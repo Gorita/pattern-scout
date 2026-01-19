@@ -10,7 +10,7 @@
  * - Full pattern modal with all details
  */
 
-import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, copyFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -18,9 +18,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PATTERNS_DIR = join(__dirname, '../src/data/patterns');
-const OUTPUT_FILE = join(__dirname, '../dist/standalone.html');
+const DIST_DIR = join(__dirname, '../dist');
+const OUTPUT_FILE = join(DIST_DIR, 'standalone.html');
+const AI_MANIFEST_SRC = join(__dirname, '../public/ai-manifest.json');
+const AI_MANIFEST_DEST = join(DIST_DIR, 'ai-manifest.json');
 
 console.log('📦 Building complete standalone HTML...');
+
+// Ensure dist directory exists
+if (!existsSync(DIST_DIR)) {
+  mkdirSync(DIST_DIR, { recursive: true });
+}
 
 // Load all pattern files
 const files = readdirSync(PATTERNS_DIR).filter(f => f.endsWith('.json'));
@@ -745,8 +753,18 @@ const html = `<!DOCTYPE html>
 
 writeFileSync(OUTPUT_FILE, html, 'utf-8');
 
-console.log('✅ Complete standalone HTML created!');
-console.log(`   Output: ${OUTPUT_FILE}`);
+// Copy ai-manifest.json for AI search functionality
+if (existsSync(AI_MANIFEST_SRC)) {
+  copyFileSync(AI_MANIFEST_SRC, AI_MANIFEST_DEST);
+  console.log('✅ Complete standalone HTML created!');
+  console.log(`   Output: ${OUTPUT_FILE}`);
+  console.log(`   AI Manifest: ${AI_MANIFEST_DEST}`);
+} else {
+  console.log('✅ Complete standalone HTML created!');
+  console.log(`   Output: ${OUTPUT_FILE}`);
+  console.log('⚠️  AI manifest not found. Run: npm run generate:ai-manifest');
+}
+
 console.log('');
 console.log('Features included:');
 console.log('   ✓ Hero section with stats');
