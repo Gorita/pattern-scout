@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://gorita.github.io',
-  base: '/awesome-agentic-patterns/',
+  base: '/pattern-scout/',
   integrations: [tailwind()],
   output: 'static',
   build: {

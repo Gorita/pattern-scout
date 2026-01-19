@@ -31,7 +31,8 @@
       "Bash(npm run build:*)",
       "Bash(git commit:*)",
       "WebFetch(domain:esc5221.github.io)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git remote:*)"
     ],
     "deny": [],
     "ask": []

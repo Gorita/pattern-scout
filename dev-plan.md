@@ -4,7 +4,7 @@
 
 **목표**: nibzard/awesome-agentic-patterns 데이터를 기반으로 한국어 지원 + AI 시각화가 포함된 정적 웹사이트 구축
 
-**배포 URL**: `https://gorita.github.io/awesome-agentic-patterns/`
+**배포 URL**: `https://gorita.github.io/pattern-scout/`
 
 ---
 

@@ -4,7 +4,7 @@
 
 **Pattern Scout**는 AI 에이전트를 구축할 때 적합한 디자인 패턴을 빠르게 찾아주는 웹 애플리케이션입니다. [nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns)의 **117개 패턴**을 한국어와 영어로 제공하며, 카테고리별 탐색과 실시간 검색을 지원합니다.
 
-🌐 **웹사이트**: [https://gorita.github.io/awesome-agentic-patterns](https://gorita.github.io/awesome-agentic-patterns)
+🌐 **웹사이트**: [https://gorita.github.io/pattern-scout](https://gorita.github.io/pattern-scout)
 
 ---
 
@@ -36,8 +36,8 @@
 ### 로컬 실행
 
 ```bash
-git clone https://github.com/gorita/awesome-agentic-patterns.git
-cd awesome-agentic-patterns
+git clone https://github.com/gorita/pattern-scout.git
+cd pattern-scout
 npm install
 npm run dev  # http://localhost:4321
 ```

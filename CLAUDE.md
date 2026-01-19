@@ -17,7 +17,7 @@ AI 에이전트가 이 프로젝트를 효과적으로 작업하기 위한 가�
 - **동기화**: upstream 저장소와 자동 동기화 (예정)
 
 ### 배포 URL
-- **메인**: https://gorita.github.io/awesome-agentic-patterns (예정)
+- **메인**: https://gorita.github.io/pattern-scout (예정)
 - **개발**: http://localhost:4321
 
 ---
