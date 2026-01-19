@@ -20,7 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PATTERNS_DIR = join(__dirname, '../src/data/patterns');
-const OUTPUT_FILE = join(__dirname, '../src/data/ai-manifest.json');
+const OUTPUT_FILE = join(__dirname, '../public/ai-manifest.json');
 
 /**
  * 패턴 JSON 파일을 AI 검색에 최적화된 형태로 변환

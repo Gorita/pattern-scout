@@ -127,7 +127,7 @@
         resultDiv.textContent = '🔄 AI가 패턴을 분석하고 있습니다...';
 
         // 1. AI Manifest 로드
-        const manifestResponse = await fetch('../src/data/ai-manifest.json');
+        const manifestResponse = await fetch('../public/ai-manifest.json');
         const manifest = await manifestResponse.json();
 
         // 2. 시스템 프롬프트 구성

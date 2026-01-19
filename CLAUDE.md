@@ -73,9 +73,10 @@ awesome-agentic-patterns/
 │   │   └── index.astro         # 메인 페이지 (사이드바 + 그리드)
 │   └── styles/
 │       └── global.css          # 글로벌 스타일
-├── public/                     # 정적 파일
+├── public/                     # 정적 파일 (빌드 시 dist로 복사)
 │   ├── favicon.svg
-│   └── pattern-scout-banner.png # 배너 이미지
+│   ├── pattern-scout-banner.png # 배너 이미지
+│   └── ai-manifest.json        # AI 검색용 manifest ⭐
 ├── examples/
 │   └── ai-search-example.html  # AI 검색 프로토타입 (Gemini)
 ├── patterns/                   # upstream 원본 마크다운 (참조용)
@@ -744,7 +745,8 @@ npm run generate:ai-manifest
 ```
 
 - **입력**: `src/data/patterns/*.json` (117개 패턴)
-- **출력**: `src/data/ai-manifest.json` (146KB, ~37K 토큰)
+- **출력**: `public/ai-manifest.json` (146KB, ~37K 토큰)
+- **배포**: `dist/ai-manifest.json` (빌드 시 자동 복사)
 
 ### 생성 시점
 
