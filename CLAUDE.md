@@ -735,213 +735,44 @@ jobs:
 
 ## 🤖 AI 검색 Manifest
 
-AI 기반 패턴 검색 기능을 위한 최적화된 데이터 파일을 자동 생성합니다.
+AI가 패턴을 검색할 수 있도록 최적화된 manifest 파일을 자동 생성합니다.
 
-### 개요
-
-**목적**: 117개 패턴을 AI(Gemini, Claude 등)가 읽기 좋은 형태로 변환
-
-**위치**:
-- 생성기: `scripts/generate-ai-manifest.js`
-- 출력: `src/data/ai-manifest.json` (146KB, ~37K 토큰)
-- 예제: `examples/ai-search-example.html`
-
-### 사용법
+### 생성 방법
 
 ```bash
-# AI Manifest 생성
 npm run generate:ai-manifest
 ```
 
-**출력 예시**:
-```
-🔍 Reading pattern files...
-   Found 117 pattern files
-
-✅ AI Manifest generated successfully!
-   Output: src/data/ai-manifest.json
-   Patterns: 117
-   Categories: 8
-   File size: 146.98 KB
-   Est. tokens: ~37,626
-
-📊 Patterns by category:
-   Orchestration & Control: 33
-   Tool Use & Environment: 21
-   Context & Memory: 14
-   ...
-```
+- **입력**: `src/data/patterns/*.json` (117개 패턴)
+- **출력**: `src/data/ai-manifest.json` (146KB, ~37K 토큰)
 
 ### 생성 시점
 
-다음 상황에서 manifest를 재생성하세요:
+- 새 패턴 추가 후
+- 기존 패턴의 description, problem, solution 수정 후
+- AI 검색 기능 개발 전
 
-1. **새 패턴 추가 후**
-   ```bash
-   # 패턴 추가
-   cat > src/data/patterns/new-pattern.json << EOF
-   {...}
-   EOF
+### 데이터 구조
 
-   # Manifest 재생성
-   npm run generate:ai-manifest
-   ```
-
-2. **기존 패턴 수정 후**
-   ```bash
-   # description, problem, solution 등 변경 시
-   npm run generate:ai-manifest
-   ```
-
-3. **AI 검색 기능 개발 전**
-   ```bash
-   # 최신 데이터로 업데이트
-   npm run generate:ai-manifest
-   ```
-
-### AI Manifest 데이터 구조
-
-생성기는 개별 패턴 파일(`patterns/*.json`)을 AI 친화적 형태로 변환합니다:
+개별 패턴 파일을 AI가 읽기 좋게 변환:
 
 ```json
-[
-  {
-    "id": "context-minimization-pattern",
-    "title": "Context-Minimization Pattern",
-    "title_ko": "컨텍스트 최소화 패턴",
-    "category": "Context & Memory",
-    "description": "Reduces token usage and prevents injection by summarizing...",
-    "problem": "User-supplied text lingers in context, increasing costs...",
-    "solution": "Transform user input into safe intermediate form...",
-    "when_to_use": ["Customer service chat", "Medical Q&A"],
-    "pros": ["Simple", "Prevents injection"],
-    "cons": ["Loses conversational nuance"],
-    "tags": ["security", "cost", "memory"],
-    "related": []
-  }
-]
+{
+  "id": "pattern-id",
+  "title": "Pattern Title",
+  "title_ko": "패턴 제목",
+  "category": "Orchestration & Control",
+  "description": "문제와 해결책 요약 (200자)",
+  "problem": "문제 전문",
+  "solution": "해결책 전문",
+  "when_to_use": ["사용 시기..."],
+  "pros": ["장점..."],
+  "cons": ["단점..."],
+  "tags": ["tag1", "tag2"]
+}
 ```
 
-**변환 규칙**:
-- ✅ **명확한 키 이름**: `title`, `description` (단축하지 않음)
-- ✅ **영어 데이터만**: AI 검색은 영어 기준 (한국어는 title_ko만)
-- ✅ **description 자동 생성**: problem + solution의 첫 문장 (200자 제한)
-- ✅ **카테고리별 정렬**: AI가 패턴을 찾기 쉽게
-
-### AI 검색 통합 (프로토타입)
-
-`examples/ai-search-example.html`에서 작동하는 예제를 확인할 수 있습니다.
-
-**기본 구조**:
-```javascript
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import manifest from './src/data/ai-manifest.json';
-
-// 시스템 프롬프트에 manifest 포함
-const systemInstruction = `
-You are an expert on AI Agent Design Patterns.
-Available patterns: ${JSON.stringify(manifest)}
-
-Task: Analyze user query and recommend 2-3 most relevant patterns.
-`;
-
-const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
-  systemInstruction: systemInstruction
-});
-
-// 사용자 쿼리 처리
-const result = await model.generateContent(userQuery);
-```
-
-### 비용 및 성능
-
-**Gemini 1.5 Flash 기준** (2025-01 가격):
-
-| 항목 | 값 |
-|------|-----|
-| Manifest 크기 | 146KB |
-| 토큰 수 | ~37,600 토큰 |
-| 비용/요청 (캐싱 없음) | ~$0.01 |
-| 비용/요청 (캐싱 사용) | ~$0.001 (90% 절감) |
-
-**최적화 전략**:
-
-1. **Context Caching** (권장)
-   ```javascript
-   const model = genAI.getGenerativeModel({
-     model: "gemini-1.5-flash-001",
-     systemInstruction: systemInstruction,
-     cachedContent: "pattern-manifest-v1" // 캐시 키
-   });
-   ```
-
-2. **하이브리드 검색** (확장성)
-   ```javascript
-   // Step 1: 클라이언트 필터링 (기존 검색)
-   const filtered = patterns.filter(p =>
-     p.tags.includes(keyword) || p.category === category
-   ).slice(0, 20);
-
-   // Step 2: AI 추천 (상위 20개만 전송)
-   const systemInstruction = `
-   Available patterns: ${JSON.stringify(filtered)}
-   ...
-   `;
-   ```
-
-### 자동화 (향후)
-
-GitHub Actions에 통합 예정:
-
-```yaml
-# .github/workflows/update-manifest.yml
-name: Update AI Manifest
-
-on:
-  push:
-    paths:
-      - 'src/data/patterns/*.json'
-
-jobs:
-  update-manifest:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: npm install
-      - run: npm run generate:ai-manifest
-      - name: Commit if changed
-        run: |
-          git add src/data/ai-manifest.json
-          git commit -m "chore: Update AI manifest" || exit 0
-          git push
-```
-
-### 문제 해결
-
-**문제**: Manifest 파일이 생성되지 않음
-```bash
-# 해결: Node.js 버전 확인 (18+ 필요)
-node --version
-
-# 스크립트 직접 실행
-node scripts/generate-ai-manifest.js
-```
-
-**문제**: 토큰 수가 너무 많음 (50K+)
-```bash
-# 해결: description 길이 확인
-cat src/data/ai-manifest.json | jq '.[].description' | wc -c
-
-# 생성기에서 description 제한: 200자
-```
-
-**문제**: AI가 패턴을 잘못 추천함
-```bash
-# 해결: 프롬프트 개선 필요
-# examples/ai-search-example.html의 systemInstruction 수정
-```
+AI 검색 구현 예제는 `examples/ai-search-example.html` 참고.
 
 ---
 
@@ -1003,19 +834,16 @@ cat src/data/ai-manifest.json | jq '.[].description' | wc -c
 
 **마지막 업데이트**: 2025-01-19
 **버전**: 1.2.0
-**상태**: 프로덕션 준비 완료 + AI 검색 프로토타입
+**상태**: 프로덕션 준비 완료
 
 ---
 
 ## 📝 변경 이력
 
 ### v1.2.0 (2025-01-19)
-- AI 검색 Manifest 생성기 추가
-- `scripts/generate-ai-manifest.js` 스크립트 작성
-- `src/data/ai-manifest.json` 자동 생성 (146KB, 37K 토큰)
-- AI 검색 통합 가이드 추가
-- Gemini 1.5 Flash 예제 코드 추가
-- 비용 최적화 전략 문서화
+- AI 검색 Manifest 생성기 추가 (`npm run generate:ai-manifest`)
+- `src/data/ai-manifest.json` 자동 생성
+- `examples/ai-search-example.html` 프로토타입 추가
 
 ### v1.1.0 (2025-01-19)
 - upstream에서 새 패턴 추가 가이드 추가
