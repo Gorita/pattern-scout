@@ -3,7 +3,7 @@ import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://esc5221.github.io',
+  site: 'https://gorita.github.io',
   base: '/awesome-agentic-patterns/',
   integrations: [tailwind()],
   output: 'static',
