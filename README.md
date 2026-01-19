@@ -45,8 +45,9 @@ npm run dev  # http://localhost:4321
 ### 빌드 및 배포
 
 ```bash
-npm run build    # 프로덕션 빌드
-npm run preview  # 빌드 미리보기
+npm run build              # 프로덕션 빌드 (GitHub Pages)
+npm run build:standalone   # 단일 HTML 파일 생성 (팀 공유용)
+npm run preview            # 빌드 미리보기
 ```
 
 ---

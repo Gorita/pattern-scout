@@ -36,16 +36,17 @@ npm run build
 npm run preview
 ```
 
-### 배포 테스트
+### Standalone 빌드 (웹서버 불필요)
 ```bash
-npm run build
-# dist/ 폴더 생성 확인
+npm run build:standalone
+# dist/standalone.html 생성 (팀 공유용)
+# 더블클릭으로 바로 실행 가능
 ```
 
 ### AI Manifest 생성
 ```bash
 npm run generate:ai-manifest
-# src/data/ai-manifest.json 생성 (AI 검색용)
+# public/ai-manifest.json 생성 (AI 검색용)
 ```
 
 ---
@@ -82,9 +83,10 @@ awesome-agentic-patterns/
 ├── patterns/                   # upstream 원본 마크다운 (참조용)
 │   └── *.md
 ├── scripts/
-│   ├── generate-ai-manifest.js # AI Manifest 생성기 ⭐
-│   ├── README.md               # 스크립트 문서
-│   └── sync-upstream.sh        # upstream 동기화 (예정)
+│   ├── build-standalone-html.js # 단일 HTML 파일 생성기 (팀 공유용) ⭐
+│   ├── generate-ai-manifest.js  # AI Manifest 생성기 ⭐
+│   ├── README.md                # 스크립트 문서
+│   └── sync-upstream.sh         # upstream 동기화 (예정)
 ├── astro.config.mjs
 ├── tailwind.config.js
 └── package.json
@@ -734,6 +736,30 @@ jobs:
 
 ---
 
+## 📦 Standalone 빌드 (팀 공유용)
+
+팀원에게 공유할 수 있는 단일 HTML 파일을 생성합니다.
+
+### 생성 방법
+```bash
+npm run build:standalone
+```
+
+- **결과물**: `dist/standalone.html` (단일 파일)
+- **실행**: 더블클릭으로 바로 열림 (웹서버 불필요)
+- **기능**: 모든 기능 포함 (사이드바, 검색, 언어 전환, 모달)
+
+### Astro 빌드와의 차이
+
+| 항목 | Astro 빌드 | Standalone 빌드 |
+|------|-----------|----------------|
+| 명령어 | `npm run build` | `npm run build:standalone` |
+| 결과물 | `dist/` 폴더 (여러 파일) | `dist/standalone.html` (1개) |
+| 실행 | 웹서버 필요 | 더블클릭으로 바로 열림 |
+| 용도 | GitHub Pages 배포 | 팀 공유, 오프라인 사용 |
+
+---
+
 ## 🤖 AI 검색 Manifest
 
 AI가 패턴을 검색할 수 있도록 최적화된 manifest 파일을 자동 생성합니다.
@@ -835,16 +861,21 @@ AI 검색 구현 예제는 `examples/ai-search-example.html` 참고.
 ---
 
 **마지막 업데이트**: 2025-01-19
-**버전**: 1.2.0
+**버전**: 1.3.0
 **상태**: 프로덕션 준비 완료
 
 ---
 
 ## 📝 변경 이력
 
+### v1.3.0 (2025-01-19)
+- Standalone 빌드 추가 (`npm run build:standalone`)
+- 웹서버 없이 실행 가능한 단일 HTML 파일 생성
+- 팀 공유 및 오프라인 사용 지원
+
 ### v1.2.0 (2025-01-19)
 - AI 검색 Manifest 생성기 추가 (`npm run generate:ai-manifest`)
-- `src/data/ai-manifest.json` 자동 생성
+- `public/ai-manifest.json` 자동 생성
 - `examples/ai-search-example.html` 프로토타입 추가
 
 ### v1.1.0 (2025-01-19)
