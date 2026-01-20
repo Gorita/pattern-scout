@@ -129,49 +129,55 @@
         }
 
         .blacksmith-img {
-            width: 80%; 
+            position: relative; /* box 배치를 위한 기준점 */
+            width: 80%;
             max-width: 400px;
             height: auto;
             border-radius: 4px;
+            /* 이미지 비율 유지 (832:1248 = 2:3) */
+            aspect-ratio: 832 / 1248;
             /* 이미지가 깨졌을 때 레이아웃 유지 */
-            min-height: 300px; 
+            min-height: 300px;
             background-color: #222;
         }
 
         /* 상자 스타일 및 위치 */
         .treasure-box {
             position: absolute;
-            /* 세로 3/2 부분 (약 56% 지점) 배치 */
-            top: 56%; 
-            /* 가로 중앙 배치: left 50% 후 너비의 절반만큼 왼쪽으로 이동 */
+            /* 이미지 크기에 비례한 위치 (이미지 높이의 약 66% 지점) */
+            top: 66%;
+            /* 가로 중앙 배치 */
             left: 50%;
-            margin-left: -50px; 
-            
-            width: 100px; /* 상자 크기 */
-            height: 100px; /* 깨짐 방지용 높이 */
+            transform: translateX(-50%);
+
+            /* 이미지 크기에 비례한 box 크기 (이미지 너비의 약 25%) */
+            width: 25%;
+            aspect-ratio: 1 / 1; /* 정사각형 유지 */
+            min-width: 60px; /* 최소 크기 */
+            max-width: 100px; /* 최대 크기 */
             cursor: pointer;
             transition: transform 0.1s;
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
         }
 
         .treasure-box:hover {
-            transform: scale(1.05);
+            transform: translateX(-50%) scale(1.05);
             filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
         }
 
         /* 흔들리는 애니메이션 */
         @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+            0% { transform: translateX(-50%) translate(1px, 1px) rotate(0deg); }
+            10% { transform: translateX(-50%) translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translateX(-50%) translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translateX(-50%) translate(3px, 2px) rotate(0deg); }
+            40% { transform: translateX(-50%) translate(1px, -1px) rotate(1deg); }
+            50% { transform: translateX(-50%) translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translateX(-50%) translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translateX(-50%) translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translateX(-50%) translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translateX(-50%) translate(1px, 2px) rotate(0deg); }
+            100% { transform: translateX(-50%) translate(1px, -2px) rotate(-1deg); }
         }
 
         .shake {
@@ -216,14 +222,13 @@
         /* 반응형 처리 */
         @media (max-width: 600px) {
             .speech-bubble { font-size: 1rem; padding: 10px; }
-            /* 모바일에서도 중앙 정렬 유지 및 크기 조정 */
-            .treasure-box { 
-                width: 80px; 
-                height: 80px; 
-                margin-left: -40px; /* 너비 80px의 절반 */
-                top: 66%;
-            }
+            /* 모바일에서도 이미지 비율에 따라 자동 조정됨 */
             .blacksmith-img { min-height: 200px; }
+            .treasure-box {
+                /* 모바일에서도 이미지 기준 비율 유지 */
+                min-width: 50px;
+                max-width: 80px;
+            }
             .secret-bubble { bottom: 20px; left: 20px; font-size: 0.9rem; }
         }
     </style>
