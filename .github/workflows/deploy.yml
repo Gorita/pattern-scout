@@ -10,9 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 최근 커밋 메시지 확인용
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,3 +35,50 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           cname: false
+
+      - name: Comment on related issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 최근 커밋 메시지에서 이슈 번호 추출
+            const { execSync } = require('child_process');
+            const commitMsg = execSync('git log -1 --pretty=%B').toString();
+
+            // Closes #123, Fixes #123, Resolves #123 패턴 매칭
+            const issuePattern = /(?:closes|fixes|resolves)\s+#(\d+)/gi;
+            const matches = [...commitMsg.matchAll(issuePattern)];
+
+            if (matches.length === 0) {
+              console.log('No issue references found in commit message');
+              return;
+            }
+
+            const deployUrl = 'https://gorita.github.io/pattern-scout/';
+            const commitSha = context.sha.substring(0, 7);
+
+            for (const match of matches) {
+              const issueNumber = parseInt(match[1]);
+
+              try {
+                // 이슈에 배포 완료 코멘트 추가
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: `## ✅ 배포 완료
+
+이 이슈와 관련된 변경사항이 배포되었습니다.
+
+- **배포 URL**: ${deployUrl}
+- **커밋**: \`${commitSha}\`
+- **배포 시간**: ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
+
+---
+_이 코멘트는 자동으로 생성되었습니다._`
+                });
+
+                console.log(`Commented on issue #${issueNumber}`);
+              } catch (error) {
+                console.log(`Failed to comment on issue #${issueNumber}: ${error.message}`);
+              }
+            }
