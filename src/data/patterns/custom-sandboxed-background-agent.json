@@ -1,0 +1,62 @@
+{
+  "id": "custom-sandboxed-background-agent",
+  "title": "Custom Sandboxed Background Agent",
+  "title_ko": "커스텀 샌드박스 백그라운드 에이전트",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://engineering.ramp.com/post/why-we-built-our-background-agent",
+  "problem": {
+    "en": "Off-the-shelf coding agents are either too generic (not integrated with company-specific environments), vendor-locked (tied to one model provider), or have limited context (can't access internal infrastructure). Companies need coding agents that work within their specific development environment, iterate with closed feedback loops, provide real-time visibility, and are model-agnostic.",
+    "ko": "기성 코딩 에이전트는 너무 일반적이거나(회사별 환경과 통합되지 않음), 특정 벤더에 종속되어 있거나(하나의 모델 제공자에 묶임), 제한된 컨텍스트를 가지고 있습니다(내부 인프라에 접근 불가). 기업은 특정 개발 환경에서 작동하고, 폐쇄 피드백 루프로 반복하고, 실시간 가시성을 제공하며, 모델에 구애받지 않는 코딩 에이전트가 필요합니다."
+  },
+  "solution": {
+    "en": "Build a custom background agent that runs in a sandboxed environment identical to developers. Key components include: (1) Sandboxed execution environment using Modal or similar for ephemeral dev environments, (2) Real-time communication layer via WebSockets for streaming stdout/stderr, (3) Closed feedback loop with compiler errors, linter warnings, and test failures guiding iterations, (4) Model-agnostic architecture supporting multiple frontier models, (5) Company-specific integration with internal tooling and workflows.",
+    "ko": "개발자와 동일한 샌드박스 환경에서 실행되는 커스텀 백그라운드 에이전트를 구축합니다. 주요 구성 요소: (1) Modal 또는 유사 도구를 사용한 임시 개발 환경의 샌드박스 실행 환경, (2) stdout/stderr 스트리밍을 위한 WebSocket 기반 실시간 통신 레이어, (3) 컴파일러 에러, 린터 경고, 테스트 실패가 반복을 안내하는 폐쇄 피드백 루프, (4) 여러 프론티어 모델을 지원하는 모델 중립적 아키텍처, (5) 내부 도구 및 워크플로우와의 회사별 통합."
+  },
+  "when_to_use": {
+    "en": [
+      "Need deep integration with company-specific tools and workflows",
+      "Want model flexibility without vendor lock-in",
+      "Require real-time visibility into agent progress",
+      "Agent needs same development context as human developers"
+    ],
+    "ko": [
+      "회사별 도구 및 워크플로우와 깊은 통합 필요",
+      "벤더 종속 없는 모델 유연성 필요",
+      "에이전트 진행 상황 실시간 가시성 필요",
+      "에이전트가 개발자와 동일한 개발 컨텍스트 필요"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Deep integration with company-specific tools and workflows",
+      "Model flexibility - not locked into one provider",
+      "Real-time visibility into agent progress and intermediate steps",
+      "Same context as developers - agent works in identical environment",
+      "Custom feedback loops tailored to your stack"
+    ],
+    "ko": [
+      "회사별 도구 및 워크플로우와 깊은 통합",
+      "모델 유연성 - 특정 제공자에 종속되지 않음",
+      "에이전트 진행 상황 및 중간 단계 실시간 가시성",
+      "개발자와 동일한 컨텍스트 - 동일한 환경에서 작동",
+      "스택에 맞춤화된 피드백 루프"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Engineering overhead - requires building and maintaining infrastructure",
+      "Security considerations - agent needs access to repos and credentials",
+      "Ongoing maintenance - unlike SaaS solutions, you own the ops burden",
+      "Requires DevOps expertise - sandbox management, WebSocket scaling"
+    ],
+    "ko": [
+      "엔지니어링 오버헤드 - 인프라 구축 및 유지보수 필요",
+      "보안 고려사항 - 에이전트가 저장소 및 자격증명 접근 필요",
+      "지속적인 유지보수 - SaaS와 달리 운영 부담 직접 부담",
+      "DevOps 전문성 필요 - 샌드박스 관리, WebSocket 스케일링"
+    ]
+  },
+  "mermaid_diagram": "flowchart TD\n    subgraph Client[\"Developer's Machine\"]\n        UI[Web UI / CLI]\n    end\n\n    subgraph Infrastructure[\"Company Infrastructure\"]\n        Svc[Agent Service]\n        Sandbox[Sandboxed Dev Environment]\n        VCS[Git / Version Control]\n    end\n\n    UI -->|\"WebSocket: Send Prompt\"| Svc\n    UI <-->|\"WebSocket: Real-time Stream\"| Svc\n    Svc -->|\"Spin up sandbox\"| Sandbox\n    Sandbox <-->|\"Read/Write Files\"| VCS\n    Sandbox -->|\"Compiler/Linter/Test Feedback\"| Sandbox\n    Sandbox -->|\"Final PR/Result\"| Svc\n    Svc -->|\"Notification\"| UI",
+  "tags": ["background-agent", "sandboxed", "model-agnostic", "real-time", "websocket", "custom-infra", "iterative"]
+}

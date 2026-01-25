@@ -1,0 +1,64 @@
+{
+  "id": "planner-worker-separation-for-long-running-agents",
+  "title": "Planner-Worker Separation for Long-Running Agents",
+  "title_ko": "장기 실행 에이전트를 위한 플래너-워커 분리",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://cursor.com/blog/scaling-agents",
+  "problem": {
+    "en": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges. Flat structures lead to conflicts and duplicated work. Dynamic coordination through shared files with locking becomes a bottleneck. Equal-status agents become risk-averse, avoiding difficult tasks. No agent takes ownership of hard problems or overall project direction.",
+    "ko": "복잡한 다주 프로젝트를 위해 여러 AI 에이전트를 병렬로 실행하면 상당한 조정 문제가 발생합니다. 수평적 구조는 충돌과 중복 작업을 일으킵니다. 공유 파일을 통한 동적 조정과 잠금은 병목 현상이 됩니다. 동등한 지위의 에이전트는 위험 회피적이 되어 어려운 작업을 피합니다. 어려운 문제나 전체 프로젝트 방향의 소유권을 가지는 에이전트가 없습니다."
+  },
+  "solution": {
+    "en": "Separate agent roles into a hierarchical planner-worker structure: (1) Planners continuously explore the codebase and create tasks, can spawn sub-planners for specific areas making planning parallel and recursive; (2) Workers pick up tasks and focus entirely on completing them without coordinating with other workers; (3) A Judge determines whether to continue or if the goal is achieved. This creates an iterative cycle where each iteration starts fresh, combating drift and tunnel vision.",
+    "ko": "에이전트 역할을 계층적 플래너-워커 구조로 분리합니다: (1) 플래너는 지속적으로 코드베이스를 탐색하고 작업을 생성하며, 특정 영역에 대한 서브 플래너를 생성하여 계획을 병렬적이고 재귀적으로 만듭니다; (2) 워커는 작업을 선택하고 다른 워커와 조정 없이 완료에만 집중합니다; (3) 판정자가 계속할지 목표가 달성되었는지 결정합니다. 이는 각 반복이 새롭게 시작되는 반복 주기를 만들어 드리프트와 터널 비전을 방지합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Massive codebases (1M+ lines of code, 1000+ files)",
+      "Ambitious goals - building complex systems from scratch",
+      "Large-scale migrations (e.g., framework migrations)",
+      "Performance optimization - complete rewrites in different languages"
+    ],
+    "ko": [
+      "대규모 코드베이스 (100만+ 라인, 1000+ 파일)",
+      "야심찬 목표 - 복잡한 시스템을 처음부터 구축",
+      "대규모 마이그레이션 (예: 프레임워크 마이그레이션)",
+      "성능 최적화 - 다른 언어로 완전 리라이트"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Scalability - hundreds of agents can work concurrently for weeks",
+      "Clear ownership - planners own big picture, workers own task completion",
+      "Parallel planning - planning itself scales through sub-planner spawning",
+      "Reduced coordination overhead - workers don't need to coordinate with each other",
+      "Combats tunnel vision - iterative cycles with fresh starts prevent drift"
+    ],
+    "ko": [
+      "확장성 - 수백 개의 에이전트가 몇 주간 동시 작업 가능",
+      "명확한 소유권 - 플래너가 큰 그림을, 워커가 작업 완료를 담당",
+      "병렬 계획 - 서브 플래너 생성을 통해 계획 자체도 확장",
+      "조정 오버헤드 감소 - 워커들이 서로 조정할 필요 없음",
+      "터널 비전 방지 - 새로운 시작의 반복 주기가 드리프트 방지"
+    ]
+  },
+  "cons": {
+    "en": [
+      "System complexity - requires orchestration infrastructure for role separation",
+      "Prompt engineering difficulty - coordination behavior requires extensive experimentation",
+      "Cost - running hundreds of concurrent agents for weeks is expensive",
+      "Not perfectly efficient - significant token waste, but more effective than expected",
+      "Still evolving - planners should wake up when tasks complete; agents sometimes run too long"
+    ],
+    "ko": [
+      "시스템 복잡성 - 역할 분리를 위한 오케스트레이션 인프라 필요",
+      "프롬프트 엔지니어링 어려움 - 조정 동작에 광범위한 실험 필요",
+      "비용 - 수백 개의 동시 에이전트를 몇 주간 실행하는 비용",
+      "완벽하게 효율적이지 않음 - 상당한 토큰 낭비, 하지만 예상보다 효과적",
+      "아직 발전 중 - 플래너가 작업 완료 시 깨어나야 함; 에이전트가 가끔 너무 오래 실행"
+    ]
+  },
+  "mermaid_diagram": "graph TD\n    subgraph Planning_Layer\n        P1[Planner Agent]\n        P1 --> SP1[Sub-Planner: Area A]\n        P1 --> SP2[Sub-Planner: Area B]\n        P1 --> SP3[Sub-Planner: Area C]\n    end\n\n    subgraph Execution_Layer\n        SP1 -->|creates tasks| W1[Worker 1]\n        SP1 -->|creates tasks| W2[Worker 2]\n        SP2 -->|creates tasks| W3[Worker 3]\n        SP2 -->|creates tasks| W4[Worker 4]\n        SP3 -->|creates tasks| W5[Worker 5]\n    end\n\n    subgraph Evaluation_Layer\n        W1 -->|push changes| J[Judge Agent]\n        W2 -->|push changes| J\n        W3 -->|push changes| J\n        W4 -->|push changes| J\n        W5 -->|push changes| J\n        J -->|continue?| P1\n    end",
+  "tags": ["multi-agent", "coordination", "long-running", "hierarchical", "parallelism"]
+}
