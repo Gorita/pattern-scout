@@ -1204,6 +1204,44 @@
     "related": []
   },
   {
+    "id": "custom-sandboxed-background-agent",
+    "title": "Custom Sandboxed Background Agent",
+    "title_ko": "커스텀 샌드박스 백그라운드 에이전트",
+    "category": "Orchestration & Control",
+    "description": "Off-the-shelf coding agents are either too generic (not integrated with company-specific environments), vendor-locked (tied to one model provider), or have limited context (can't access internal infra",
+    "problem": "Off-the-shelf coding agents are either too generic (not integrated with company-specific environments), vendor-locked (tied to one model provider), or have limited context (can't access internal infrastructure). Companies need coding agents that work within their specific development environment, iterate with closed feedback loops, provide real-time visibility, and are model-agnostic.",
+    "solution": "Build a custom background agent that runs in a sandboxed environment identical to developers. Key components include: (1) Sandboxed execution environment using Modal or similar for ephemeral dev environments, (2) Real-time communication layer via WebSockets for streaming stdout/stderr, (3) Closed feedback loop with compiler errors, linter warnings, and test failures guiding iterations, (4) Model-agnostic architecture supporting multiple frontier models, (5) Company-specific integration with internal tooling and workflows.",
+    "when_to_use": [
+      "Need deep integration with company-specific tools and workflows",
+      "Want model flexibility without vendor lock-in",
+      "Require real-time visibility into agent progress",
+      "Agent needs same development context as human developers"
+    ],
+    "pros": [
+      "Deep integration with company-specific tools and workflows",
+      "Model flexibility - not locked into one provider",
+      "Real-time visibility into agent progress and intermediate steps",
+      "Same context as developers - agent works in identical environment",
+      "Custom feedback loops tailored to your stack"
+    ],
+    "cons": [
+      "Engineering overhead - requires building and maintaining infrastructure",
+      "Security considerations - agent needs access to repos and credentials",
+      "Ongoing maintenance - unlike SaaS solutions, you own the ops burden",
+      "Requires DevOps expertise - sandbox management, WebSocket scaling"
+    ],
+    "tags": [
+      "background-agent",
+      "sandboxed",
+      "model-agnostic",
+      "real-time",
+      "websocket",
+      "custom-infra",
+      "iterative"
+    ],
+    "related": []
+  },
+  {
     "id": "discrete-phase-separation",
     "title": "Discrete Phase Separation",
     "title_ko": "분리된 단계 분리",
@@ -1765,6 +1803,43 @@
       "control-flow-integrity",
       "prompt-injection",
       "security"
+    ],
+    "related": []
+  },
+  {
+    "id": "planner-worker-separation-for-long-running-agents",
+    "title": "Planner-Worker Separation for Long-Running Agents",
+    "title_ko": "장기 실행 에이전트를 위한 플래너-워커 분리",
+    "category": "Orchestration & Control",
+    "description": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges Separate agent roles into a hierarchical planner-worker structure: (1) Planners cont",
+    "problem": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges. Flat structures lead to conflicts and duplicated work. Dynamic coordination through shared files with locking becomes a bottleneck. Equal-status agents become risk-averse, avoiding difficult tasks. No agent takes ownership of hard problems or overall project direction.",
+    "solution": "Separate agent roles into a hierarchical planner-worker structure: (1) Planners continuously explore the codebase and create tasks, can spawn sub-planners for specific areas making planning parallel and recursive; (2) Workers pick up tasks and focus entirely on completing them without coordinating with other workers; (3) A Judge determines whether to continue or if the goal is achieved. This creates an iterative cycle where each iteration starts fresh, combating drift and tunnel vision.",
+    "when_to_use": [
+      "Massive codebases (1M+ lines of code, 1000+ files)",
+      "Ambitious goals - building complex systems from scratch",
+      "Large-scale migrations (e.g., framework migrations)",
+      "Performance optimization - complete rewrites in different languages"
+    ],
+    "pros": [
+      "Scalability - hundreds of agents can work concurrently for weeks",
+      "Clear ownership - planners own big picture, workers own task completion",
+      "Parallel planning - planning itself scales through sub-planner spawning",
+      "Reduced coordination overhead - workers don't need to coordinate with each other",
+      "Combats tunnel vision - iterative cycles with fresh starts prevent drift"
+    ],
+    "cons": [
+      "System complexity - requires orchestration infrastructure for role separation",
+      "Prompt engineering difficulty - coordination behavior requires extensive experimentation",
+      "Cost - running hundreds of concurrent agents for weeks is expensive",
+      "Not perfectly efficient - significant token waste, but more effective than expected",
+      "Still evolving - planners should wake up when tasks complete; agents sometimes run too long"
+    ],
+    "tags": [
+      "multi-agent",
+      "coordination",
+      "long-running",
+      "hierarchical",
+      "parallelism"
     ],
     "related": []
   },
