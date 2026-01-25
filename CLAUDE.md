@@ -33,6 +33,8 @@ npm run dev
 ### 빌드 & 미리보기
 ```bash
 npm run build
+# 1. ai-manifest.json 자동 생성 (패턴 목록 업데이트)
+# 2. Astro 빌드 실행
 npm run preview
 ```
 
@@ -43,10 +45,11 @@ npm run build:standalone
 # 더블클릭으로 바로 실행 가능
 ```
 
-### AI Manifest 생성
+### AI Manifest 수동 생성 (선택)
 ```bash
 npm run generate:ai-manifest
 # public/ai-manifest.json 생성 (AI 검색용)
+# ※ npm run build 시 자동으로 실행되므로 별도 실행 불필요
 ```
 
 ---
@@ -226,6 +229,8 @@ const categoryOrder = [
   │ main 브랜치 push 시 자동 실행
   │
   ├── npm run build
+  │     ├── ai-manifest.json 자동 생성 (패턴 목록 업데이트)
+  │     └── Astro 빌드
   ├── GitHub Pages 배포
   ├── 커밋 메시지에서 이슈 번호 추출
   ├── 해당 이슈에 배포 완료 코멘트 자동 추가
