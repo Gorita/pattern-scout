@@ -2,8 +2,8 @@ name: Check Upstream Updates
 
 on:
   schedule:
-    # 매일 오전 9시 (KST) = 매일 자정 (UTC)
-    - cron: '0 0 * * *'
+    # 매일 정오 12:17 (KST) = 매일 03:17 (UTC) - 정시 피해서 부하 분산
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 jobs:
