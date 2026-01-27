@@ -30,7 +30,7 @@ SCRIPTS_DIR="$SKILL_DIR/scripts"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   Pattern Scout Skill Installer            ║${NC}"
-echo -e "${BLUE}║   117개 AI 에이전트 디자인 패턴 검색       ║${NC}"
+echo -e "${BLUE}║   AI 에이전트 디자인 패턴 검색 스킬       ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -52,7 +52,7 @@ chmod +x "$SCRIPTS_DIR/sync_patterns.py"
 echo -e "  ${GREEN}✓${NC} sync_patterns.py"
 
 # 4. 패턴 데이터 동기화
-echo -e "${YELLOW}[4/4]${NC} 패턴 데이터 동기화 중... (117개 패턴)"
+echo -e "${YELLOW}[4/4]${NC} 패턴 데이터 동기화 중..."
 echo ""
 python3 "$SCRIPTS_DIR/sync_patterns.py" --quiet
 
