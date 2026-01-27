@@ -20,13 +20,13 @@
 
 ## 📂 8개 카테고리
 
-- 🎛️ **Orchestration & Control** (31개) - 태스크 분해, 서브 에이전트 생성
-- 🧠 **Context & Memory** (13개) - 슬라이딩 윈도우, 벡터 캐시
-- 🔄 **Feedback Loops** (13개) - 컴파일러, CI, 자가 치유 재시도
+- 🎛️ **Orchestration & Control** (36개) - 태스크 분해, 서브 에이전트 생성
+- 🧠 **Context & Memory** (17개) - 슬라이딩 윈도우, 벡터 캐시
+- 🔄 **Feedback Loops** (14개) - 컴파일러, CI, 자가 치유 재시도
 - 📚 **Learning & Adaptation** (5개) - 에이전트 RFT, 스킬 라이브러리
-- ✅ **Reliability & Eval** (13개) - 가드레일, 평가 프레임워크
-- 🔒 **Security & Safety** (3개) - 격리된 VM, PII 토큰화
-- 🔧 **Tool Use & Environment** (26개) - 셸, 브라우저, DB
+- ✅ **Reliability & Eval** (15개) - 가드레일, 평가 프레임워크
+- 🔒 **Security & Safety** (5개) - 격리된 VM, PII 토큰화
+- 🔧 **Tool Use & Environment** (22개) - 셸, 브라우저, DB
 - 👥 **UX & Collaboration** (13개) - 프롬프트 핸드오프, 단계별 커밋
 
 ---

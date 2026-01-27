@@ -484,13 +484,19 @@ npm run preview
 패턴 추가 후 README 파일들의 패턴 갯수를 업데이트합니다:
 
 ```bash
-# 현재 패턴 갯수 확인
+# 현재 총 패턴 갯수 확인
 ls src/data/patterns/ | wc -l
 
-# README.md와 README_KR.md의 패턴 갯수 업데이트
-# 예: "117 patterns" → "127 patterns"
-# 예: "117개 패턴" → "127개 패턴"
+# 카테고리별 패턴 갯수 확인
+for category in "Orchestration & Control" "Context & Memory" "Feedback Loops" "Learning & Adaptation" "Reliability & Eval" "Security & Safety" "Tool Use & Environment" "UX & Collaboration"; do
+  count=$(grep -l "\"category\": \"$category\"" src/data/patterns/*.json | wc -l)
+  echo "$category: $count"
+done
 ```
+
+**업데이트할 항목:**
+- README.md, README_KR.md의 총 패턴 갯수 (예: "117 patterns" → "127 patterns")
+- README.md, README_KR.md의 카테고리별 갯수 (예: "(31)" → "(36)")
 
 #### Step 8: 커밋
 
