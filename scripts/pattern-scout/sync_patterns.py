@@ -36,9 +36,11 @@ DEFAULT_BRANCH = "main"
 
 # 경로 설정
 SKILL_DIR = Path(__file__).parent.parent
+SCRIPTS_DIR = SKILL_DIR / "scripts"
 REFERENCES_DIR = SKILL_DIR / "references"
 PATTERNS_DIR = REFERENCES_DIR / "patterns"
 SKILL_MD_PATH = SKILL_DIR / "SKILL.md"
+SELF_PATH = Path(__file__)
 
 # 카테고리 순서 및 슬러그
 CATEGORY_ORDER = [
@@ -91,6 +93,23 @@ def fetch_skill_md(branch: str) -> str:
     """SKILL.md 가져오기"""
     url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{branch}/scripts/pattern-scout/SKILL.md"
     return fetch_url(url)
+
+def fetch_self_script(branch: str) -> str:
+    """sync_patterns.py 자기 자신 가져오기"""
+    url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{branch}/scripts/pattern-scout/sync_patterns.py"
+    return fetch_url(url)
+
+def update_self(branch: str) -> bool:
+    """자기 자신 업데이트"""
+    new_script = fetch_self_script(branch)
+    if not new_script:
+        return False
+
+    current_script = SELF_PATH.read_text(encoding='utf-8')
+    if new_script != current_script:
+        SELF_PATH.write_text(new_script, encoding='utf-8')
+        return True
+    return False
 
 def get_text(obj, lang='en') -> str:
     """다국어 객체에서 텍스트 추출 (영문 우선)"""
@@ -297,7 +316,14 @@ def sync(branch: str = DEFAULT_BRANCH, verbose: bool = True):
     REFERENCES_DIR.mkdir(parents=True, exist_ok=True)
     PATTERNS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 0. SKILL.md 업데이트
+    # 0. 자기 자신(sync_patterns.py) 업데이트
+    print("📥 Checking for script updates...")
+    if update_self(branch):
+        print("  ✅ sync_patterns.py updated (changes will apply on next run)")
+    else:
+        print("  ✅ sync_patterns.py is up to date")
+
+    # 1. SKILL.md 업데이트
     print("📥 Updating SKILL.md...")
     skill_md = fetch_skill_md(branch)
     if skill_md:
