@@ -786,6 +786,11 @@ window.addEventListener('languageChange', (e) => {
   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
   ```
 
+### GitHub CLI (gh) 사용 시
+- ⚠️ **기본 저장소 설정 필수**: 이 프로젝트는 upstream remote가 있어서 `gh` 명령이 잘못된 저장소를 참조할 수 있음
+- ✅ **기본 저장소 설정**: `gh repo set-default Gorita/pattern-scout`
+- ✅ **또는 명시적 지정**: `gh issue list --repo Gorita/pattern-scout`
+
 ---
 
 ## 🚀 배포
