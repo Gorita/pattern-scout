@@ -69,6 +69,40 @@
     "related": []
   },
   {
+    "id": "context-window-auto-compaction",
+    "title": "Context Window Auto-Compaction",
+    "title_ko": "컨텍스트 윈도우 자동 압축",
+    "category": "Context & Memory",
+    "description": "Context overflow is a silent killer of agent reliability Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry",
+    "problem": "Context overflow is a silent killer of agent reliability. When accumulated conversation history exceeds the model's context window, API errors occur, requiring manual intervention and complex retry logic.",
+    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. The system detects overflow, compacts the session transcript, validates the result, and retries the request transparently.",
+    "when_to_use": [
+      "Long-running agent sessions",
+      "Multi-turn conversations",
+      "Tool-heavy workflows with large outputs"
+    ],
+    "pros": [
+      "Transparent recovery from overflow",
+      "Preserves essential context via summaries",
+      "Prevents immediate re-overflow with reserve tokens",
+      "Model-aware validation"
+    ],
+    "cons": [
+      "Summary quality may lose nuanced details",
+      "Latency penalty during compaction",
+      "Token estimation errors possible",
+      "Implementation complexity"
+    ],
+    "tags": [
+      "context-management",
+      "compaction",
+      "overflow-recovery",
+      "token-estimation",
+      "api-compaction"
+    ],
+    "related": []
+  },
+  {
     "id": "context-minimization-pattern",
     "title": "Context-Minimization Pattern",
     "title_ko": "컨텍스트 최소화 패턴",
@@ -413,6 +447,79 @@
       "large-files",
       "lazy-loading",
       "metadata"
+    ],
+    "related": []
+  },
+  {
+    "id": "prompt-caching-via-exact-prefix-preservation",
+    "title": "Prompt Caching via Exact Prefix Preservation",
+    "title_ko": "정확한 프리픽스 보존을 통한 프롬프트 캐싱",
+    "category": "Context & Memory",
+    "description": "Long-running agent conversations suffer from quadratic performance degradation: growing JSON payloads, expensive re-computation without caching, and ZDR constraints preventing server-side state Mainta",
+    "problem": "Long-running agent conversations suffer from quadratic performance degradation: growing JSON payloads, expensive re-computation without caching, and ZDR constraints preventing server-side state.",
+    "solution": "Maintain prompt cache efficiency through exact prefix preservation - always append new messages rather than modifying existing ones. Order messages by stability: static content first (system, tools, instructions), variable content last (user messages, tool results).",
+    "when_to_use": [
+      "Multi-turn agent conversations",
+      "Tool-heavy workflows",
+      "ZDR-compliant deployments"
+    ],
+    "pros": [
+      "Linear sampling cost with caching",
+      "ZDR-compatible stateless design",
+      "No server state required",
+      "Simple conceptual model"
+    ],
+    "cons": [
+      "Quadratic network traffic still exists",
+      "Cache fragility with mid-conversation changes",
+      "Disciplined message ordering required",
+      "MCP server dynamic tool limitations"
+    ],
+    "tags": [
+      "prompt-caching",
+      "exact-prefix",
+      "performance",
+      "stateless",
+      "zero-data-retention",
+      "optimization"
+    ],
+    "related": []
+  },
+  {
+    "id": "self-identity-accumulation",
+    "title": "Self-Identity Accumulation",
+    "title_ko": "자기 정체성 축적",
+    "category": "Context & Memory",
+    "description": "AI agents lack continuous memory across sessions Dual-hook architecture for self-identity accumulation: SessionStart hook injects accumulated profile, SessionEnd hook extracts new insights",
+    "problem": "AI agents lack continuous memory across sessions. Each conversation starts from zero, causing lost familiarity, repetitive explanations, shallow relationships, and generic responses.",
+    "solution": "Dual-hook architecture for self-identity accumulation: SessionStart hook injects accumulated profile, SessionEnd hook extracts new insights. An evolving identity document (WHO_AM_I.md, SOUL.md) persists across sessions.",
+    "when_to_use": [
+      "Personal assistant agents",
+      "Long-term user relationships",
+      "Preference learning scenarios"
+    ],
+    "pros": [
+      "Continuous familiarity across sessions",
+      "Deepening relationship over time",
+      "Reduced repetitive friction",
+      "Personalized behavior",
+      "Transparent and user-editable"
+    ],
+    "cons": [
+      "Profile staleness risk",
+      "Overfitting to one user",
+      "Context token overhead",
+      "Extraction noise from sessions",
+      "Requires hook infrastructure"
+    ],
+    "tags": [
+      "self-identity",
+      "persona",
+      "session-hooks",
+      "familiarity",
+      "cross-session",
+      "profile",
+      "agent-personality"
     ],
     "related": []
   },
@@ -1587,6 +1694,40 @@
     "related": []
   },
   {
+    "id": "lane-based-execution-queueing",
+    "title": "Lane-Based Execution Queueing",
+    "title_ko": "레인 기반 실행 큐잉",
+    "category": "Orchestration & Control",
+    "description": "Traditional agent systems serialize all operations through a single queue, creating bottlenecks Isolated execution lanes with independent queues and configurable concurrency per lane",
+    "problem": "Traditional agent systems serialize all operations through a single queue, creating bottlenecks. Concurrent execution causes interleaving hazards, race conditions, and deadlock risks.",
+    "solution": "Isolated execution lanes with independent queues and configurable concurrency per lane. Each lane is a named queue with its own concurrency limit, drained independently. Hierarchical composition prevents deadlocks through structured queuing.",
+    "when_to_use": [
+      "Multi-user agent systems",
+      "Background task isolation",
+      "Mixed serial/parallel workloads"
+    ],
+    "pros": [
+      "Isolation guarantees between lanes",
+      "Flexible parallelism per lane",
+      "Simple hierarchical composition",
+      "Lane-level observability"
+    ],
+    "cons": [
+      "Memory overhead for many lanes",
+      "Concurrency tuning required",
+      "Not a full-featured scheduler"
+    ],
+    "tags": [
+      "queueing",
+      "concurrency",
+      "lanes",
+      "isolation",
+      "parallelism",
+      "deadlock-prevention"
+    ],
+    "related": []
+  },
+  {
     "id": "language-agent-tree-search-lats",
     "title": "Language Agent Tree Search (LATS)",
     "title_ko": "언어 에이전트 트리 검색 (LATS)",
@@ -2325,6 +2466,41 @@
     "related": []
   },
   {
+    "id": "failover-aware-model-fallback",
+    "title": "Failover-Aware Model Fallback",
+    "title_ko": "장애 인식 모델 폴백",
+    "category": "Reliability & Eval",
+    "description": "AI model requests fail for varied reasons Semantic error classification with intelligent fallback chains",
+    "problem": "AI model requests fail for varied reasons. Simple retry logic fails to distinguish between transient failures (timeouts, rate limits) that benefit from retry, semantic failures (auth, billing) where retry is futile, and user aborts where retry wastes resources.",
+    "solution": "Semantic error classification with intelligent fallback chains. Each failure is categorized into a specific reason type, and fallback behavior is tailored to that reason with multi-model fallback chains and provider-specific allowlists.",
+    "when_to_use": [
+      "Multi-model agent systems",
+      "High-availability requirements",
+      "Cost-sensitive deployments"
+    ],
+    "pros": [
+      "Resilience to transient failures",
+      "Cost optimization via cheaper fallbacks",
+      "Clear diagnostics",
+      "Respects user aborts"
+    ],
+    "cons": [
+      "Latency penalty per failed attempt",
+      "Inconsistent outputs across models",
+      "Cost accumulation from multiple attempts",
+      "Complex configuration"
+    ],
+    "tags": [
+      "fallback",
+      "reliability",
+      "error-classification",
+      "multi-model",
+      "failover",
+      "resilience"
+    ],
+    "related": []
+  },
+  {
     "id": "lethal-trifecta-threat-model",
     "title": "Lethal Trifecta Threat Model",
     "title_ko": "치명적 삼중 위협 모델",
@@ -2661,6 +2837,41 @@
     "related": []
   },
   {
+    "id": "external-credential-sync",
+    "title": "External Credential Sync",
+    "title_ko": "외부 자격 증명 동기화",
+    "category": "Security & Safety",
+    "description": "Users manage AI API credentials across multiple tools—CLIs, web portals, and local environments Cross-credential-source synchronization with near-expiry detection, type-aware upgrades, and duplicate d",
+    "problem": "Users manage AI API credentials across multiple tools—CLIs, web portals, and local environments. Manually re-entering credentials causes stale tokens, inconsistent state, and authentication failures.",
+    "solution": "Cross-credential-source synchronization with near-expiry detection, type-aware upgrades, and duplicate detection. The system reads credentials from external tool stores and syncs them with intelligent merging and freshness tracking.",
+    "when_to_use": [
+      "Multi-tool environments",
+      "OAuth token management",
+      "CLI credential sharing"
+    ],
+    "pros": [
+      "Reduced authentication friction",
+      "Proactive token refresh",
+      "Automatic OAuth upgrades",
+      "Duplicate elimination"
+    ],
+    "cons": [
+      "Keychain dependency",
+      "Platform-specific APIs",
+      "Privilege requirements",
+      "Sync lag due to caching"
+    ],
+    "tags": [
+      "credentials",
+      "oauth",
+      "token-sync",
+      "keychain",
+      "cli-integration",
+      "auth-reuse"
+    ],
+    "related": []
+  },
+  {
     "id": "isolated-vm-per-rl-rollout",
     "title": "Isolated VM per RL Rollout",
     "title_ko": "RL 롤아웃당 격리된 VM",
@@ -2721,6 +2932,42 @@
       "security",
       "mcp",
       "data-protection"
+    ],
+    "related": []
+  },
+  {
+    "id": "sandboxed-tool-authorization",
+    "title": "Sandboxed Tool Authorization",
+    "title_ko": "샌드박스 도구 권한 부여",
+    "category": "Security & Safety",
+    "description": "Tool authorization needs flexibility across multiple environments (dev vs prod), different agent roles (coding vs messaging), hierarchical delegation, and plugin ecosystems requiring dynamic inclusion",
+    "problem": "Tool authorization needs flexibility across multiple environments (dev vs prod), different agent roles (coding vs messaging), hierarchical delegation, and plugin ecosystems requiring dynamic inclusion.",
+    "solution": "Pattern-based policies with deny-by-default and inheritance. Tools are authorized by matching against compiled patterns (exact, regex, wildcard), with deny lists taking precedence. Subagents inherit parent policies with additional restrictions.",
+    "when_to_use": [
+      "Multi-environment deployments",
+      "Role-based agent permissions",
+      "Plugin/MCP tool ecosystems"
+    ],
+    "pros": [
+      "Flexible pattern matching",
+      "Security by default",
+      "Hierarchical control for subagents",
+      "Profile presets for common roles",
+      "Plugin support via tool groups"
+    ],
+    "cons": [
+      "Pattern complexity can be confusing",
+      "Policy explosion with many agents",
+      "Evaluation order bugs can cause issues",
+      "Related tool decisions are subjective"
+    ],
+    "tags": [
+      "authorization",
+      "policy",
+      "allowlist",
+      "deny-by-default",
+      "pattern-matching",
+      "subagent-security"
     ],
     "related": []
   },
@@ -3071,6 +3318,43 @@
       "exfiltration",
       "outbound-controls",
       "security"
+    ],
+    "related": []
+  },
+  {
+    "id": "intelligent-bash-tool-execution",
+    "title": "Intelligent Bash Tool Execution",
+    "title_ko": "지능형 Bash 도구 실행",
+    "category": "Tool Use & Environment",
+    "description": "Secure, reliable command execution from agents is complex: PTY requirements for TTY-required CLIs, platform differences for signal handling, security concerns requiring approval workflows, and backgro",
+    "problem": "Secure, reliable command execution from agents is complex: PTY requirements for TTY-required CLIs, platform differences for signal handling, security concerns requiring approval workflows, and background process management needs.",
+    "solution": "Multi-mode execution with adaptive fallback: direct exec → PTY, with automatic selection based on command requirements. Handles PTY spawn failures gracefully, manages background processes, and provides security-aware approval workflows.",
+    "when_to_use": [
+      "Interactive CLI tools",
+      "Long-running background tasks",
+      "Security-sensitive command execution"
+    ],
+    "pros": [
+      "TTY support for interactive tools",
+      "Graceful degradation without PTY",
+      "Flexible security policies",
+      "Background process tracking",
+      "Platform-aware signal handling"
+    ],
+    "cons": [
+      "PTY native module dependency",
+      "Multi-mode execution complexity",
+      "Memory usage for output buffering",
+      "Platform-specific signal limitations"
+    ],
+    "tags": [
+      "bash",
+      "shell",
+      "pty",
+      "fallback",
+      "security",
+      "process-management",
+      "sandboxing"
     ],
     "related": []
   },

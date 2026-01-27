@@ -1,0 +1,29 @@
+{
+  "id": "failover-aware-model-fallback",
+  "title": "Failover-Aware Model Fallback",
+  "title_ko": "장애 인식 모델 폴백",
+  "category": "Reliability & Eval",
+  "status": "validated-in-production",
+  "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/agents/model-fallback.ts",
+  "problem": {
+    "en": "AI model requests fail for varied reasons. Simple retry logic fails to distinguish between transient failures (timeouts, rate limits) that benefit from retry, semantic failures (auth, billing) where retry is futile, and user aborts where retry wastes resources.",
+    "ko": "AI 모델 요청이 다양한 이유로 실패합니다. 단순 재시도 로직은 재시도가 유효한 일시적 실패(타임아웃, 속도 제한), 재시도가 무의미한 의미적 실패(인증, 결제), 재시도가 리소스를 낭비하는 사용자 중단을 구분하지 못합니다."
+  },
+  "solution": {
+    "en": "Semantic error classification with intelligent fallback chains. Each failure is categorized into a specific reason type, and fallback behavior is tailored to that reason with multi-model fallback chains and provider-specific allowlists.",
+    "ko": "지능적인 폴백 체인을 통한 의미적 오류 분류입니다. 각 실패는 특정 이유 유형으로 분류되고, 다중 모델 폴백 체인과 공급자별 허용 목록으로 해당 이유에 맞는 폴백 동작을 수행합니다."
+  },
+  "when_to_use": {
+    "en": ["Multi-model agent systems", "High-availability requirements", "Cost-sensitive deployments"],
+    "ko": ["다중 모델 에이전트 시스템", "고가용성 요구사항", "비용 민감 배포"]
+  },
+  "pros": {
+    "en": ["Resilience to transient failures", "Cost optimization via cheaper fallbacks", "Clear diagnostics", "Respects user aborts"],
+    "ko": ["일시적 실패에 대한 복원력", "저렴한 폴백을 통한 비용 최적화", "명확한 진단", "사용자 중단 존중"]
+  },
+  "cons": {
+    "en": ["Latency penalty per failed attempt", "Inconsistent outputs across models", "Cost accumulation from multiple attempts", "Complex configuration"],
+    "ko": ["실패 시도당 지연 발생", "모델 간 일관성 없는 출력", "다중 시도로 인한 비용 누적", "복잡한 설정"]
+  },
+  "tags": ["fallback", "reliability", "error-classification", "multi-model", "failover", "resilience"]
+}

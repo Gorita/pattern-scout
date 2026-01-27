@@ -1,0 +1,29 @@
+{
+  "id": "lane-based-execution-queueing",
+  "title": "Lane-Based Execution Queueing",
+  "title_ko": "레인 기반 실행 큐잉",
+  "category": "Orchestration & Control",
+  "status": "validated-in-production",
+  "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/process/command-queue.ts",
+  "problem": {
+    "en": "Traditional agent systems serialize all operations through a single queue, creating bottlenecks. Concurrent execution causes interleaving hazards, race conditions, and deadlock risks.",
+    "ko": "전통적인 에이전트 시스템은 모든 작업을 단일 큐를 통해 직렬화하여 병목 현상을 만듭니다. 동시 실행은 인터리빙 위험, 경쟁 조건, 데드락 위험을 야기합니다."
+  },
+  "solution": {
+    "en": "Isolated execution lanes with independent queues and configurable concurrency per lane. Each lane is a named queue with its own concurrency limit, drained independently. Hierarchical composition prevents deadlocks through structured queuing.",
+    "ko": "독립적인 큐와 레인당 설정 가능한 동시성을 가진 격리된 실행 레인입니다. 각 레인은 자체 동시성 제한이 있는 명명된 큐이며 독립적으로 드레인됩니다. 계층적 구성은 구조화된 큐잉을 통해 데드락을 방지합니다."
+  },
+  "when_to_use": {
+    "en": ["Multi-user agent systems", "Background task isolation", "Mixed serial/parallel workloads"],
+    "ko": ["다중 사용자 에이전트 시스템", "백그라운드 작업 격리", "혼합 직렬/병렬 워크로드"]
+  },
+  "pros": {
+    "en": ["Isolation guarantees between lanes", "Flexible parallelism per lane", "Simple hierarchical composition", "Lane-level observability"],
+    "ko": ["레인 간 격리 보장", "레인별 유연한 병렬성", "간단한 계층적 구성", "레인 수준 관찰 가능성"]
+  },
+  "cons": {
+    "en": ["Memory overhead for many lanes", "Concurrency tuning required", "Not a full-featured scheduler"],
+    "ko": ["많은 레인에 대한 메모리 오버헤드", "동시성 튜닝 필요", "완전한 스케줄러가 아님"]
+  },
+  "tags": ["queueing", "concurrency", "lanes", "isolation", "parallelism", "deadlock-prevention"]
+}

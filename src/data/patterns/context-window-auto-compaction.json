@@ -1,0 +1,29 @@
+{
+  "id": "context-window-auto-compaction",
+  "title": "Context Window Auto-Compaction",
+  "title_ko": "컨텍스트 윈도우 자동 압축",
+  "category": "Context & Memory",
+  "status": "validated-in-production",
+  "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/agents/pi-embedded-runner/compact.ts",
+  "problem": {
+    "en": "Context overflow is a silent killer of agent reliability. When accumulated conversation history exceeds the model's context window, API errors occur, requiring manual intervention and complex retry logic.",
+    "ko": "컨텍스트 오버플로우는 에이전트 신뢰성의 조용한 킬러입니다. 누적된 대화 기록이 모델의 컨텍스트 윈도우를 초과하면 API 오류가 발생하여 수동 개입과 복잡한 재시도 로직이 필요합니다."
+  },
+  "solution": {
+    "en": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. The system detects overflow, compacts the session transcript, validates the result, and retries the request transparently.",
+    "ko": "컨텍스트 오버플로우 오류 시 자동 세션 압축을 트리거하고, 스마트 예비 토큰과 레인 인식 재시도를 수행합니다. 시스템이 오버플로우를 감지하고, 세션 트랜스크립트를 압축하고, 결과를 검증한 후 투명하게 요청을 재시도합니다."
+  },
+  "when_to_use": {
+    "en": ["Long-running agent sessions", "Multi-turn conversations", "Tool-heavy workflows with large outputs"],
+    "ko": ["장시간 실행 에이전트 세션", "다중 턴 대화", "대용량 출력이 있는 도구 집약적 워크플로우"]
+  },
+  "pros": {
+    "en": ["Transparent recovery from overflow", "Preserves essential context via summaries", "Prevents immediate re-overflow with reserve tokens", "Model-aware validation"],
+    "ko": ["오버플로우에서 투명한 복구", "요약을 통한 필수 컨텍스트 보존", "예비 토큰으로 즉각적 재오버플로우 방지", "모델 인식 검증"]
+  },
+  "cons": {
+    "en": ["Summary quality may lose nuanced details", "Latency penalty during compaction", "Token estimation errors possible", "Implementation complexity"],
+    "ko": ["요약 품질이 세부 뉘앙스를 잃을 수 있음", "압축 중 지연 발생", "토큰 추정 오류 가능", "구현 복잡성"]
+  },
+  "tags": ["context-management", "compaction", "overflow-recovery", "token-estimation", "api-compaction"]
+}

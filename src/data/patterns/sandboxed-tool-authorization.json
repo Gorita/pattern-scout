@@ -1,0 +1,29 @@
+{
+  "id": "sandboxed-tool-authorization",
+  "title": "Sandboxed Tool Authorization",
+  "title_ko": "샌드박스 도구 권한 부여",
+  "category": "Security & Safety",
+  "status": "validated-in-production",
+  "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/agents/tool-policy.ts",
+  "problem": {
+    "en": "Tool authorization needs flexibility across multiple environments (dev vs prod), different agent roles (coding vs messaging), hierarchical delegation, and plugin ecosystems requiring dynamic inclusion.",
+    "ko": "도구 권한 부여는 여러 환경(개발 vs 프로덕션), 다양한 에이전트 역할(코딩 vs 메시징), 계층적 위임, 동적 포함이 필요한 플러그인 생태계에서 유연성이 필요합니다."
+  },
+  "solution": {
+    "en": "Pattern-based policies with deny-by-default and inheritance. Tools are authorized by matching against compiled patterns (exact, regex, wildcard), with deny lists taking precedence. Subagents inherit parent policies with additional restrictions.",
+    "ko": "기본 거부와 상속을 통한 패턴 기반 정책입니다. 도구는 컴파일된 패턴(정확, 정규식, 와일드카드)에 대해 매칭하여 권한이 부여되며, 거부 목록이 우선합니다. 서브에이전트는 추가 제한과 함께 부모 정책을 상속합니다."
+  },
+  "when_to_use": {
+    "en": ["Multi-environment deployments", "Role-based agent permissions", "Plugin/MCP tool ecosystems"],
+    "ko": ["다중 환경 배포", "역할 기반 에이전트 권한", "플러그인/MCP 도구 생태계"]
+  },
+  "pros": {
+    "en": ["Flexible pattern matching", "Security by default", "Hierarchical control for subagents", "Profile presets for common roles", "Plugin support via tool groups"],
+    "ko": ["유연한 패턴 매칭", "기본 보안", "서브에이전트를 위한 계층적 제어", "일반 역할을 위한 프로필 프리셋", "도구 그룹을 통한 플러그인 지원"]
+  },
+  "cons": {
+    "en": ["Pattern complexity can be confusing", "Policy explosion with many agents", "Evaluation order bugs can cause issues", "Related tool decisions are subjective"],
+    "ko": ["패턴 복잡성이 혼란스러울 수 있음", "많은 에이전트로 정책 폭발", "평가 순서 버그가 문제 유발 가능", "관련 도구 결정이 주관적"]
+  },
+  "tags": ["authorization", "policy", "allowlist", "deny-by-default", "pattern-matching", "subagent-security"]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "prompt-caching-via-exact-prefix-preservation",
+  "title": "Prompt Caching via Exact Prefix Preservation",
+  "title_ko": "정확한 프리픽스 보존을 통한 프롬프트 캐싱",
+  "category": "Context & Memory",
+  "status": "emerging",
+  "original_url": "https://openai.com/index/unrolling-the-codex-agent-loop/",
+  "problem": {
+    "en": "Long-running agent conversations suffer from quadratic performance degradation: growing JSON payloads, expensive re-computation without caching, and ZDR constraints preventing server-side state.",
+    "ko": "장시간 실행 에이전트 대화는 이차적 성능 저하를 겪습니다: 증가하는 JSON 페이로드, 캐싱 없는 고비용 재계산, 서버 측 상태를 방지하는 ZDR 제약."
+  },
+  "solution": {
+    "en": "Maintain prompt cache efficiency through exact prefix preservation - always append new messages rather than modifying existing ones. Order messages by stability: static content first (system, tools, instructions), variable content last (user messages, tool results).",
+    "ko": "정확한 프리픽스 보존을 통해 프롬프트 캐시 효율성을 유지합니다 - 기존 메시지를 수정하지 않고 항상 새 메시지를 추가합니다. 안정성에 따라 메시지 정렬: 정적 콘텐츠 먼저(시스템, 도구, 지침), 가변 콘텐츠 나중에(사용자 메시지, 도구 결과)."
+  },
+  "when_to_use": {
+    "en": ["Multi-turn agent conversations", "Tool-heavy workflows", "ZDR-compliant deployments"],
+    "ko": ["다중 턴 에이전트 대화", "도구 집약적 워크플로우", "ZDR 준수 배포"]
+  },
+  "pros": {
+    "en": ["Linear sampling cost with caching", "ZDR-compatible stateless design", "No server state required", "Simple conceptual model"],
+    "ko": ["캐싱으로 선형 샘플링 비용", "ZDR 호환 무상태 설계", "서버 상태 불필요", "간단한 개념 모델"]
+  },
+  "cons": {
+    "en": ["Quadratic network traffic still exists", "Cache fragility with mid-conversation changes", "Disciplined message ordering required", "MCP server dynamic tool limitations"],
+    "ko": ["이차적 네트워크 트래픽 여전히 존재", "대화 중 변경 시 캐시 취약성", "규율 있는 메시지 순서 필요", "MCP 서버 동적 도구 제한"]
+  },
+  "tags": ["prompt-caching", "exact-prefix", "performance", "stateless", "zero-data-retention", "optimization"]
+}

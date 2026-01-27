@@ -1,0 +1,29 @@
+{
+  "id": "self-identity-accumulation",
+  "title": "Self-Identity Accumulation",
+  "title_ko": "자기 정체성 축적",
+  "category": "Context & Memory",
+  "status": "emerging",
+  "original_url": "https://github.com/nibzard/awesome-agentic-patterns",
+  "problem": {
+    "en": "AI agents lack continuous memory across sessions. Each conversation starts from zero, causing lost familiarity, repetitive explanations, shallow relationships, and generic responses.",
+    "ko": "AI 에이전트는 세션 간 연속적인 메모리가 없습니다. 각 대화가 제로에서 시작하여 친숙함 상실, 반복적인 설명, 얕은 관계, 일반적인 응답을 초래합니다."
+  },
+  "solution": {
+    "en": "Dual-hook architecture for self-identity accumulation: SessionStart hook injects accumulated profile, SessionEnd hook extracts new insights. An evolving identity document (WHO_AM_I.md, SOUL.md) persists across sessions.",
+    "ko": "자기 정체성 축적을 위한 이중 훅 아키텍처: SessionStart 훅이 축적된 프로필을 주입하고, SessionEnd 훅이 새로운 인사이트를 추출합니다. 진화하는 정체성 문서(WHO_AM_I.md, SOUL.md)가 세션 간에 지속됩니다."
+  },
+  "when_to_use": {
+    "en": ["Personal assistant agents", "Long-term user relationships", "Preference learning scenarios"],
+    "ko": ["개인 어시스턴트 에이전트", "장기 사용자 관계", "선호도 학습 시나리오"]
+  },
+  "pros": {
+    "en": ["Continuous familiarity across sessions", "Deepening relationship over time", "Reduced repetitive friction", "Personalized behavior", "Transparent and user-editable"],
+    "ko": ["세션 간 지속적인 친숙함", "시간이 지남에 따라 깊어지는 관계", "반복적 마찰 감소", "개인화된 행동", "투명하고 사용자 편집 가능"]
+  },
+  "cons": {
+    "en": ["Profile staleness risk", "Overfitting to one user", "Context token overhead", "Extraction noise from sessions", "Requires hook infrastructure"],
+    "ko": ["프로필 노후화 위험", "한 사용자에 과적합", "컨텍스트 토큰 오버헤드", "세션에서 추출 노이즈", "훅 인프라 필요"]
+  },
+  "tags": ["self-identity", "persona", "session-hooks", "familiarity", "cross-session", "profile", "agent-personality"]
+}
