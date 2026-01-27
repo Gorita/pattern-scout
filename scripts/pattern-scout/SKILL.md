@@ -1,11 +1,11 @@
 ---
 name: pattern-scout
-description: AI agent design pattern search and recommendation. Find the right pattern among 117 proven patterns. Use when (1) starting agent design, (2) solving specific problems, (3) comparing patterns, (4) looking up pattern details, (5) questions like "which pattern should I use?"
+description: AI agent design pattern search and recommendation. Find the right pattern among 127 proven patterns. Use when (1) starting agent design, (2) solving specific problems, (3) comparing patterns, (4) looking up pattern details, (5) questions like "which pattern should I use?"
 ---
 
 # Pattern Scout - AI Agent Design Pattern Guide
 
-Search and recommend from 117 proven AI agent design patterns.
+Search and recommend from 127 proven AI agent design patterns.
 
 ## Data Location
 
@@ -129,7 +129,25 @@ Ask for details on any pattern you'd like to explore further.
 
 ## Data Sync
 
-To update pattern data:
+### Automatic Update Check
+
+When user asks to update patterns or says "패턴 업데이트", "update patterns", "sync patterns":
+
+1. Run version check:
+   ```bash
+   python3 ~/.claude/skills/pattern-scout/scripts/sync_patterns.py --check
+   ```
+
+2. If remote has more patterns than local, run sync:
+   ```bash
+   python3 ~/.claude/skills/pattern-scout/scripts/sync_patterns.py
+   ```
+
+3. Report update results to user
+
+### Manual Update
+
+User can also run manually:
 
 ```bash
 python3 ~/.claude/skills/pattern-scout/scripts/sync_patterns.py
@@ -138,5 +156,5 @@ python3 ~/.claude/skills/pattern-scout/scripts/sync_patterns.py
 ## Reference
 
 - Source: https://github.com/Gorita/pattern-scout
-- Total patterns: 117
+- Total patterns: 127
 - Data format: English (for better pattern matching)
