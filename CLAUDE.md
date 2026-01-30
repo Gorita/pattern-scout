@@ -10,7 +10,7 @@ AI 에이전트가 이 프로젝트를 효과적으로 작업하기 위한 가�
 
 ### 주요 특징
 - **기술 스택**: Astro + Tailwind CSS + TypeScript
-- **데이터 구조**: 117개의 개별 JSON 파일로 패턴 저장 (토큰 효율성)
+- **데이터 구조**: 129개의 개별 JSON 파일로 패턴 저장 (토큰 효율성)
 - **언어 지원**: 한국어/영어 이중 언어 (AI 번역)
 - **UI 특징**: 사이드바 네비게이션, 모달 상세 보기, 검색 기능(예정)
 - **배포**: GitHub Pages
@@ -43,6 +43,14 @@ npm run preview
 npm run build:standalone
 # dist/standalone.html 생성 (팀 공유용)
 # 더블클릭으로 바로 실행 가능
+```
+
+### 패턴 검증 (로컬 테스트)
+```bash
+npm test
+# 또는
+npm run validate
+# → 패턴 JSON 유효성 + README 패턴 수 일치 검증
 ```
 
 ### AI Manifest 수동 생성 (선택)
@@ -107,8 +115,9 @@ python3 ~/.claude/skills/pattern-scout/scripts/sync_patterns.py
 awesome-agentic-patterns/
 ├── .github/
 │   └── workflows/
+│       ├── ci.yml              # CI: 패턴 검증 + 빌드 테스트 + PR 코멘트 ⭐
 │       ├── deploy.yml          # GitHub Pages 자동 배포
-│       └── check-upstream.yml  # upstream 변경 감지 (예정)
+│       └── check-upstream.yml  # upstream 변경 감지 (매일 12:17 KST)
 ├── src/
 │   ├── components/             # Astro 컴포넌트
 │   │   ├── PatternCard.astro   # 패턴 카드 (요약)
@@ -116,7 +125,7 @@ awesome-agentic-patterns/
 │   │   ├── SearchBar.astro     # 검색 바 (클라이언트 검색)
 │   │   └── LanguageToggle.astro # 언어 토글
 │   ├── data/
-│   │   ├── patterns/           # 117개의 개별 패턴 JSON 파일 ⭐
+│   │   ├── patterns/           # 129개의 개별 패턴 JSON 파일 ⭐
 │   │   └── ai-manifest.json    # AI 검색용 최적화 데이터 (자동 생성)
 │   ├── layouts/
 │   │   └── MainLayout.astro    # 메인 레이아웃 (헤더, 푸터)
@@ -135,6 +144,7 @@ awesome-agentic-patterns/
 ├── scripts/
 │   ├── build-standalone-html.js # 단일 HTML 파일 생성기 (팀 공유용) ⭐
 │   ├── generate-ai-manifest.js  # AI Manifest 생성기 ⭐
+│   ├── validate-patterns.js     # 패턴 JSON + README 검증 스크립트 ⭐
 │   ├── install-skill.sh         # Claude Code Skill 설치 스크립트 ⭐
 │   ├── pattern-scout/           # Claude Code Skill 소스 ⭐
 │   │   ├── SKILL.md             # 스킬 정의
@@ -166,7 +176,7 @@ src/data/
 └── patterns/                           # 개별 패턴 파일
     ├── plan-then-execute-pattern.json  # 약 5KB
     ├── reflection.json                 # 약 5KB
-    └── ... (117개)
+    └── ... (129개)
 ```
 
 ---
@@ -256,7 +266,7 @@ const categoryOrder = [
 
 ```
 [GitHub Actions: check-upstream.yml]
-  │ 매주 월요일 오전 9시(KST) 자동 실행
+  │ 매일 정오 12:17(KST) 자동 실행
   │ 또는 수동 실행 (workflow_dispatch)
   ▼
 [upstream 변경 감지]
@@ -267,20 +277,39 @@ const categoryOrder = [
   │ 제목: "🔄 Upstream 업데이트 감지"
   │ 본문: 새 커밋 수, 변경된 패턴 파일 목록
   ▼
-[작업자 패턴 추가 작업]
+[작업자 패턴 추가 작업] ⚠️ PR 기반 워크플로우
   │
-  ├── 1. git fetch upstream main
-  ├── 2. git checkout upstream/main -- patterns/새파일.md
-  ├── 3. JSON 파일 생성 (src/data/patterns/)
-  ├── 4. 한국어 번역 추가
-  └── 5. 커밋 메시지에 "Closes #이슈번호" 포함
+  ├── 1. git checkout -b feat/add-new-patterns
+  ├── 2. git fetch upstream main
+  ├── 3. git checkout upstream/main -- patterns/새파일.md
+  ├── 4. JSON 파일 생성 (src/data/patterns/)
+  ├── 5. 한국어 번역 추가
+  ├── 6. README 패턴 수 업데이트
+  ├── 7. npm test (로컬 검증)
+  ├── 8. git push -u origin feat/add-new-patterns
+  └── 9. gh pr create (커밋 메시지에 "Closes #이슈번호" 포함)
         │
         ▼
-[GitHub Actions: deploy.yml]
-  │ main 브랜치 push 시 자동 실행
+[GitHub Actions: ci.yml] ⭐ PR 자동 검증
+  │ PR 생성 시 자동 실행
   │
+  ├── validate: 패턴 JSON + README 검증
+  ├── build: Astro 빌드 테스트
+  │
+  ├── ✅ 성공 시: "CI 통과" 코멘트
+  └── ❌ 실패 시: 에러 상세 코멘트 + 체크리스트
+        │
+        ▼
+[PR 머지]
+  │ CI 통과 후 머지 (Branch Protection 적용)
+  │
+        ▼
+[GitHub Actions: deploy.yml]
+  │ main 브랜치 머지 시 자동 실행
+  │
+  ├── 패턴 검증 (안전장치)
   ├── npm run build
-  │     ├── ai-manifest.json 자동 생성 (패턴 목록 업데이트)
+  │     ├── ai-manifest.json 자동 생성
   │     └── Astro 빌드
   ├── GitHub Pages 배포
   ├── 커밋 메시지에서 이슈 번호 추출
@@ -288,23 +317,66 @@ const categoryOrder = [
   └── 이슈 자동 close (GitHub 기본 기능)
 ```
 
-### 커밋 메시지 규칙 (이슈 연동)
+### Branch Protection 설정 ⭐
 
-패턴 추가 작업 완료 후 커밋 시, 다음 키워드로 이슈를 연동합니다:
+main 브랜치에 직접 push가 차단되어 있습니다. 모든 변경은 PR을 통해 진행해야 합니다.
+
+**적용된 규칙:**
+- ✅ PR을 통한 머지만 허용 (직접 push 불가)
+- ✅ CI 통과 필수 (validate, build)
+- ✅ 최신 main과 동기화 필수
+
+### PR 기반 워크플로우 명령어
 
 ```bash
-# 이슈 자동 close + 배포 완료 코멘트
+# 1. 브랜치 생성
+git checkout -b feat/add-new-pattern
+
+# 2. 작업 후 커밋
+git add .
 git commit -m "feat: Add [Pattern Name] pattern
 
 Closes #이슈번호
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+
+# 3. 푸시 및 PR 생성
+git push -u origin feat/add-new-pattern
+gh pr create --title "feat: Add [Pattern Name]" --body "..."
+
+# 4. CI 통과 확인 후 머지
+gh pr merge --merge --delete-branch
 ```
 
-**지원하는 키워드:**
-- `Closes #번호` - 이슈 close
-- `Fixes #번호` - 이슈 close
-- `Resolves #번호` - 이슈 close
+### CI 자동 코멘트
+
+**성공 시:**
+```markdown
+## ✅ CI 통과
+
+모든 검증과 빌드가 성공적으로 완료되었습니다.
+
+- ✅ 패턴 JSON 검증
+- ✅ README 문서 검증
+- ✅ Astro 빌드
+
+머지 준비가 완료되었습니다.
+```
+
+**실패 시:**
+```markdown
+## ❌ 패턴 검증 실패
+
+자동 검증에서 오류가 발견되었습니다.
+
+[에러 로그]
+
+### 체크리스트
+- [ ] JSON 파일 필수 필드 확인 (id, title, title_ko, category, status)
+- [ ] 카테고리/상태 값이 유효한지 확인
+- [ ] 파일명과 id가 일치하는지 확인
+- [ ] README 패턴 수가 실제와 일치하는지 확인
+```
 
 ### 배포 완료 시 자동 생성되는 코멘트
 
