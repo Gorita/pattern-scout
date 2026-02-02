@@ -269,25 +269,30 @@ const categoryOrder = [
   │ 매일 정오 12:17(KST) 자동 실행
   │ 또는 수동 실행 (workflow_dispatch)
   ▼
-[upstream 변경 감지]
-  │ nibzard/awesome-agentic-patterns 저장소 확인
-  │ 새 커밋/패턴 파일 감지
+[.last-upstream-sync 파일 기반 변경 감지] ⭐
+  │ 마지막 동기화 커밋과 비교
+  │ 새 패턴 vs 수정된 패턴 구분
   ▼
 [GitHub Issue 자동 생성]
-  │ 제목: "🔄 Upstream 업데이트 감지"
-  │ 본문: 새 커밋 수, 변경된 패턴 파일 목록
+  │ 제목: "🔄 Upstream 업데이트: 새 패턴 N개, 수정된 패턴 M개"
+  │ 본문: 새 패턴 목록, 수정된 패턴 목록, 작업 가이드
   ▼
-[작업자 패턴 추가 작업] ⚠️ PR 기반 워크플로우
+[작업자 패턴 작업] ⚠️ PR 기반 워크플로우
   │
-  ├── 1. git checkout -b feat/add-new-patterns
-  ├── 2. git fetch upstream main
-  ├── 3. git checkout upstream/main -- patterns/새파일.md
-  ├── 4. JSON 파일 생성 (src/data/patterns/)
-  ├── 5. 한국어 번역 추가
-  ├── 6. README 패턴 수 업데이트
-  ├── 7. npm test (로컬 검증)
-  ├── 8. git push -u origin feat/add-new-patterns
-  └── 9. gh pr create (커밋 메시지에 "Closes #이슈번호" 포함)
+  ├── 🆕 새 패턴의 경우:
+  │   ├── 1. JSON 파일 생성 (src/data/patterns/)
+  │   ├── 2. 한국어 번역 추가
+  │   └── 3. README 패턴 수 업데이트
+  │
+  ├── 📝 수정된 패턴의 경우:
+  │   ├── 1. upstream diff 확인
+  │   ├── 2. JSON 파일의 영어 필드 업데이트
+  │   └── 3. 한국어 번역 검토 (필요시 재번역)
+  │
+  ├── 공통:
+  │   ├── .last-upstream-sync 파일 업데이트
+  │   ├── npm test (로컬 검증)
+  │   └── PR 생성 (Closes #이슈번호)
         │
         ▼
 [GitHub Actions: ci.yml] ⭐ PR 자동 검증
@@ -315,6 +320,18 @@ const categoryOrder = [
   ├── 커밋 메시지에서 이슈 번호 추출
   ├── 해당 이슈에 배포 완료 코멘트 자동 추가
   └── 이슈 자동 close (GitHub 기본 기능)
+```
+
+### .last-upstream-sync 파일 ⭐
+
+마지막으로 동기화한 upstream 커밋 해시를 저장합니다. 이를 통해 정확한 변경 감지가 가능합니다.
+
+```bash
+# 현재 저장된 커밋 확인
+cat .last-upstream-sync
+
+# 동기화 완료 후 업데이트
+echo "$(git rev-parse upstream/main)" > .last-upstream-sync
 ```
 
 ### Branch Protection 설정 ⭐
@@ -570,18 +587,28 @@ done
 - README.md, README_KR.md의 총 패턴 갯수 (예: "117 patterns" → "127 patterns")
 - README.md, README_KR.md의 카테고리별 갯수 (예: "(31)" → "(36)")
 
-#### Step 8: 커밋
+#### Step 8: .last-upstream-sync 업데이트
 
 ```bash
-git add src/data/patterns/*.json README.md README_KR.md
+# 동기화 완료 후 커밋 해시 업데이트
+echo "$(git rev-parse upstream/main)" > .last-upstream-sync
+```
+
+#### Step 9: 커밋
+
+```bash
+git add src/data/patterns/*.json README.md README_KR.md .last-upstream-sync
 git commit -m "feat: Add [Pattern Title]
 
 - Translate from upstream nibzard/awesome-agentic-patterns
 - Add Korean translation
 - Include diagrams and code examples
 - Update pattern count in README
+- Update .last-upstream-sync
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+Closes #이슈번호
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 git push
 ```
 
@@ -639,6 +666,65 @@ Break down tasks into smaller, manageable sub-tasks.
   },
   "tags": ["example", "demo"]
 }
+```
+
+---
+
+### 1-B. 📝 수정된 패턴 업데이트하기
+
+upstream에서 기존 패턴의 내용이 수정되었을 때 업데이트하는 프로세스입니다.
+
+#### Step 1: 변경 내용 확인
+
+```bash
+# upstream과 로컬의 차이 확인
+git fetch upstream
+git diff HEAD..upstream/main -- patterns/{pattern-name}.md
+```
+
+#### Step 2: 영어 필드 업데이트
+
+JSON 파일에서 변경된 영어 필드만 업데이트합니다:
+
+- `problem.en` - 문제 설명이 변경된 경우
+- `solution.en` - 해결책이 변경된 경우
+- `when_to_use.en` - 사용 시기가 변경된 경우
+- `pros.en` / `cons.en` - 장단점이 변경된 경우
+- `mermaid_diagram` - 다이어그램이 변경된 경우
+
+#### Step 3: 한국어 번역 검토
+
+영어 내용이 크게 변경된 경우 한국어 번역도 업데이트합니다:
+
+| 변경 정도 | 조치 |
+|----------|------|
+| 오타/문법 수정 | 한국어 유지 |
+| 문장 추가/삭제 | 해당 부분만 번역 |
+| 전체 재작성 | 전체 재번역 |
+
+#### Step 4: .last-upstream-sync 업데이트
+
+```bash
+# 동기화 완료 후 커밋 해시 업데이트
+echo "$(git rev-parse upstream/main)" > .last-upstream-sync
+```
+
+#### Step 5: 검증 및 커밋
+
+```bash
+# 로컬 검증
+npm test
+
+# 커밋
+git add src/data/patterns/{pattern-name}.json .last-upstream-sync
+git commit -m "fix: Update {Pattern Name} pattern from upstream
+
+- Update English content from upstream changes
+- Review Korean translation
+
+Closes #이슈번호
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
 
 ---

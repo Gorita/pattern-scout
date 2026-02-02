@@ -23,81 +23,234 @@ jobs:
           git remote add upstream https://github.com/nibzard/awesome-agentic-patterns.git || true
           git fetch upstream main
 
-      - name: Check for new commits
+      - name: Check for changes since last sync
         id: check
         run: |
-          # Get the latest commit from upstream
+          # Read last synced commit
+          LAST_SYNC=""
+          if [ -f ".last-upstream-sync" ]; then
+            LAST_SYNC=$(cat .last-upstream-sync | tr -d '[:space:]')
+          fi
+
           UPSTREAM_COMMIT=$(git rev-parse upstream/main)
           echo "upstream_commit=$UPSTREAM_COMMIT" >> $GITHUB_OUTPUT
+          echo "Last synced: $LAST_SYNC"
+          echo "Upstream HEAD: $UPSTREAM_COMMIT"
 
-          # Check if this commit exists in our repo
-          # Note: --is-ancestor returns exit code 1 if not ancestor, so we use || true
-          if git merge-base --is-ancestor $UPSTREAM_COMMIT HEAD 2>/dev/null; then
-            echo "has_updates=false" >> $GITHUB_OUTPUT
-            echo "No new updates from upstream"
-          else
-            echo "has_updates=true" >> $GITHUB_OUTPUT
+          # If no last sync record, or same commit, no updates
+          if [ -z "$LAST_SYNC" ]; then
+            echo "No .last-upstream-sync file found. Comparing all patterns by name."
 
-            # Try to get the common ancestor, fallback to comparing all commits if no common ancestor
-            MERGE_BASE=$(git merge-base HEAD upstream/main 2>/dev/null || echo "")
+            # Compare pattern files by name
+            git ls-tree --name-only upstream/main patterns/ | grep '\.md$' | grep -v TEMPLATE | sed 's|patterns/||;s|\.md$||' | sort > /tmp/upstream_patterns.txt
+            ls src/data/patterns/*.json 2>/dev/null | xargs -n1 basename | sed 's/\.json$//' | sort > /tmp/local_patterns.txt
 
-            if [ -z "$MERGE_BASE" ]; then
-              # No common ancestor - repositories are unrelated
-              # Compare against the first commit of upstream
-              echo "No common ancestor found, comparing full history"
-              NEW_COMMITS=$(git rev-list --count upstream/main)
-              CHANGED_FILES=$(git ls-tree -r --name-only upstream/main -- patterns/ | head -20)
-              COMMIT_LOG=$(git log --oneline upstream/main --max-count=10)
+            NEW_PATTERNS=$(comm -23 /tmp/upstream_patterns.txt /tmp/local_patterns.txt)
+
+            if [ -z "$NEW_PATTERNS" ]; then
+              echo "has_updates=false" >> $GITHUB_OUTPUT
+              echo "All patterns are synced."
             else
-              # Normal case - common ancestor exists
-              NEW_COMMITS=$(git rev-list --count $MERGE_BASE..upstream/main)
-              CHANGED_FILES=$(git diff --name-only $MERGE_BASE..upstream/main -- patterns/ | head -20)
-              COMMIT_LOG=$(git log --oneline $MERGE_BASE..upstream/main --max-count=10)
+              echo "has_updates=true" >> $GITHUB_OUTPUT
+              echo "has_new=true" >> $GITHUB_OUTPUT
+              echo "has_modified=false" >> $GITHUB_OUTPUT
+
+              NEW_COUNT=$(echo "$NEW_PATTERNS" | grep -c . || echo "0")
+              echo "new_count=$NEW_COUNT" >> $GITHUB_OUTPUT
+
+              echo "new_patterns<<EOF" >> $GITHUB_OUTPUT
+              echo "$NEW_PATTERNS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+
+              echo "modified_patterns<<EOF" >> $GITHUB_OUTPUT
+              echo "" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
             fi
-
-            echo "new_commits=$NEW_COMMITS" >> $GITHUB_OUTPUT
-
-            echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-            echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-
-            echo "commit_log<<EOF" >> $GITHUB_OUTPUT
-            echo "$COMMIT_LOG" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            exit 0
           fi
+
+          if [ "$LAST_SYNC" = "$UPSTREAM_COMMIT" ]; then
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "No new commits since last sync."
+            exit 0
+          fi
+
+          # Check if last sync commit exists in upstream
+          if ! git cat-file -e "$LAST_SYNC" 2>/dev/null; then
+            echo "Last sync commit not found. Falling back to pattern name comparison."
+
+            git ls-tree --name-only upstream/main patterns/ | grep '\.md$' | grep -v TEMPLATE | sed 's|patterns/||;s|\.md$||' | sort > /tmp/upstream_patterns.txt
+            ls src/data/patterns/*.json 2>/dev/null | xargs -n1 basename | sed 's/\.json$//' | sort > /tmp/local_patterns.txt
+
+            NEW_PATTERNS=$(comm -23 /tmp/upstream_patterns.txt /tmp/local_patterns.txt)
+
+            if [ -z "$NEW_PATTERNS" ]; then
+              echo "has_updates=false" >> $GITHUB_OUTPUT
+            else
+              echo "has_updates=true" >> $GITHUB_OUTPUT
+              echo "has_new=true" >> $GITHUB_OUTPUT
+              echo "has_modified=false" >> $GITHUB_OUTPUT
+
+              NEW_COUNT=$(echo "$NEW_PATTERNS" | grep -c . || echo "0")
+              echo "new_count=$NEW_COUNT" >> $GITHUB_OUTPUT
+
+              echo "new_patterns<<EOF" >> $GITHUB_OUTPUT
+              echo "$NEW_PATTERNS" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+
+              echo "modified_patterns<<EOF" >> $GITHUB_OUTPUT
+              echo "" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+            exit 0
+          fi
+
+          # Get changed pattern files since last sync
+          CHANGED_FILES=$(git diff --name-only $LAST_SYNC..upstream/main -- 'patterns/*.md' | grep -v TEMPLATE || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+            echo "No pattern changes since last sync."
+            exit 0
+          fi
+
+          echo "has_updates=true" >> $GITHUB_OUTPUT
+
+          # Separate new vs modified patterns
+          # Get current local pattern names
+          ls src/data/patterns/*.json 2>/dev/null | xargs -n1 basename | sed 's/\.json$//' | sort > /tmp/local_patterns.txt
+
+          NEW_PATTERNS=""
+          MODIFIED_PATTERNS=""
+
+          for file in $CHANGED_FILES; do
+            # Extract pattern name from path (patterns/name.md -> name)
+            PATTERN_NAME=$(basename "$file" .md)
+
+            if grep -q "^${PATTERN_NAME}$" /tmp/local_patterns.txt; then
+              # Pattern exists locally - it's modified
+              MODIFIED_PATTERNS="$MODIFIED_PATTERNS$PATTERN_NAME"$'\n'
+            else
+              # Pattern doesn't exist locally - it's new
+              NEW_PATTERNS="$NEW_PATTERNS$PATTERN_NAME"$'\n'
+            fi
+          done
+
+          # Remove trailing newlines
+          NEW_PATTERNS=$(echo "$NEW_PATTERNS" | sed '/^$/d')
+          MODIFIED_PATTERNS=$(echo "$MODIFIED_PATTERNS" | sed '/^$/d')
+
+          # Count
+          NEW_COUNT=0
+          MODIFIED_COUNT=0
+          [ -n "$NEW_PATTERNS" ] && NEW_COUNT=$(echo "$NEW_PATTERNS" | grep -c . || echo "0")
+          [ -n "$MODIFIED_PATTERNS" ] && MODIFIED_COUNT=$(echo "$MODIFIED_PATTERNS" | grep -c . || echo "0")
+
+          echo "new_count=$NEW_COUNT" >> $GITHUB_OUTPUT
+          echo "modified_count=$MODIFIED_COUNT" >> $GITHUB_OUTPUT
+
+          [ -n "$NEW_PATTERNS" ] && echo "has_new=true" >> $GITHUB_OUTPUT || echo "has_new=false" >> $GITHUB_OUTPUT
+          [ -n "$MODIFIED_PATTERNS" ] && echo "has_modified=true" >> $GITHUB_OUTPUT || echo "has_modified=false" >> $GITHUB_OUTPUT
+
+          echo "new_patterns<<EOF" >> $GITHUB_OUTPUT
+          echo "$NEW_PATTERNS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "modified_patterns<<EOF" >> $GITHUB_OUTPUT
+          echo "$MODIFIED_PATTERNS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Get commit log
+          COMMIT_LOG=$(git log --oneline $LAST_SYNC..upstream/main --max-count=10)
+          echo "commit_log<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_LOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          COMMIT_COUNT=$(git rev-list --count $LAST_SYNC..upstream/main)
+          echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
 
       - name: Create Issue for Updates
         if: steps.check.outputs.has_updates == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const newCommits = '${{ steps.check.outputs.new_commits }}';
-            const changedFiles = `${{ steps.check.outputs.changed_files }}`;
-            const commitLog = `${{ steps.check.outputs.commit_log }}`;
+            const hasNew = '${{ steps.check.outputs.has_new }}' === 'true';
+            const hasModified = '${{ steps.check.outputs.has_modified }}' === 'true';
+            const newCount = '${{ steps.check.outputs.new_count }}' || '0';
+            const modifiedCount = '${{ steps.check.outputs.modified_count }}' || '0';
+            const newPatterns = `${{ steps.check.outputs.new_patterns }}`.trim();
+            const modifiedPatterns = `${{ steps.check.outputs.modified_patterns }}`.trim();
+            const commitLog = `${{ steps.check.outputs.commit_log }}`.trim();
+            const commitCount = '${{ steps.check.outputs.commit_count }}' || '?';
             const upstreamCommit = '${{ steps.check.outputs.upstream_commit }}';
 
-            const body = `## 🔄 Upstream 업데이트 감지
+            let title = '🔄 Upstream 업데이트: ';
+            const parts = [];
+            if (hasNew) parts.push(`새 패턴 ${newCount}개`);
+            if (hasModified) parts.push(`수정된 패턴 ${modifiedCount}개`);
+            title += parts.join(', ');
 
-            upstream 저장소([nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns))에 새로운 변경사항이 있습니다.
+            let body = `## 🔄 Upstream 업데이트 감지
+
+            upstream 저장소([nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns))에 변경사항이 있습니다.
 
             ### 📊 요약
-            - **새 커밋 수**: ${newCommits}개
+            - **새 커밋 수**: ${commitCount}개
+            - **새 패턴**: ${newCount}개
+            - **수정된 패턴**: ${modifiedCount}개
             - **최신 커밋**: \`${upstreamCommit.substring(0, 7)}\`
-            - **확인 링크**: [Compare changes](https://github.com/nibzard/awesome-agentic-patterns/compare/${upstreamCommit.substring(0, 7)}...main)
+            `;
 
+            if (hasNew && newPatterns) {
+              body += `
+            ### 🆕 새 패턴 (${newCount}개)
+            JSON 파일 생성 + 한국어 번역 필요
+
+            \`\`\`
+            ${newPatterns}
+            \`\`\`
+            `;
+            }
+
+            if (hasModified && modifiedPatterns) {
+              body += `
+            ### 📝 수정된 패턴 (${modifiedCount}개)
+            영어 필드 업데이트 필요 (한국어는 검토 후 필요시 재번역)
+
+            \`\`\`
+            ${modifiedPatterns}
+            \`\`\`
+            `;
+            }
+
+            if (commitLog) {
+              body += `
             ### 📝 최근 커밋 로그
             \`\`\`
             ${commitLog}
             \`\`\`
+            `;
+            }
 
-            ### 📂 변경된 파일 (patterns/ 디렉토리)
-            ${changedFiles ? '```\n' + changedFiles + '\n```' : '_변경된 패턴 파일이 없습니다_'}
+            body += `
+            ### 🔧 작업 가이드
 
-            ### 🔧 다음 단계
-            1. [upstream 저장소](https://github.com/nibzard/awesome-agentic-patterns) 확인
-            2. 새로운 패턴이 있다면 CLAUDE.md의 "upstream에서 새 패턴 추가하기" 가이드 참고
-            3. 패턴 번역 및 JSON 파일 생성
-            4. 빌드 테스트 후 커밋
+            #### 새 패턴 추가
+            1. upstream에서 마크다운 파일 확인
+            2. JSON 파일 생성 (\`src/data/patterns/{id}.json\`)
+            3. 한국어 번역 추가
+            4. README 패턴 수 업데이트
+
+            #### 수정된 패턴 업데이트
+            1. upstream 변경 내용 확인: \`git diff <old>..<new> -- patterns/{name}.md\`
+            2. 해당 JSON 파일의 영어 필드 업데이트
+            3. 한국어 번역 검토 (필요시 재번역)
+
+            #### 완료 후
+            \`\`\`bash
+            # .last-upstream-sync 파일 업데이트
+            echo "${upstreamCommit}" > .last-upstream-sync
+            \`\`\`
 
             ---
             _이 이슈는 자동으로 생성되었습니다. 작업 완료 후 이슈를 닫아주세요._`;
@@ -105,7 +258,7 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🔄 Upstream 업데이트 감지',
+              title: title,
               body: body,
               labels: ['upstream', 'sync']
             });
