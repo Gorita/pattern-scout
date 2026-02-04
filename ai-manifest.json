@@ -75,7 +75,7 @@
     "category": "Context & Memory",
     "description": "Context overflow is a silent killer of agent reliability Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry",
     "problem": "Context overflow is a silent killer of agent reliability. When accumulated conversation history exceeds the model's context window, API errors occur, requiring manual intervention and complex retry logic.",
-    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. The system detects overflow, compacts the session transcript, validates the result, and retries the request transparently.",
+    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. Two approaches: (1) Client-side summarization that compacts transcripts locally, (2) API-based compaction (e.g., OpenAI's /responses/compact endpoint) that preserves latent understanding via encrypted_content. The system detects overflow, compacts the session, validates the result, and retries transparently.",
     "when_to_use": [
       "Long-running agent sessions",
       "Multi-turn conversations",
