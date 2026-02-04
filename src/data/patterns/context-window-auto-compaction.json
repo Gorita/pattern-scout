@@ -10,8 +10,8 @@
     "ko": "컨텍스트 오버플로우는 에이전트 신뢰성의 조용한 킬러입니다. 누적된 대화 기록이 모델의 컨텍스트 윈도우를 초과하면 API 오류가 발생하여 수동 개입과 복잡한 재시도 로직이 필요합니다."
   },
   "solution": {
-    "en": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. The system detects overflow, compacts the session transcript, validates the result, and retries the request transparently.",
-    "ko": "컨텍스트 오버플로우 오류 시 자동 세션 압축을 트리거하고, 스마트 예비 토큰과 레인 인식 재시도를 수행합니다. 시스템이 오버플로우를 감지하고, 세션 트랜스크립트를 압축하고, 결과를 검증한 후 투명하게 요청을 재시도합니다."
+    "en": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. Two approaches: (1) Client-side summarization that compacts transcripts locally, (2) API-based compaction (e.g., OpenAI's /responses/compact endpoint) that preserves latent understanding via encrypted_content. The system detects overflow, compacts the session, validates the result, and retries transparently.",
+    "ko": "컨텍스트 오버플로우 오류 시 자동 세션 압축을 트리거하고, 스마트 예비 토큰과 레인 인식 재시도를 수행합니다. 두 가지 접근법: (1) 로컬에서 트랜스크립트를 압축하는 클라이언트 측 요약, (2) encrypted_content를 통해 잠재적 이해를 보존하는 API 기반 압축(예: OpenAI의 /responses/compact 엔드포인트). 시스템이 오버플로우를 감지하고, 세션을 압축하고, 결과를 검증한 후 투명하게 재시도합니다."
   },
   "when_to_use": {
     "en": ["Long-running agent sessions", "Multi-turn conversations", "Tool-heavy workflows with large outputs"],
