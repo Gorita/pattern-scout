@@ -1,0 +1,60 @@
+{
+  "id": "codebase-optimization-for-agents",
+  "title": "Codebase Optimization for Agents",
+  "title_ko": "에이전트를 위한 코드베이스 최적화",
+  "category": "UX & Collaboration",
+  "status": "emerging",
+  "original_url": "https://www.youtube.com/watch?v=2wjnV6F2arc",
+  "problem": {
+    "en": "When introducing AI agents to a codebase, there's a tendency to preserve human developer experience (DX). This limits agent effectiveness because the codebase remains optimized for humans. Even good models struggle without clear feedback loops—agents fail not because of capability limits but because the codebase isn't 'welded' to the agent.",
+    "ko": "AI 에이전트를 코드베이스에 도입할 때 인간 개발자 경험(DX)을 보존하려는 경향이 있습니다. 이는 코드베이스가 인간에게 최적화된 상태로 남아 에이전트 효과를 제한합니다. 좋은 모델도 명확한 피드백 루프 없이는 어려움을 겪습니다. 에이전트는 능력 한계가 아니라 코드베이스가 에이전트에 '용접'되지 않아서 실패합니다."
+  },
+  "solution": {
+    "en": "Optimize the codebase for agents first, humans second. Accept that tooling and workflows may regress for humans to unlock better agent performance. Key areas: CLI interfaces with machine-readable output, single-command test execution, skills that encapsulate operations, and AGENTS.md files. This creates a snowball effect: agent tooling improves, humans use agents more, editors matter less, more incentive to optimize for agents.",
+    "ko": "코드베이스를 에이전트 우선, 인간 차선으로 최적화합니다. 더 나은 에이전트 성능을 위해 인간을 위한 도구와 워크플로우가 후퇴할 수 있음을 수용합니다. 핵심 영역: 기계 판독 가능한 출력의 CLI 인터페이스, 단일 명령 테스트 실행, 작업을 캡슐화하는 스킬, AGENTS.md 파일입니다. 이는 눈덩이 효과를 만듭니다: 에이전트 도구 개선 → 인간이 에이전트를 더 사용 → 에디터 중요성 감소 → 에이전트 최적화 인센티브 증가."
+  },
+  "when_to_use": {
+    "en": [
+      "Agents will use a workflow 10x more than humans",
+      "The workflow is automatable and well-defined",
+      "Speed matters more than human user experience",
+      "Team is committed to agent-first development"
+    ],
+    "ko": [
+      "에이전트가 인간보다 워크플로우를 10배 이상 사용할 때",
+      "워크플로우가 자동화 가능하고 잘 정의되어 있을 때",
+      "인간 사용자 경험보다 속도가 중요할 때",
+      "팀이 에이전트 우선 개발에 전념할 때"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Dramatically better agent performance",
+      "Accelerates transition to agent-first workflows",
+      "Future-proof for increasing AI autonomy",
+      "Compound improvements through snowball effect"
+    ],
+    "ko": [
+      "에이전트 성능의 극적인 향상",
+      "에이전트 우선 워크플로우로의 전환 가속",
+      "증가하는 AI 자율성에 대한 미래 대비",
+      "눈덩이 효과를 통한 복합적 개선"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Human developer experience regresses",
+      "Team resistance to 'worse' tools",
+      "Hybrid team challenges for members not using agents",
+      "Lock-in risk with agent-specific patterns"
+    ],
+    "ko": [
+      "인간 개발자 경험의 후퇴",
+      "'더 나빠진' 도구에 대한 팀의 저항",
+      "에이전트를 사용하지 않는 멤버와의 하이브리드 팀 문제",
+      "에이전트 특화 패턴에 대한 종속 위험"
+    ]
+  },
+  "mermaid_diagram": "graph LR\n    A[Optimize for Agents] --> B[Agents Excel]\n    A --> C[Human DX Regresses]\n    B --> D[Humans Use Agents More]\n    D --> E[Humans Use Editors Less]\n    E --> F[Editor DX Matters Less]\n    F --> A",
+  "tags": ["agent-first", "human-dx", "optimization", "tooling", "codebase-design", "feedback-loops", "agent-native"]
+}
