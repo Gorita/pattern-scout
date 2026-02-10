@@ -1,0 +1,62 @@
+{
+  "id": "tool-selection-guide",
+  "title": "Tool Selection Guide",
+  "title_ko": "도구 선택 가이드",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://github.com/nibzard/SKILLS-AGENTIC-LESSONS",
+  "problem": {
+    "en": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows. Common anti-patterns include using Write when Edit would be more appropriate, launching subagents for simple exploration tasks, skipping build verification after code changes, and performing sequential exploration when parallel would be faster. These inefficiencies compound across long sessions.",
+    "ko": "AI 에이전트가 주어진 작업에 최적의 도구를 선택하는 데 어려움을 겪어 비효율적인 워크플로우가 발생합니다. 일반적인 안티 패턴으로는 Edit이 적절한 상황에서 Write 사용, 간단한 탐색에 서브 에이전트 실행, 코드 변경 후 빌드 검증 건너뛰기, 병렬이 더 빠를 때 순차적 탐색 등이 있습니다. 이러한 비효율은 긴 세션에서 누적됩니다."
+  },
+  "solution": {
+    "en": "Encode data-driven tool selection patterns from analysis of 88 real-world sessions. Match task type to optimal tool: exploration tasks use Read/Grep/Glob, code modification uses Edit (not Write), verification uses Bash, and delegation uses Task with clear subjects. Key rules: prefer Edit over Write for modifications (3.4:1 ratio observed), always Read before Edit, run Bash verification after changes, and use parallel delegation for independent tasks.",
+    "ko": "88개 실제 세션 분석에서 도출된 데이터 기반 도구 선택 패턴을 적용합니다. 작업 유형에 최적 도구를 매핑합니다: 탐색 작업은 Read/Grep/Glob, 코드 수정은 Edit(Write 아님), 검증은 Bash, 위임은 명확한 제목과 함께 Task를 사용합니다. 핵심 규칙: 수정 시 Write보다 Edit 선호(3.4:1 비율 관찰), Edit 전 항상 Read, 변경 후 Bash 검증 실행, 독립적 작업에는 병렬 위임 사용입니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Codebase exploration requiring file and content search",
+      "Code modification of existing files",
+      "Build and test verification after changes",
+      "Delegating parallel research tasks to subagents"
+    ],
+    "ko": [
+      "파일 및 콘텐츠 검색이 필요한 코드베이스 탐색",
+      "기존 파일의 코드 수정",
+      "변경 후 빌드 및 테스트 검증",
+      "서브 에이전트에 병렬 리서치 작업 위임"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Data-driven from 88 real sessions",
+      "Reduces token waste and user corrections",
+      "Faster workflow completion",
+      "Clear mental model for tool selection",
+      "Prevents common anti-patterns"
+    ],
+    "ko": [
+      "88개 실제 세션 기반 데이터 기반 접근",
+      "토큰 낭비 및 사용자 수정 감소",
+      "워크플로우 완료 속도 향상",
+      "도구 선택에 대한 명확한 사고 모델",
+      "일반적인 안티 패턴 방지"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Requires tool availability (e.g., Bash for verification)",
+      "Parallel delegation increases cost",
+      "May feel slower for simple one-off tasks",
+      "Requires discipline to follow patterns consistently"
+    ],
+    "ko": [
+      "도구 가용성 필요 (예: 검증용 Bash)",
+      "병렬 위임 시 비용 증가",
+      "간단한 일회성 작업에서는 더 느리게 느껴질 수 있음",
+      "패턴을 일관되게 따르려면 규율 필요"
+    ]
+  },
+  "mermaid_diagram": "flowchart TD\n    A[Task Type?] --> B[Exploration]\n    A --> C[Modification]\n    A --> D[Verification]\n    A --> E[Delegation]\n    B --> B1[Glob files]\n    B1 --> B2[Grep content]\n    B2 --> B3[Read targets]\n    C --> C1[Read file first]\n    C1 --> C2{New file?}\n    C2 -->|Yes| C3[Write]\n    C2 -->|No| C4[Edit]\n    D --> D1[Bash build/test]\n    D1 --> D2{Errors?}\n    D2 -->|Yes| D3[Fix then retry]\n    D2 -->|No| D4[Proceed]\n    E --> E1[Define clear subject]\n    E1 --> E2{Independent tasks?}\n    E2 -->|Yes| E3[Parallel delegation]\n    E2 -->|No| E4[Sequential delegation]",
+  "tags": ["tools", "workflow", "best-practices", "efficiency", "patterns", "exploration", "modification"]
+}

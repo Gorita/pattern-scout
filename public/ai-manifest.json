@@ -75,7 +75,7 @@
     "category": "Context & Memory",
     "description": "Context overflow is a silent killer of agent reliability Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry",
     "problem": "Context overflow is a silent killer of agent reliability. When accumulated conversation history exceeds the model's context window, API errors occur, requiring manual intervention and complex retry logic.",
-    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. The system detects overflow, compacts the session transcript, validates the result, and retries the request transparently.",
+    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. Two approaches: (1) Client-side summarization that compacts transcripts locally, (2) API-based compaction (e.g., OpenAI's /responses/compact endpoint) that preserves latent understanding via encrypted_content. The system detects overflow, compacts the session, validates the result, and retries transparently.",
     "when_to_use": [
       "Long-running agent sessions",
       "Multi-turn conversations",
@@ -555,6 +555,44 @@
     "related": []
   },
   {
+    "id": "working-memory-via-todos",
+    "title": "Working Memory via TodoWrite",
+    "title_ko": "TodoWrite를 통한 작업 기억 관리",
+    "category": "Context & Memory",
+    "description": "During complex multi-step tasks, AI agents lose track of what tasks are pending, in progress, or completed, which tasks are blocked by dependencies, verification steps that need to run, and next actio",
+    "problem": "During complex multi-step tasks, AI agents lose track of what tasks are pending, in progress, or completed, which tasks are blocked by dependencies, verification steps that need to run, and next actions after context switches. This leads to redundant work, forgotten tasks, and confused users.",
+    "solution": "Use TodoWrite (or equivalent state externalization) to maintain explicit working memory throughout the session. Track task status (pending, in_progress, completed), blocking relationships, verification steps, and next actions. TodoWrite usage correlates with smoother sessions—it serves as working memory for both agent and user.",
+    "when_to_use": [
+      "Working on complex multi-step tasks",
+      "Need to track blocked tasks and dependencies",
+      "Want to maintain session state across operations",
+      "Multiple parallel work streams"
+    ],
+    "pros": [
+      "Explicit session state for agent and user",
+      "Dependency tracking prevents blocked work",
+      "Progress visibility builds confidence",
+      "Survives context window switches",
+      "Reduces 'what about X?' questions from users"
+    ],
+    "cons": [
+      "Overhead for simple tasks",
+      "Requires discipline to maintain",
+      "Can become cluttered if overused",
+      "May feel bureaucratic for quick one-offs"
+    ],
+    "tags": [
+      "context",
+      "memory",
+      "working-memory",
+      "state",
+      "todo-tracking",
+      "dependencies",
+      "session-management"
+    ],
+    "related": []
+  },
+  {
     "id": "ai-assisted-code-review-verification",
     "title": "AI-Assisted Code Review / Verification",
     "title_ko": "AI 지원 코드 리뷰 / 검증",
@@ -854,9 +892,9 @@
     "title": "Rich Feedback Loops > Perfect Prompts",
     "title_ko": "완벽한 프롬프트보다 풍부한 피드백 루프",
     "category": "Feedback Loops",
-    "description": "Crafting perfect prompts is fragile and time-consuming; agents need real-world feedback to improve reliably Invest in rich feedback mechanisms like tests, linters, and CI systems rather than over-engi",
-    "problem": "Crafting perfect prompts is fragile and time-consuming; agents need real-world feedback to improve reliably.",
-    "solution": "Invest in rich feedback mechanisms like tests, linters, and CI systems rather than over-engineering prompts.",
+    "description": "Polishing a single prompt can't cover every edge-case; agents need ground truth to self-correct Expose iterative, machine-readable feedback (compiler errors, test failures, linter output, screenshots)",
+    "problem": "Polishing a single prompt can't cover every edge-case; agents need ground truth to self-correct. Additionally, agents need to integrate human feedback (positive and corrective) to improve session quality over time. Projects that better respond to user feedback have fewer corrections and better outcomes.",
+    "solution": "Expose iterative, machine-readable feedback (compiler errors, test failures, linter output, screenshots) after every tool call. Integrate human feedback patterns: recognize positive feedback to reinforce working patterns, learn from corrections to avoid repeating mistakes, adapt based on user communication style, and track what works for specific users. Evidence from 88 sessions shows projects with more positive feedback had better outcomes (nibzard-web: 80% success with 8 positive vs awesome-agentic-patterns: 17% with 1 positive).",
     "when_to_use": [
       "Coding agents",
       "Quality-critical tasks",
@@ -874,7 +912,10 @@
     "tags": [
       "feedback",
       "testing",
-      "reliability"
+      "reliability",
+      "user-feedback",
+      "positive-reinforcement",
+      "corrections"
     ],
     "related": []
   },
@@ -2175,13 +2216,15 @@
     "title": "Sub-Agent Spawning",
     "title_ko": "서브 에이전트 생성 패턴",
     "category": "Orchestration & Control",
-    "description": "Complex tasks exceed single agent context limits and require specialized handling for different subtasks Main agent spawns specialized sub-agents for specific subtasks, each with focused context and c",
+    "description": "Complex tasks exceed single agent context limits and require specialized handling for different subtasks Let the main agent spawn focused sub-agents, each with its own fresh context, to work in parall",
     "problem": "Complex tasks exceed single agent context limits and require specialized handling for different subtasks.",
-    "solution": "Main agent spawns specialized sub-agents for specific subtasks, each with focused context and capabilities.",
+    "solution": "Let the main agent spawn focused sub-agents, each with its own fresh context, to work in parallel on shardable subtasks. Aggregate their results when done. Critical requirement: each subagent invocation must have a clear, specific task subject for traceability. Implementation approaches include declarative YAML configuration (defining subagent types with system prompts, allowed tools, and context windows) and dynamic spawning (on-demand parallel task execution). Parallel delegation best practices: launch independent tasks simultaneously, use clear task subjects, plan synthesis upfront, and limit to 2-4 subagents.",
     "when_to_use": [
       "Large codebase operations",
       "Parallel processing needs",
-      "Specialized task separation"
+      "Specialized task separation",
+      "Independent exploration tasks that can run simultaneously",
+      "Complex research requiring multiple focused investigations"
     ],
     "pros": [
       "Context isolation",
@@ -2198,7 +2241,45 @@
       "context",
       "scalability",
       "subagents",
-      "parallelization"
+      "parallelization",
+      "subject-hygiene",
+      "parallel-delegation"
+    ],
+    "related": []
+  },
+  {
+    "id": "subject-hygiene",
+    "title": "Subject Hygiene for Task Delegation",
+    "title_ko": "작업 위임을 위한 제목 위생 관리",
+    "category": "Orchestration & Control",
+    "description": "When delegating work to subagents via the Task tool, empty or generic task subjects make conversations untraceable, unreferencable, and confusing Enforce clear, specific task subjects for every Task t",
+    "problem": "When delegating work to subagents via the Task tool, empty or generic task subjects make conversations untraceable, unreferencable, and confusing. Multiple subagents with empty subjects are indistinguishable. From 48 Task invocations across 88 sessions, empty task subjects were identified as a major pain point.",
+    "solution": "Enforce clear, specific task subjects for every Task tool invocation. A good subject should not be empty, be specific and descriptive, be reference-able, and follow naming conventions using imperative mood with a clear target.",
+    "when_to_use": [
+      "Parallel subagent delegations (2+ agents)",
+      "Complex research tasks requiring multiple subagents",
+      "Long-running subagent work",
+      "When user needs to review subagent output"
+    ],
+    "pros": [
+      "Traceable subagent conversations",
+      "Reference-able work items",
+      "Clearer synthesis of parallel work",
+      "Better communication with user",
+      "Easier debugging of delegation issues"
+    ],
+    "cons": [
+      "Requires upfront thinking about subject",
+      "Longer subject strings (minor overhead)",
+      "No technical enforcement (requires discipline)"
+    ],
+    "tags": [
+      "subagents",
+      "delegation",
+      "traceability",
+      "naming",
+      "clarity",
+      "anti-pattern"
     ],
     "related": []
   },
@@ -2294,6 +2375,44 @@
       "least-privilege",
       "tool-permissions",
       "security"
+    ],
+    "related": []
+  },
+  {
+    "id": "tool-selection-guide",
+    "title": "Tool Selection Guide",
+    "title_ko": "도구 선택 가이드",
+    "category": "Orchestration & Control",
+    "description": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows Encode data-driven tool selection patterns from analysis of 88 real-world sessions",
+    "problem": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows. Common anti-patterns include using Write when Edit would be more appropriate, launching subagents for simple exploration tasks, skipping build verification after code changes, and performing sequential exploration when parallel would be faster. These inefficiencies compound across long sessions.",
+    "solution": "Encode data-driven tool selection patterns from analysis of 88 real-world sessions. Match task type to optimal tool: exploration tasks use Read/Grep/Glob, code modification uses Edit (not Write), verification uses Bash, and delegation uses Task with clear subjects. Key rules: prefer Edit over Write for modifications (3.4:1 ratio observed), always Read before Edit, run Bash verification after changes, and use parallel delegation for independent tasks.",
+    "when_to_use": [
+      "Codebase exploration requiring file and content search",
+      "Code modification of existing files",
+      "Build and test verification after changes",
+      "Delegating parallel research tasks to subagents"
+    ],
+    "pros": [
+      "Data-driven from 88 real sessions",
+      "Reduces token waste and user corrections",
+      "Faster workflow completion",
+      "Clear mental model for tool selection",
+      "Prevents common anti-patterns"
+    ],
+    "cons": [
+      "Requires tool availability (e.g., Bash for verification)",
+      "Parallel delegation increases cost",
+      "May feel slower for simple one-off tasks",
+      "Requires discipline to follow patterns consistently"
+    ],
+    "tags": [
+      "tools",
+      "workflow",
+      "best-practices",
+      "efficiency",
+      "patterns",
+      "exploration",
+      "modification"
     ],
     "related": []
   },

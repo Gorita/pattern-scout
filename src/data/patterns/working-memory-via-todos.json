@@ -1,0 +1,62 @@
+{
+  "id": "working-memory-via-todos",
+  "title": "Working Memory via TodoWrite",
+  "title_ko": "TodoWrite를 통한 작업 기억 관리",
+  "category": "Context & Memory",
+  "status": "emerging",
+  "original_url": "https://github.com/nibzard/SKILLS-AGENTIC-LESSONS",
+  "problem": {
+    "en": "During complex multi-step tasks, AI agents lose track of what tasks are pending, in progress, or completed, which tasks are blocked by dependencies, verification steps that need to run, and next actions after context switches. This leads to redundant work, forgotten tasks, and confused users.",
+    "ko": "복잡한 다단계 작업 수행 중 AI 에이전트가 대기 중, 진행 중, 완료된 작업의 상태를 놓치고, 의존성에 의해 차단된 작업, 실행해야 할 검증 단계, 컨텍스트 전환 후 다음 행동을 추적하지 못합니다. 이로 인해 중복 작업, 누락된 작업, 혼란스러운 사용자 경험이 발생합니다."
+  },
+  "solution": {
+    "en": "Use TodoWrite (or equivalent state externalization) to maintain explicit working memory throughout the session. Track task status (pending, in_progress, completed), blocking relationships, verification steps, and next actions. TodoWrite usage correlates with smoother sessions—it serves as working memory for both agent and user.",
+    "ko": "TodoWrite(또는 동등한 상태 외부화)를 사용하여 세션 전체에 걸쳐 명시적 작업 기억을 유지합니다. 작업 상태(대기, 진행 중, 완료), 차단 관계, 검증 단계, 다음 행동을 추적합니다. TodoWrite 사용은 더 원활한 세션과 상관관계가 있으며, 에이전트와 사용자 모두를 위한 작업 기억으로 기능합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Working on complex multi-step tasks",
+      "Need to track blocked tasks and dependencies",
+      "Want to maintain session state across operations",
+      "Multiple parallel work streams"
+    ],
+    "ko": [
+      "복잡한 다단계 작업 수행 시",
+      "차단된 작업과 의존성 추적 필요 시",
+      "작업 간 세션 상태 유지가 필요할 때",
+      "여러 병렬 작업 흐름이 있을 때"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Explicit session state for agent and user",
+      "Dependency tracking prevents blocked work",
+      "Progress visibility builds confidence",
+      "Survives context window switches",
+      "Reduces 'what about X?' questions from users"
+    ],
+    "ko": [
+      "에이전트와 사용자를 위한 명시적 세션 상태",
+      "의존성 추적으로 차단된 작업 방지",
+      "진행 상황 가시성으로 신뢰 구축",
+      "컨텍스트 윈도우 전환에도 유지",
+      "사용자의 'X는 어떻게 되었나요?' 질문 감소"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Overhead for simple tasks",
+      "Requires discipline to maintain",
+      "Can become cluttered if overused",
+      "May feel bureaucratic for quick one-offs"
+    ],
+    "ko": [
+      "간단한 작업에 대한 오버헤드",
+      "유지하려면 규율 필요",
+      "과다 사용 시 복잡해질 수 있음",
+      "빠른 일회성 작업에는 관료적으로 느껴질 수 있음"
+    ]
+  },
+  "mermaid_diagram": "stateDiagram-v2\n    [*] --> Pending: Task identified\n    Pending --> InProgress: Started\n    InProgress --> Completed: Finished\n    InProgress --> Blocked: Dependency wait\n    Blocked --> InProgress: Dependency resolved\n    Completed --> [*]",
+  "tags": ["context", "memory", "working-memory", "state", "todo-tracking", "dependencies", "session-management"]
+}

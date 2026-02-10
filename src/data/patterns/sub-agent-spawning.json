@@ -10,15 +10,15 @@
     "ko": "복잡한 작업이 단일 에이전트 컨텍스트 한계를 초과하고 다른 하위 작업에 전문화된 처리가 필요합니다."
   },
   "solution": {
-    "en": "Main agent spawns specialized sub-agents for specific subtasks, each with focused context and capabilities.",
-    "ko": "메인 에이전트가 특정 하위 작업을 위한 전문화된 서브 에이전트를 생성하고, 각각 집중된 컨텍스트와 기능을 갖습니다."
+    "en": "Let the main agent spawn focused sub-agents, each with its own fresh context, to work in parallel on shardable subtasks. Aggregate their results when done. Critical requirement: each subagent invocation must have a clear, specific task subject for traceability. Implementation approaches include declarative YAML configuration (defining subagent types with system prompts, allowed tools, and context windows) and dynamic spawning (on-demand parallel task execution). Parallel delegation best practices: launch independent tasks simultaneously, use clear task subjects, plan synthesis upfront, and limit to 2-4 subagents.",
+    "ko": "메인 에이전트가 집중된 서브 에이전트를 생성하여 각각 고유한 새로운 컨텍스트로 분할 가능한 하위 작업을 병렬 처리합니다. 완료 후 결과를 집계합니다. 핵심 요구사항: 각 서브 에이전트 호출에는 추적 가능한 명확하고 구체적인 작업 제목이 있어야 합니다. 구현 방식으로는 선언적 YAML 구성(시스템 프롬프트, 허용 도구, 컨텍스트 윈도우를 포함한 서브 에이전트 타입 정의)과 동적 생성(필요 시 병렬 작업 실행)이 있습니다. 병렬 위임 모범 사례: 독립적 작업은 동시 실행, 명확한 작업 제목 사용, 사전 종합 계획, 서브 에이전트 2-4개 제한입니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│   Main Agent    │\n└────────┬────────┘\n    ┌────┼────┐\n    ▼    ▼    ▼\n┌─────┐┌─────┐┌─────┐\n│Sub1 ││Sub2 ││Sub3 │\n│Code ││Test ││Docs │\n└──┬──┘└──┬──┘└──┬──┘\n   └──────┼──────┘\n          ▼\n   ┌────────────┐\n   │  Combine   │\n   └────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Main Agent] --> B[Sub-Agent: Code]\n    A --> C[Sub-Agent: Test]\n    A --> D[Sub-Agent: Docs]\n    B & C & D --> E[Aggregate Results]",
   "code_example": "main_agent = Agent(task='Refactor auth module')\n\n# Spawn specialized sub-agents\ncode_agent = main_agent.spawn('code', focus='implementation')\ntest_agent = main_agent.spawn('test', focus='test coverage')\ndocs_agent = main_agent.spawn('docs', focus='documentation')\n\n# Each works in parallel with focused context\nresults = await asyncio.gather(\n    code_agent.run(),\n    test_agent.run(),\n    docs_agent.run()\n)",
   "when_to_use": {
-    "en": ["Large codebase operations", "Parallel processing needs", "Specialized task separation"],
-    "ko": ["대규모 코드베이스 작업", "병렬 처리 필요 시", "전문화된 작업 분리"]
+    "en": ["Large codebase operations", "Parallel processing needs", "Specialized task separation", "Independent exploration tasks that can run simultaneously", "Complex research requiring multiple focused investigations"],
+    "ko": ["대규모 코드베이스 작업", "병렬 처리 필요 시", "전문화된 작업 분리", "동시에 실행 가능한 독립적 탐색 작업", "여러 집중 조사가 필요한 복잡한 리서치"]
   },
   "pros": {
     "en": ["Context isolation", "Parallel processing", "Specialization"],
@@ -28,5 +28,5 @@
     "en": ["Coordination overhead", "Increased costs", "Complex result integration"],
     "ko": ["조정 오버헤드", "비용 증가", "결과 통합 복잡"]
   },
-  "tags": ["orchestration", "context", "scalability", "subagents", "parallelization"]
+  "tags": ["orchestration", "context", "scalability", "subagents", "parallelization", "subject-hygiene", "parallel-delegation"]
 }

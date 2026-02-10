@@ -6,12 +6,12 @@
   "status": "validated-in-production",
   "original_url": "https://www.nibzard.com/ampcode",
   "problem": {
-    "en": "Crafting perfect prompts is fragile and time-consuming; agents need real-world feedback to improve reliably.",
-    "ko": "완벽한 프롬프트를 만드는 것은 취약하고 시간이 많이 걸립니다. 에이전트는 신뢰할 수 있는 개선을 위해 실제 피드백이 필요합니다."
+    "en": "Polishing a single prompt can't cover every edge-case; agents need ground truth to self-correct. Additionally, agents need to integrate human feedback (positive and corrective) to improve session quality over time. Projects that better respond to user feedback have fewer corrections and better outcomes.",
+    "ko": "단일 프롬프트를 다듬는 것만으로는 모든 엣지 케이스를 처리할 수 없습니다. 에이전트는 자기 교정을 위해 실제 결과가 필요합니다. 또한 에이전트는 세션 품질을 시간에 따라 개선하기 위해 인간 피드백(긍정적 피드백과 교정 피드백)을 통합해야 합니다. 사용자 피드백에 더 잘 반응하는 프로젝트가 더 적은 수정과 더 나은 결과를 보입니다."
   },
   "solution": {
-    "en": "Invest in rich feedback mechanisms like tests, linters, and CI systems rather than over-engineering prompts.",
-    "ko": "프롬프트를 과도하게 엔지니어링하기보다 테스트, 린터, CI 시스템과 같은 풍부한 피드백 메커니즘에 투자합니다."
+    "en": "Expose iterative, machine-readable feedback (compiler errors, test failures, linter output, screenshots) after every tool call. Integrate human feedback patterns: recognize positive feedback to reinforce working patterns, learn from corrections to avoid repeating mistakes, adapt based on user communication style, and track what works for specific users. Evidence from 88 sessions shows projects with more positive feedback had better outcomes (nibzard-web: 80% success with 8 positive vs awesome-agentic-patterns: 17% with 1 positive).",
+    "ko": "모든 도구 호출 후 반복적이고 기계가 읽을 수 있는 피드백(컴파일러 오류, 테스트 실패, 린터 출력, 스크린샷)을 제공합니다. 인간 피드백 패턴을 통합합니다: 긍정적 피드백을 인식하여 효과적인 패턴을 강화하고, 수정에서 학습하여 실수 반복을 방지하고, 사용자 소통 스타일에 맞게 적응하며, 특정 사용자에게 효과적인 것을 추적합니다. 88개 세션 분석에서 긍정적 피드백이 더 많은 프로젝트가 더 나은 결과를 보였습니다 (nibzard-web: 긍정 8회로 80% 성공 vs awesome-agentic-patterns: 긍정 1회로 17%)."
   },
   "ascii_diagram": "┌──────────────────────┐\n│ Instead of:          │\n│ Perfect Prompt ────? │\n│                      │\n│ Do this:             │\n│ Agent ──▶ Tests      │\n│       ──▶ Linter     │\n│       ──▶ CI         │\n│       ──▶ Improve    │\n└──────────────────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Agent Output] --> B[Tests]\n    A --> C[Linter]\n    A --> D[CI]\n    B & C & D --> E[Feedback]\n    E --> F[Improve]",
@@ -28,5 +28,5 @@
     "en": ["Infrastructure required", "Initial setup costs"],
     "ko": ["인프라 필요", "초기 설정 비용"]
   },
-  "tags": ["feedback", "testing", "reliability"]
+  "tags": ["feedback", "testing", "reliability", "user-feedback", "positive-reinforcement", "corrections"]
 }
