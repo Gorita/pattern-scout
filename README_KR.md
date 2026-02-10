@@ -2,7 +2,7 @@
 
 ![Pattern Scout](./public/pattern-scout-banner.png)
 
-**Pattern Scout**는 AI 에이전트를 구축할 때 적합한 디자인 패턴을 빠르게 찾아주는 웹 애플리케이션입니다. [nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns)의 **132개 패턴**을 한국어와 영어로 제공하며, 카테고리별 탐색과 실시간 검색을 지원합니다.
+**Pattern Scout**는 AI 에이전트를 구축할 때 적합한 디자인 패턴을 빠르게 찾아주는 웹 애플리케이션입니다. [nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns)의 **139개 패턴**을 한국어와 영어로 제공하며, 카테고리별 탐색과 실시간 검색을 지원합니다.
 
 🌐 **웹사이트**: [https://gorita.github.io/pattern-scout](https://gorita.github.io/pattern-scout)
 
@@ -11,7 +11,7 @@
 ## ✨ 주요 특징
 
 - 🇰🇷 **한국어/영어 지원** - 모든 패턴의 이중 언어 제공
-- 📂 **카테고리별 정리** - 8개 주요 카테고리, 132개 패턴
+- 📂 **카테고리별 정리** - 8개 주요 카테고리, 139개 패턴
 - 🗂️ **사이드바 네비게이션** - 데스크톱/모바일 최적화
 - 🔍 **실시간 검색** - 제목, 설명, 태그 검색
 - 📊 **상세 모달** - 문제, 해결책, 다이어그램, 코드 예제, 장단점
@@ -20,14 +20,14 @@
 
 ## 📂 8개 카테고리
 
-- 🎛️ **Orchestration & Control** (39개) - 태스크 분해, 서브 에이전트 생성
+- 🎛️ **Orchestration & Control** (42개) - 태스크 분해, 서브 에이전트 생성
 - 🧠 **Context & Memory** (18개) - 슬라이딩 윈도우, 벡터 캐시
 - 🔄 **Feedback Loops** (14개) - 컴파일러, CI, 자가 치유 재시도
-- 📚 **Learning & Adaptation** (5개) - 에이전트 RFT, 스킬 라이브러리
+- 📚 **Learning & Adaptation** (7개) - 에이전트 RFT, 스킬 라이브러리
 - ✅ **Reliability & Eval** (16개) - 가드레일, 평가 프레임워크
 - 🔒 **Security & Safety** (5개) - 격리된 VM, PII 토큰화
 - 🔧 **Tool Use & Environment** (22개) - 셸, 브라우저, DB
-- 👥 **UX & Collaboration** (13개) - 프롬프트 핸드오프, 단계별 커밋
+- 👥 **UX & Collaboration** (15개) - 프롬프트 핸드오프, 단계별 커밋
 
 ---
 

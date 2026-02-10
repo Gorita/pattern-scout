@@ -1,0 +1,64 @@
+{
+  "id": "dev-tooling-assumptions-reset",
+  "title": "Dev Tooling Assumptions Reset",
+  "title_ko": "개발 도구 가정 재설정",
+  "category": "UX & Collaboration",
+  "status": "emerging",
+  "original_url": "https://www.youtube.com/watch?v=2wjnV6F2arc",
+  "problem": {
+    "en": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense. When agents write 90% of code, these tools create bottlenecks and friction.",
+    "ko": "전통적인 개발 도구는 더 이상 유효하지 않은 가정 위에 구축되어 있습니다: 인간이 노력과 전문성으로 코드를 작성하고, 변경 사항은 희소하고 가치 있으며, 선형 워크플로우가 합리적이라는 가정입니다. 에이전트가 코드의 90%를 작성할 때, 이러한 도구는 병목과 마찰을 만듭니다."
+  },
+  "solution": {
+    "en": "Re-examine dev tooling assumptions from first principles. When agents write most code, the perceived value of changes drops dramatically. Replace linear tickets with immediate agent dispatch, PR reviews with automated verification, sprint planning with continuous flow. Embrace the 'primordial soup' of continuous agent-generated code rather than discrete human changes.",
+    "ko": "개발 도구의 가정을 제1원칙에서 재검토합니다. 에이전트가 대부분의 코드를 작성하면 변경의 인식된 가치가 급격히 떨어집니다. 선형 티켓을 즉각적인 에이전트 디스패치로, PR 리뷰를 자동화된 검증으로, 스프린트 계획을 지속적 흐름으로 대체합니다. 이산적인 인간 변경 대신 에이전트가 지속적으로 생성하는 코드의 '원시 수프'를 수용합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Agents writing majority of code (50%+)",
+      "Team comfortable with autonomous agents",
+      "Codebase has good automated testing",
+      "Leadership committed to new ways of working"
+    ],
+    "ko": [
+      "에이전트가 코드의 대부분(50% 이상)을 작성할 때",
+      "팀이 자율 에이전트에 익숙할 때",
+      "코드베이스에 좋은 자동화 테스트가 있을 때",
+      "리더십이 새로운 작업 방식에 전념할 때"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Removes bottlenecks by eliminating waiting for human availability",
+      "Faster iteration with immediate agent investigation",
+      "Better exploration through parallel approach generation",
+      "Reduced ceremony around changes",
+      "Scalability as agent usage grows"
+    ],
+    "ko": [
+      "인간 가용성 대기를 제거하여 병목 해소",
+      "즉각적인 에이전트 조사로 빠른 반복",
+      "병렬 접근 방식 생성을 통한 탐색 향상",
+      "변경 주변 절차 감소",
+      "에이전트 사용 증가에 따른 확장성"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Loss of visibility into what's happening",
+      "Integration challenges with existing tools",
+      "Team resistance to unfamiliar workflows",
+      "Increased blast radius with more automation",
+      "Transition pain with hybrid human/agent workflows"
+    ],
+    "ko": [
+      "진행 상황에 대한 가시성 손실",
+      "기존 도구와의 통합 문제",
+      "익숙하지 않은 워크플로우에 대한 팀의 저항",
+      "더 많은 자동화에 따른 영향 범위 증가",
+      "하이브리드 인간/에이전트 워크플로우의 전환 고통"
+    ]
+  },
+  "mermaid_diagram": "graph TD\n    A1[Humans write code] --> C[Linear Tickets]\n    A2[Code is scarce] --> D[PR Reviews]\n    A3[Developers are busy] --> E[Sprint Planning]\n    B1[Agents write code] --> G[Send Agent Immediately]\n    B2[Code is abundant] --> H[Generate 10 Variations]\n    B3[Agents are unlimited] --> I[Parallel Investigation]",
+  "tags": ["dev-tools", "assumptions", "tickets", "code-review", "tooling", "agent-workflows", "paradigm-shift"]
+}

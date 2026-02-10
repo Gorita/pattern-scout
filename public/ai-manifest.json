@@ -1100,6 +1100,42 @@
     "related": []
   },
   {
+    "id": "frontier-focused-development",
+    "title": "Frontier-Focused Development",
+    "title_ko": "프론티어 중심 개발",
+    "category": "Learning & Adaptation",
+    "description": "AI capabilities are advancing so rapidly that products optimized for today's models will be obsolete in months Always target the frontier—the state-of-the-art models—and design products that can rapid",
+    "problem": "AI capabilities are advancing so rapidly that products optimized for today's models will be obsolete in months. Many teams waste time solving problems that new models already solve, or build products tied to specific models that won't stay competitive.",
+    "solution": "Always target the frontier—the state-of-the-art models—and design products that can rapidly evolve. Key principles: no model selector (pick the best model per use case), frontier or nothing (only build features that push boundaries), rapid evolution (expect complete product changes every 3 months), and avoid subscription tie-ins to specific models.",
+    "when_to_use": [
+      "Targeting early adopters and frontier users",
+      "Products where AI capability is the core differentiator",
+      "Small teams that can pivot quickly",
+      "Building for developers who value speed over cost"
+    ],
+    "pros": [
+      "Always at the frontier as models improve",
+      "Rapid learning from focused usage",
+      "Future-proof with instant model switching capability",
+      "Quality focus on best capabilities"
+    ],
+    "cons": [
+      "Higher costs with frontier models",
+      "Smaller market excluding cost-sensitive users",
+      "Rapid product changes every 3 months",
+      "Exclusionary to 'median' users wanting stability"
+    ],
+    "tags": [
+      "frontier",
+      "state-of-the-art",
+      "model-selection",
+      "product-strategy",
+      "learning",
+      "innovation"
+    ],
+    "related": []
+  },
+  {
     "id": "memory-reinforcement-learning-memrl",
     "title": "Memory Reinforcement Learning (MemRL)",
     "title_ko": "메모리 강화 학습 (MemRL)",
@@ -1128,6 +1164,45 @@
       "self-evolution",
       "value-aware-retrieval",
       "runtime-learning"
+    ],
+    "related": []
+  },
+  {
+    "id": "shipping-as-research",
+    "title": "Shipping as Research",
+    "title_ko": "출시 자체가 리서치",
+    "category": "Learning & Adaptation",
+    "description": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind Treat shipping as research: release features not because you're certain they'll work, but to lear",
+    "problem": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind. Traditional product development emphasizes validation and certainty before release, but when the market changes every 3-6 weeks, you can't afford to wait.",
+    "solution": "Treat shipping as research: release features not because you're certain they'll work, but to learn whether they work. Ship to figure out what works and doesn't. Design for reversibility so features can be easily removed. Embrace rapid addition AND removal of features based on learnings. Users on the frontier appreciate constant evolution.",
+    "when_to_use": [
+      "User base is early adopters who understand experimentation",
+      "Operating on a rapidly evolving frontier like AI agents",
+      "Small enough team to pivot quickly",
+      "Cost of being wrong is low (reversible features)"
+    ],
+    "pros": [
+      "Learn faster than competitors waiting for certainty",
+      "Real-world validation over theoretical analysis",
+      "User goodwill from being part of the journey",
+      "Agility to pivot quickly when something fails",
+      "Discover approaches that planning would miss"
+    ],
+    "cons": [
+      "Some features will be built and then killed",
+      "Constant change can disorient users",
+      "User churn from those preferring stability",
+      "Public failures can damage reputation",
+      "Building throwaway features seems resource-inefficient"
+    ],
+    "tags": [
+      "research",
+      "experimentation",
+      "rapid-iteration",
+      "learning",
+      "dogfooding",
+      "shipping",
+      "uncertainty"
     ],
     "related": []
   },
@@ -1226,6 +1301,41 @@
     "related": []
   },
   {
+    "id": "agent-modes-by-model-personality",
+    "title": "Agent Modes by Model Personality",
+    "title_ko": "모델 성격 기반 에이전트 모드",
+    "category": "Orchestration & Control",
+    "description": "Different AI models have fundamentally different personalities and working styles Design different agent modes optimized for each model's personality rather than forcing all models into a single inter",
+    "problem": "Different AI models have fundamentally different personalities and working styles. Treating all models the same leads to suboptimal outcomes. Some models are 'trigger happy' and want to run commands immediately, while others prefer thorough research before acting.",
+    "solution": "Design different agent modes optimized for each model's personality rather than forcing all models into a single interaction pattern. Each mode should have its own UI/UX patterns, tool configurations, expectation setting, and working style. Present these as different working modes (e.g., Smart Mode, Rush Mode, Deep Mode), not as a model selector dropdown.",
+    "when_to_use": [
+      "Multi-model agent systems with different model backends",
+      "Products supporting both interactive and autonomous workflows",
+      "When model personalities significantly differ in working style",
+      "User-facing AI tools requiring clear expectation setting"
+    ],
+    "pros": [
+      "Optimized for each model's strengths",
+      "Clear user expectations per mode",
+      "Reduced user frustration",
+      "Better outcomes through model-appropriate workflows"
+    ],
+    "cons": [
+      "Increased complexity with multiple modes to maintain",
+      "User confusion about which mode to choose",
+      "Model evolution risk as personalities change with new versions",
+      "Testing overhead for each mode independently"
+    ],
+    "tags": [
+      "model-personality",
+      "interaction-modes",
+      "multi-model",
+      "ux-design",
+      "agent-behavior"
+    ],
+    "related": []
+  },
+  {
     "id": "agent-driven-research",
     "title": "Agent-Driven Research",
     "title_ko": "에이전트 주도 리서치",
@@ -1286,6 +1396,44 @@
       "multi-agent",
       "engineering-tasks",
       "tmux"
+    ],
+    "related": []
+  },
+  {
+    "id": "burn-the-boats",
+    "title": "Burn the Boats",
+    "title_ko": "배를 불태워라 (레거시 제거)",
+    "category": "Orchestration & Control",
+    "description": "In fast-moving AI development, holding onto features or workflows that are 'working fine' prevents teams from fully embracing new paradigms Intentionally kill features and workflows to force evolution",
+    "problem": "In fast-moving AI development, holding onto features or workflows that are 'working fine' prevents teams from fully embracing new paradigms. The comfort of existing functionality becomes an anchor that holds back innovation—even when the old approach is obsolete.",
+    "solution": "Intentionally kill features and workflows to force evolution and prevent being stuck on old paradigms. Set hard deadlines for feature removal to create urgency and commitment to the new way. Accept user churn as a natural consequence—you're selecting for frontier users, not laggers.",
+    "when_to_use": [
+      "The paradigm has fundamentally shifted",
+      "Existing features limit users from better ways of working",
+      "Maintaining old features splits team focus",
+      "Future target users won't need the old feature"
+    ],
+    "pros": [
+      "Forces internal innovation with no safety net",
+      "Signals commitment to users and team",
+      "Avoids split focus on obsolete features",
+      "Selects for frontier users",
+      "Prevents stagnation"
+    ],
+    "cons": [
+      "User churn from feature removal",
+      "Short-term revenue impact",
+      "Risk of being wrong about the new direction",
+      "Team morale impact from killing their work",
+      "Competitive vulnerability during transition"
+    ],
+    "tags": [
+      "feature-killing",
+      "forced-evolution",
+      "courage",
+      "focus",
+      "obsolescence",
+      "product-strategy"
     ],
     "related": []
   },
@@ -1541,6 +1689,42 @@
       "exploration",
       "planning",
       "decision-making"
+    ],
+    "related": []
+  },
+  {
+    "id": "factory-over-assistant",
+    "title": "Factory over Assistant",
+    "title_ko": "어시스턴트보다 팩토리 모델",
+    "category": "Orchestration & Control",
+    "description": "The 'assistant' model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability Shift from the assistant model to the factory mod",
+    "problem": "The 'assistant' model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability. The human becomes the bottleneck as the feedback loop. You can only run one agent at a time when watching it in a sidebar.",
+    "solution": "Shift from the assistant model to the factory model: spawn multiple autonomous agents that work in parallel, check on them periodically, and focus your time on higher-level orchestration. Instead of being the feedback loop, set up automated feedback loops (tests, builds, skills). Use interactive models for quick tasks and autonomous models for deep work.",
+    "when_to_use": [
+      "Multiple independent tasks that can run in parallel",
+      "Tasks where models can work autonomously for 30-60 minutes",
+      "Robust automated feedback loops already in place",
+      "Team ready to shift from interactive to orchestration role"
+    ],
+    "pros": [
+      "Massive parallelization of agent work",
+      "Better use of human time on orchestration",
+      "Scales with model autonomy capabilities",
+      "Higher throughput with multiple tasks in parallel"
+    ],
+    "cons": [
+      "Loss of real-time control over agent work",
+      "Delayed feedback on issues (30-60 minute cycles)",
+      "Setup overhead for robust automated feedback loops",
+      "Harder to debug when things go wrong"
+    ],
+    "tags": [
+      "parallelism",
+      "autonomous-agents",
+      "factory",
+      "assistant",
+      "orchestration",
+      "asynchronous-work"
     ],
     "related": []
   },
@@ -4038,6 +4222,43 @@
     "related": []
   },
   {
+    "id": "codebase-optimization-for-agents",
+    "title": "Codebase Optimization for Agents",
+    "title_ko": "에이전트를 위한 코드베이스 최적화",
+    "category": "UX & Collaboration",
+    "description": "When introducing AI agents to a codebase, there's a tendency to preserve human developer experience (DX) Optimize the codebase for agents first, humans second",
+    "problem": "When introducing AI agents to a codebase, there's a tendency to preserve human developer experience (DX). This limits agent effectiveness because the codebase remains optimized for humans. Even good models struggle without clear feedback loops—agents fail not because of capability limits but because the codebase isn't 'welded' to the agent.",
+    "solution": "Optimize the codebase for agents first, humans second. Accept that tooling and workflows may regress for humans to unlock better agent performance. Key areas: CLI interfaces with machine-readable output, single-command test execution, skills that encapsulate operations, and AGENTS.md files. This creates a snowball effect: agent tooling improves, humans use agents more, editors matter less, more incentive to optimize for agents.",
+    "when_to_use": [
+      "Agents will use a workflow 10x more than humans",
+      "The workflow is automatable and well-defined",
+      "Speed matters more than human user experience",
+      "Team is committed to agent-first development"
+    ],
+    "pros": [
+      "Dramatically better agent performance",
+      "Accelerates transition to agent-first workflows",
+      "Future-proof for increasing AI autonomy",
+      "Compound improvements through snowball effect"
+    ],
+    "cons": [
+      "Human developer experience regresses",
+      "Team resistance to 'worse' tools",
+      "Hybrid team challenges for members not using agents",
+      "Lock-in risk with agent-specific patterns"
+    ],
+    "tags": [
+      "agent-first",
+      "human-dx",
+      "optimization",
+      "tooling",
+      "codebase-design",
+      "feedback-loops",
+      "agent-native"
+    ],
+    "related": []
+  },
+  {
     "id": "democratization-of-tooling-via-agents",
     "title": "Democratization of Tooling via Agents",
     "title_ko": "에이전트를 통한 도구화 민주화",
@@ -4070,6 +4291,45 @@
       "tool-creation",
       "business-users",
       "automation"
+    ],
+    "related": []
+  },
+  {
+    "id": "dev-tooling-assumptions-reset",
+    "title": "Dev Tooling Assumptions Reset",
+    "title_ko": "개발 도구 가정 재설정",
+    "category": "UX & Collaboration",
+    "description": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense Re-",
+    "problem": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense. When agents write 90% of code, these tools create bottlenecks and friction.",
+    "solution": "Re-examine dev tooling assumptions from first principles. When agents write most code, the perceived value of changes drops dramatically. Replace linear tickets with immediate agent dispatch, PR reviews with automated verification, sprint planning with continuous flow. Embrace the 'primordial soup' of continuous agent-generated code rather than discrete human changes.",
+    "when_to_use": [
+      "Agents writing majority of code (50%+)",
+      "Team comfortable with autonomous agents",
+      "Codebase has good automated testing",
+      "Leadership committed to new ways of working"
+    ],
+    "pros": [
+      "Removes bottlenecks by eliminating waiting for human availability",
+      "Faster iteration with immediate agent investigation",
+      "Better exploration through parallel approach generation",
+      "Reduced ceremony around changes",
+      "Scalability as agent usage grows"
+    ],
+    "cons": [
+      "Loss of visibility into what's happening",
+      "Integration challenges with existing tools",
+      "Team resistance to unfamiliar workflows",
+      "Increased blast radius with more automation",
+      "Transition pain with hybrid human/agent workflows"
+    ],
+    "tags": [
+      "dev-tools",
+      "assumptions",
+      "tickets",
+      "code-review",
+      "tooling",
+      "agent-workflows",
+      "paradigm-shift"
     ],
     "related": []
   },

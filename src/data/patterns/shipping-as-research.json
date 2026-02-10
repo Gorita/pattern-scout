@@ -1,0 +1,64 @@
+{
+  "id": "shipping-as-research",
+  "title": "Shipping as Research",
+  "title_ko": "출시 자체가 리서치",
+  "category": "Learning & Adaptation",
+  "status": "emerging",
+  "original_url": "https://www.youtube.com/watch?v=4rx36wc9ugw",
+  "problem": {
+    "en": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind. Traditional product development emphasizes validation and certainty before release, but when the market changes every 3-6 weeks, you can't afford to wait.",
+    "ko": "빠르게 변하는 AI 환경에서 확실성을 기다린 후 구축하면 항상 뒤처집니다. 전통적인 제품 개발은 출시 전 검증과 확실성을 강조하지만, 시장이 3-6주마다 변할 때는 기다릴 여유가 없습니다."
+  },
+  "solution": {
+    "en": "Treat shipping as research: release features not because you're certain they'll work, but to learn whether they work. Ship to figure out what works and doesn't. Design for reversibility so features can be easily removed. Embrace rapid addition AND removal of features based on learnings. Users on the frontier appreciate constant evolution.",
+    "ko": "출시를 리서치로 취급합니다: 기능이 작동할 것이라는 확신 때문이 아니라, 작동하는지 배우기 위해 릴리스합니다. 무엇이 효과적인지 파악하기 위해 출시합니다. 기능을 쉽게 제거할 수 있도록 가역성을 고려하여 설계합니다. 학습에 기반한 기능의 빠른 추가와 제거를 수용합니다. 프론티어의 사용자는 지속적인 진화를 높이 평가합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "User base is early adopters who understand experimentation",
+      "Operating on a rapidly evolving frontier like AI agents",
+      "Small enough team to pivot quickly",
+      "Cost of being wrong is low (reversible features)"
+    ],
+    "ko": [
+      "실험을 이해하는 얼리 어답터 사용자 기반",
+      "AI 에이전트와 같이 빠르게 변하는 프론티어에서 운영",
+      "빠르게 방향 전환할 수 있는 충분히 작은 팀",
+      "틀렸을 때의 비용이 낮은 경우 (가역적 기능)"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Learn faster than competitors waiting for certainty",
+      "Real-world validation over theoretical analysis",
+      "User goodwill from being part of the journey",
+      "Agility to pivot quickly when something fails",
+      "Discover approaches that planning would miss"
+    ],
+    "ko": [
+      "확실성을 기다리는 경쟁자보다 빠르게 학습",
+      "이론적 분석보다 실제 검증",
+      "여정에 참여하는 사용자의 호의",
+      "실패 시 빠른 방향 전환 민첩성",
+      "계획으로는 놓칠 수 있는 접근 방식 발견"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Some features will be built and then killed",
+      "Constant change can disorient users",
+      "User churn from those preferring stability",
+      "Public failures can damage reputation",
+      "Building throwaway features seems resource-inefficient"
+    ],
+    "ko": [
+      "일부 기능은 만들고 나서 제거됨",
+      "지속적 변경이 사용자를 혼란스럽게 할 수 있음",
+      "안정성을 선호하는 사용자의 이탈",
+      "공개적 실패가 평판을 손상시킬 수 있음",
+      "일회성 기능 구축이 자원 비효율적으로 보임"
+    ]
+  },
+  "mermaid_diagram": "graph TD\n    A[Observation/Insight] --> B{Ship to Learn?}\n    B -->|No, Wait| C[Market Moves On]\n    C --> D[Obsolete Before Starting]\n    B -->|Yes, Ship| E[Get Real Feedback]\n    E --> F{Works?}\n    F -->|Yes| G[Double Down]\n    F -->|No| H[Pivot or Kill]\n    G --> I[Learned What Works]\n    H --> I\n    I --> J[Next Insight]",
+  "tags": ["research", "experimentation", "rapid-iteration", "learning", "dogfooding", "shipping", "uncertainty"]
+}

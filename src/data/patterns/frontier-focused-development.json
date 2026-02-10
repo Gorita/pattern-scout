@@ -1,0 +1,60 @@
+{
+  "id": "frontier-focused-development",
+  "title": "Frontier-Focused Development",
+  "title_ko": "프론티어 중심 개발",
+  "category": "Learning & Adaptation",
+  "status": "emerging",
+  "original_url": "https://www.youtube.com/watch?v=2wjnV6F2arc",
+  "problem": {
+    "en": "AI capabilities are advancing so rapidly that products optimized for today's models will be obsolete in months. Many teams waste time solving problems that new models already solve, or build products tied to specific models that won't stay competitive.",
+    "ko": "AI 능력이 매우 빠르게 발전하여 오늘의 모델에 최적화된 제품은 몇 달 안에 구식이 됩니다. 많은 팀이 새 모델이 이미 해결하는 문제를 해결하느라 시간을 낭비하거나, 경쟁력을 유지하지 못할 특정 모델에 묶인 제품을 만듭니다."
+  },
+  "solution": {
+    "en": "Always target the frontier—the state-of-the-art models—and design products that can rapidly evolve. Key principles: no model selector (pick the best model per use case), frontier or nothing (only build features that push boundaries), rapid evolution (expect complete product changes every 3 months), and avoid subscription tie-ins to specific models.",
+    "ko": "항상 프론티어(최첨단 모델)를 목표로 하고 빠르게 진화할 수 있는 제품을 설계합니다. 핵심 원칙: 모델 선택기 없이(사용 사례별 최적 모델 선택), 프론티어 아니면 하지 않기(경계를 넓히는 기능만 구축), 빠른 진화(3개월마다 제품 완전 변경 예상), 특정 모델에 대한 구독 종속 회피입니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Targeting early adopters and frontier users",
+      "Products where AI capability is the core differentiator",
+      "Small teams that can pivot quickly",
+      "Building for developers who value speed over cost"
+    ],
+    "ko": [
+      "얼리 어답터와 프론티어 사용자를 타겟으로 할 때",
+      "AI 능력이 핵심 차별화 요소인 제품",
+      "빠르게 방향 전환할 수 있는 소규모 팀",
+      "비용보다 속도를 중시하는 개발자를 위한 제품"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Always at the frontier as models improve",
+      "Rapid learning from focused usage",
+      "Future-proof with instant model switching capability",
+      "Quality focus on best capabilities"
+    ],
+    "ko": [
+      "모델 개선에 따라 항상 프론티어 유지",
+      "집중된 사용에서의 빠른 학습",
+      "즉각적 모델 전환 기능으로 미래 대비",
+      "최고 기능에 대한 품질 집중"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Higher costs with frontier models",
+      "Smaller market excluding cost-sensitive users",
+      "Rapid product changes every 3 months",
+      "Exclusionary to 'median' users wanting stability"
+    ],
+    "ko": [
+      "프론티어 모델의 높은 비용",
+      "비용 민감 사용자를 제외한 작은 시장",
+      "3개월마다 급격한 제품 변경",
+      "안정성을 원하는 '중간' 사용자에게 배타적"
+    ]
+  },
+  "mermaid_diagram": "graph TD\n    A[New Model Released] --> B{At the Frontier?}\n    B -->|Yes| C[Adopt Immediately]\n    B -->|No, Older| D[Ignore]\n    C --> E[Learn from Usage]\n    E --> F[Product Evolves]\n    F --> A\n    D --> G[Wasted Effort]\n    G --> H[Stale Product]",
+  "tags": ["frontier", "state-of-the-art", "model-selection", "product-strategy", "learning", "innovation"]
+}

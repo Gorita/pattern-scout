@@ -1,0 +1,60 @@
+{
+  "id": "agent-modes-by-model-personality",
+  "title": "Agent Modes by Model Personality",
+  "title_ko": "모델 성격 기반 에이전트 모드",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://www.youtube.com/watch?v=4rx36wc9ugw",
+  "problem": {
+    "en": "Different AI models have fundamentally different personalities and working styles. Treating all models the same leads to suboptimal outcomes. Some models are 'trigger happy' and want to run commands immediately, while others prefer thorough research before acting.",
+    "ko": "서로 다른 AI 모델은 근본적으로 다른 성격과 작업 스타일을 가지고 있습니다. 모든 모델을 동일하게 취급하면 최적이 아닌 결과가 발생합니다. 일부 모델은 즉시 명령을 실행하려 하고, 다른 모델은 행동 전 철저한 조사를 선호합니다."
+  },
+  "solution": {
+    "en": "Design different agent modes optimized for each model's personality rather than forcing all models into a single interaction pattern. Each mode should have its own UI/UX patterns, tool configurations, expectation setting, and working style. Present these as different working modes (e.g., Smart Mode, Rush Mode, Deep Mode), not as a model selector dropdown.",
+    "ko": "모든 모델을 하나의 상호작용 패턴에 강제하는 대신, 각 모델의 성격에 최적화된 다른 에이전트 모드를 설계합니다. 각 모드는 고유한 UI/UX 패턴, 도구 구성, 기대치 설정, 작업 스타일을 가져야 합니다. 모델 선택 드롭다운이 아닌 다른 작업 모드(예: 스마트 모드, 러시 모드, 딥 모드)로 제시합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Multi-model agent systems with different model backends",
+      "Products supporting both interactive and autonomous workflows",
+      "When model personalities significantly differ in working style",
+      "User-facing AI tools requiring clear expectation setting"
+    ],
+    "ko": [
+      "다양한 모델 백엔드를 가진 멀티 모델 에이전트 시스템",
+      "대화형과 자율 워크플로우를 모두 지원하는 제품",
+      "모델 성격이 작업 스타일에서 크게 다를 때",
+      "명확한 기대치 설정이 필요한 사용자 대면 AI 도구"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Optimized for each model's strengths",
+      "Clear user expectations per mode",
+      "Reduced user frustration",
+      "Better outcomes through model-appropriate workflows"
+    ],
+    "ko": [
+      "각 모델의 강점에 최적화",
+      "모드별 명확한 사용자 기대치",
+      "사용자 불만 감소",
+      "모델에 적합한 워크플로우를 통한 향상된 결과"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Increased complexity with multiple modes to maintain",
+      "User confusion about which mode to choose",
+      "Model evolution risk as personalities change with new versions",
+      "Testing overhead for each mode independently"
+    ],
+    "ko": [
+      "유지해야 할 여러 모드로 인한 복잡성 증가",
+      "어떤 모드를 선택할지에 대한 사용자 혼란",
+      "새 버전에서 성격이 변하는 모델 진화 위험",
+      "각 모드의 독립적 테스트 오버헤드"
+    ]
+  },
+  "mermaid_diagram": "graph LR\n    A[User Request] --> B{Select Mode}\n    B -->|Smart Mode| C[Opus 4.5]\n    B -->|Deep Mode| D[GPT-5.2]\n    C --> E[Interactive: Fast feedback, rapid iteration]\n    D --> F[Autonomous: Send off, check back later]\n    E --> G[Results in minutes]\n    F --> H[Results in 45-60 minutes]",
+  "tags": ["model-personality", "interaction-modes", "multi-model", "ux-design", "agent-behavior"]
+}
