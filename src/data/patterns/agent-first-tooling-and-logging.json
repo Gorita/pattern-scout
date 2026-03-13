@@ -3,7 +3,7 @@
   "title": "Agent-First Tooling and Logging",
   "title_ko": "에이전트 우선 도구 및 로깅",
   "category": "Tool Use & Environment",
-  "status": "emerging",
+  "status": "established",
   "original_url": "https://www.sourcegraph.com",
   "problem": {
     "en": "Most developer tools, CLIs, and logs are designed for human consumption with color-coded, multi-line outputs that are difficult for AI agents to parse reliably.",

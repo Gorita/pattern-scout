@@ -1,0 +1,30 @@
+{
+  "id": "budget-aware-model-routing-with-hard-cost-caps",
+  "title": "Budget-Aware Model Routing with Hard Cost Caps",
+  "title_ko": "하드 비용 상한이 있는 예산 인식 모델 라우팅",
+  "category": "Orchestration & Control",
+  "status": "established",
+  "original_url": "https://martinfowler.com/articles/llm.html",
+  "problem": {
+    "en": "Agent systems often route every request to the strongest model by default, which quietly inflates cost and reduces throughput under load. Soft budget guidance in prompts is not enough because model selection happens in control code, not language outputs. Teams need deterministic guardrails that preserve quality for hard tasks while preventing runaway token spend for routine work.",
+    "ko": "에이전트 시스템은 기본적으로 모든 요청을 가장 강력한 모델로 라우팅하여 비용이 조용히 증가하고 부하 시 처리량이 감소합니다. 프롬프트의 소프트 예산 가이드는 모델 선택이 언어 출력이 아닌 제어 코드에서 이루어지기 때문에 충분하지 않습니다. 팀은 어려운 작업의 품질을 유지하면서 일상적인 작업의 토큰 비용 폭주를 방지하는 결정론적 가드레일이 필요합니다."
+  },
+  "solution": {
+    "en": "Introduce a routing layer with explicit budget contracts and hard caps per request, user, and workflow lane. Key elements: a tiered model catalog (small, medium, frontier) with capability metadata, a policy engine that computes maximum allowable spend before each call, deterministic fallback rules when the selected model would exceed budget, and quality override paths for safety-critical workflows. Cascade routing: try the cheapest adequate model first; if quality gates fail, escalate to stronger models.",
+    "ko": "요청, 사용자, 워크플로우 레인별로 명시적 예산 계약과 하드 캡이 있는 라우팅 계층을 도입합니다. 핵심 요소: 기능 메타데이터가 있는 계층화된 모델 카탈로그(소형, 중형, 프론티어), 각 호출 전 최대 허용 비용을 계산하는 정책 엔진, 선택된 모델이 예산을 초과할 때의 결정론적 폴백 규칙, 안전 관련 워크플로우를 위한 품질 오버라이드 경로. 캐스케이드 라우팅: 가장 저렴한 적합 모델을 먼저 시도하고, 품질 게이트가 실패하면 더 강력한 모델로 에스컬레이션합니다."
+  },
+  "when_to_use": {
+    "en": ["Model bills growing faster than product value", "High-volume workflows with measurable quality targets", "Need for routing telemetry and escalation policy"],
+    "ko": ["모델 비용이 제품 가치보다 빠르게 증가할 때", "측정 가능한 품질 목표가 있는 대량 워크플로우", "라우팅 텔레메트리 및 에스컬레이션 정책 필요"]
+  },
+  "pros": {
+    "en": ["Predictable spending", "Better capacity planning", "Clear escalation policy"],
+    "ko": ["예측 가능한 비용", "향상된 용량 계획", "명확한 에스컬레이션 정책"]
+  },
+  "cons": {
+    "en": ["More control-plane complexity", "Risk of under-powering hard requests if classification is weak"],
+    "ko": ["제어 플레인 복잡성 증가", "분류가 약할 경우 어려운 요청에 대한 성능 부족 위험"]
+  },
+  "code_example": "budget = policy.max_cost(task_type, user_tier)\ncandidate = router.pick_model(task_features, budget)\n\nif estimate_cost(candidate, context) > budget:\n    candidate = router.next_cheaper(candidate)\n\nresult = call_model(candidate, context)\nif quality_gate.failed(result) and policy.can_escalate(task_type):\n    result = call_model(router.next_stronger(candidate), context)",
+  "tags": ["routing", "cost-control", "multi-model", "orchestration", "reliability"]
+}

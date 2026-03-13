@@ -3,7 +3,7 @@
   "title": "Three-Stage Perception Architecture",
   "title_ko": "3단계 인식 아키텍처",
   "category": "Orchestration & Control",
-  "status": "proposed",
+  "status": "established",
   "original_url": "https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/",
   "problem": {
     "en": "Complex AI agents struggle with unstructured inputs. Without clear separation of concerns, agents become monolithic and difficult to debug, extend, or scale independently.",

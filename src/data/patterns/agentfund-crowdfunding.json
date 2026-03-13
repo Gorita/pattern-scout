@@ -1,0 +1,29 @@
+{
+  "id": "agentfund-crowdfunding",
+  "title": "Milestone Escrow for Agent Resource Funding",
+  "title_ko": "에이전트 리소스 펀딩을 위한 마일스톤 에스크로",
+  "category": "UX & Collaboration",
+  "status": "emerging",
+  "original_url": "https://github.com/RioTheGreat-ai/agentfund-skill",
+  "problem": {
+    "en": "Autonomous agent teams can need ongoing resources (compute, API spend, tools) over many steps. Without a funding model that enforces guardrails, they either require heavy human intervention or risk budget runaway.",
+    "ko": "자율 에이전트 팀은 여러 단계에 걸쳐 지속적인 리소스(컴퓨팅, API 비용, 도구)가 필요합니다. 가드레일을 적용하는 펀딩 모델이 없으면 과도한 인간 개입이 필요하거나 예산 초과 위험이 발생합니다."
+  },
+  "solution": {
+    "en": "Use milestone-based escrow with verifiable release conditions. 1) Define measurable milestones tied to expected outputs and acceptance criteria. 2) Hold committed funds in an escrow mechanism. 3) Collect proof artifacts for each milestone. 4) Release payment only after independent verification of each milestone. 5) Keep remaining funds locked until the next milestone threshold is met.",
+    "ko": "검증 가능한 해제 조건을 갖춘 마일스톤 기반 에스크로를 사용합니다. 1) 예상 산출물과 수락 기준에 연결된 측정 가능한 마일스톤을 정의합니다. 2) 약정 자금을 에스크로 메커니즘에 보관합니다. 3) 각 마일스톤에 대한 증빙 아티팩트를 수집합니다. 4) 각 마일스톤의 독립적 검증 후에만 지불을 해제합니다. 5) 다음 마일스톤 임계값에 도달할 때까지 나머지 자금을 잠금 상태로 유지합니다."
+  },
+  "when_to_use": {
+    "en": ["Work that can be partitioned into auditable milestones", "Small and objective milestone definitions needed", "Clear proof formats required in advance"],
+    "ko": ["감사 가능한 마일스톤으로 분할 가능한 작업", "작고 객관적인 마일스톤 정의 필요", "사전에 명확한 증빙 형식 필요"]
+  },
+  "pros": {
+    "en": ["Prevents budget runaway", "Auditable milestone tracking", "Independent verification ensures accountability"],
+    "ko": ["예산 초과 방지", "감사 가능한 마일스톤 추적", "독립적 검증으로 책임성 보장"]
+  },
+  "cons": {
+    "en": ["Requires governance design for milestone verification", "Verification burden can become bottleneck", "Disputes need explicit handling and timeout rules", "Smart contract / payment rails add operational complexity"],
+    "ko": ["마일스톤 검증을 위한 거버넌스 설계 필요", "검증 부담이 병목이 될 수 있음", "분쟁에 대한 명시적 처리 및 타임아웃 규칙 필요", "스마트 컨트랙트 / 결제 레일로 운영 복잡성 증가"]
+  },
+  "tags": ["resource-funding", "escrow", "milestones", "agent-governance", "budget-controls"]
+}

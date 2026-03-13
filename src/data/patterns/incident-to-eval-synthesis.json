@@ -1,0 +1,30 @@
+{
+  "id": "incident-to-eval-synthesis",
+  "title": "Incident-to-Eval Synthesis",
+  "title_ko": "인시던트-평가 합성",
+  "category": "Feedback Loops",
+  "status": "emerging",
+  "original_url": "https://sre.google/sre-book/postmortem-culture/",
+  "problem": {
+    "en": "Many teams run agent evaluations, but the eval suite drifts away from real failures seen in production. Incidents get resolved operationally, yet the exact failure mode is rarely converted into a durable regression test. This creates repeat incidents and false confidence from stale benchmark sets.",
+    "ko": "많은 팀이 에이전트 평가를 실행하지만, 평가 스위트는 프로덕션에서 발생하는 실제 실패와 점점 괴리됩니다. 인시던트는 운영적으로 해결되지만, 정확한 실패 모드가 지속적인 회귀 테스트로 변환되는 경우는 드뭅니다. 이로 인해 반복적인 인시던트와 오래된 벤치마크 세트에 의한 거짓 확신이 생깁니다."
+  },
+  "solution": {
+    "en": "Convert every production incident into one or more executable eval cases, then gate future changes on those cases. Pattern mechanics: capture incident artifacts (inputs, context, tool traces, outputs, impact), normalize sensitive data and derive a minimal reproducible scenario, encode expected behavior as objective pass/fail criteria, add the case to the evaluation corpus with severity and owner metadata, run incident-derived evals in CI and release gates.",
+    "ko": "모든 프로덕션 인시던트를 하나 이상의 실행 가능한 평가 케이스로 변환한 후, 해당 케이스를 기준으로 향후 변경을 게이팅합니다. 패턴 메커니즘: 인시던트 아티팩트(입력, 컨텍스트, 도구 트레이스, 출력, 영향) 캡처, 민감한 데이터 정규화 및 최소 재현 가능 시나리오 도출, 예상 동작을 객관적 통과/실패 기준으로 인코딩, 심각도 및 담당자 메타데이터와 함께 평가 코퍼스에 케이스 추가, CI 및 릴리스 게이트에서 인시던트 기반 평가 실행."
+  },
+  "when_to_use": {
+    "en": ["Teams with recurring production incidents", "Need to align evals with real risk", "Organizations wanting to compound operational learning"],
+    "ko": ["반복적인 프로덕션 인시던트가 있는 팀", "평가를 실제 위험과 정렬해야 할 때", "운영 학습을 누적하려는 조직"]
+  },
+  "pros": {
+    "en": ["Aligns evals with real risk", "Compounds operational learning over time"],
+    "ko": ["평가를 실제 위험과 정렬", "시간이 지남에 따라 운영 학습 누적"]
+  },
+  "cons": {
+    "en": ["Adds triage overhead", "Requires discipline in incident data capture"],
+    "ko": ["트리아지 오버헤드 추가", "인시던트 데이터 캡처에 규율 필요"]
+  },
+  "code_example": "incident = ingest_incident(ticket_id)\ncase = build_eval_case(\n  prompt=redact(incident.prompt),\n  tools=incident.tool_trace,\n  expected=define_acceptance_criteria(incident)\n)\n\nsuite.add(case, labels=[\"incident\", incident.severity])\nif not suite.run(candidate_policy).pass(case.id):\n    block_release(candidate_policy)",
+  "tags": ["evals", "incidents", "reliability", "feedback", "continuous-improvement"]
+}

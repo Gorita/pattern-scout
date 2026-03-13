@@ -1,0 +1,29 @@
+{
+  "id": "wfgy-reliability-problem-map",
+  "title": "Reliability Problem Map Checklist for RAG and Agents",
+  "title_ko": "RAG 및 에이전트를 위한 신뢰성 문제 지도 체크리스트",
+  "category": "Reliability & Eval",
+  "status": "proposed",
+  "original_url": "https://github.com/onestardao/WFGY/blob/main/ProblemMap/README.md",
+  "problem": {
+    "en": "RAG pipelines and agent systems often fail in ways that are hard to diagnose: missing context, unstable retrieval, brittle tool contracts, and flaky behavior after data updates. Teams frequently address these failures by iterating on prompts or tuning model settings first, which makes incidents feel random and expensive to fix.",
+    "ko": "RAG 파이프라인과 에이전트 시스템은 진단하기 어려운 방식으로 자주 실패합니다: 누락된 컨텍스트, 불안정한 검색, 취약한 도구 계약, 데이터 업데이트 후 불안정한 동작. 팀은 이러한 실패를 프롬프트 반복이나 모델 설정 튜닝으로 먼저 해결하려 하여 인시던트가 무작위적이고 수정 비용이 높게 느껴집니다."
+  },
+  "solution": {
+    "en": "Use a fixed reliability checklist (the Problem Map) as the first step in every incident response. The checklist groups recurring failure classes across four areas: retrieval behavior, vector/index behavior, prompt and tool contracts, deployment and operational state. For each failing case, the team classifies the incident by answering checklist items. Confirmed failures are mapped to repair actions and re-tested against the same reproduction case. This creates a consistent vocabulary for incidents and keeps responses structured.",
+    "ko": "모든 인시던트 대응의 첫 단계로 고정된 신뢰성 체크리스트(문제 지도)를 사용합니다. 체크리스트는 네 가지 영역에 걸쳐 반복되는 실패 클래스를 그룹화합니다: 검색 동작, 벡터/인덱스 동작, 프롬프트 및 도구 계약, 배포 및 운영 상태. 각 실패 케이스에 대해 팀은 체크리스트 항목에 답하여 인시던트를 분류합니다. 확인된 실패는 수리 조치에 매핑되고 동일한 재현 케이스에 대해 재테스트됩니다. 이를 통해 인시던트에 대한 일관된 용어를 만들고 대응을 구조화합니다."
+  },
+  "when_to_use": {
+    "en": ["RAG pipeline debugging and incident response", "Agent system reliability triage", "Teams needing shared language for common failures"],
+    "ko": ["RAG 파이프라인 디버깅 및 인시던트 대응", "에이전트 시스템 신뢰성 트리아지", "일반적인 실패에 대한 공유 언어가 필요한 팀"]
+  },
+  "pros": {
+    "en": ["Shared language for common agent/RAG failures", "Works across LLM providers and vector stores", "Encourages targeted fixes instead of blind prompt changes", "Produces repeatable incident history"],
+    "ko": ["일반적인 에이전트/RAG 실패에 대한 공유 언어", "LLM 제공업체와 벡터 스토어에 걸쳐 작동", "맹목적 프롬프트 변경 대신 표적 수정 장려", "반복 가능한 인시던트 이력 생성"]
+  },
+  "cons": {
+    "en": ["Requires discipline to run full triage sequence first", "Not a replacement for automated evaluations or metrics", "Repair actions still need maintenance per tech stack"],
+    "ko": ["전체 트리아지 시퀀스를 먼저 실행하는 규율 필요", "자동화된 평가나 메트릭을 대체하지 않음", "수리 조치는 기술 스택별로 여전히 유지보수 필요"]
+  },
+  "tags": ["reliability", "evaluation", "rag", "agents", "debugging", "failure-modes", "checklist"]
+}

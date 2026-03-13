@@ -3,7 +3,7 @@
   "title": "Self-Critique Evaluator Loop",
   "title_ko": "자기 비판 평가자 루프",
   "category": "Feedback Loops",
-  "status": "emerging",
+  "status": "established",
   "original_url": "https://arxiv.org/abs/2408.02666",
   "problem": {
     "en": "Human preference labels are costly and quickly become outdated as base models improve.",
