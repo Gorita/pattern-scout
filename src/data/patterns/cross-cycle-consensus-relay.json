@@ -1,0 +1,30 @@
+{
+  "id": "cross-cycle-consensus-relay",
+  "title": "Cross-Cycle Consensus Relay",
+  "title_ko": "크로스 사이클 합의 릴레이",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://github.com/NikitaDmitrieff/auto-co-meta",
+  "problem": {
+    "en": "Autonomous multi-agent loops that run across many cycles (minutes, hours, or days) need a way to reliably transfer context, decisions, and next actions between cycles. In-memory state is lost on crash or restart. Generic checkpoint files don't encode the structured reasoning — what was decided, why, and what comes next — that agents need to make good decisions in subsequent cycles. Without a structured relay mechanism, autonomous loops suffer from drift, repetition, and stalls.",
+    "ko": "여러 사이클(분, 시간, 일)에 걸쳐 실행되는 자율 멀티 에이전트 루프는 사이클 간에 컨텍스트, 결정, 다음 작업을 안정적으로 전달하는 방법이 필요합니다. 인메모리 상태는 충돌이나 재시작 시 손실됩니다. 일반적인 체크포인트 파일은 에이전트가 후속 사이클에서 좋은 결정을 내리는 데 필요한 구조화된 추론을 인코딩하지 않습니다. 구조화된 릴레이 메커니즘 없이 자율 루프는 드리프트, 반복, 정체 문제를 겪습니다."
+  },
+  "solution": {
+    "en": "Each agent cycle reads a consensus relay document at the start, executes its work, then writes an updated consensus document at the end. The document is a structured handoff that encodes current phase, completed actions, active decisions, open questions, and the single most important next action. The relay document is written to a temp file and atomically renamed to prevent partial-write corruption. Convergence detection triggers when the same next action appears for N consecutive cycles.",
+    "ko": "각 에이전트 사이클은 시작 시 합의 릴레이 문서를 읽고, 작업을 실행한 후, 끝에서 업데이트된 합의 문서를 작성합니다. 이 문서는 현재 단계, 완료된 작업, 활성 결정, 미해결 질문, 가장 중요한 다음 작업을 인코딩하는 구조화된 핸드오프입니다. 릴레이 문서는 임시 파일에 작성된 후 원자적으로 이름이 변경되어 부분 쓰기 손상을 방지합니다. 동일한 다음 작업이 N번 연속 사이클에 나타나면 수렴 감지가 트리거됩니다."
+  },
+  "when_to_use": {
+    "en": ["Long-running autonomous agent loops (multi-cycle, multi-day execution)", "Multi-agent systems where context must survive restarts", "Teams of agents needing shared understanding of decisions", "Systems wanting convergence toward shipping rather than endless discussion"],
+    "ko": ["장기 실행 자율 에이전트 루프(다중 사이클, 다일 실행)", "컨텍스트가 재시작을 견뎌야 하는 멀티 에이전트 시스템", "결정에 대한 공유 이해가 필요한 에이전트 팀", "끝없는 논의 대신 배포로의 수렴을 원하는 시스템"]
+  },
+  "pros": {
+    "en": ["Agents resume with full context after crash or restart", "Structured relay prevents context drift across cycles", "Open questions create forward pressure", "Human-readable and git-friendly"],
+    "ko": ["충돌이나 재시작 후 전체 컨텍스트로 재개", "구조화된 릴레이로 사이클 간 컨텍스트 드리프트 방지", "미해결 질문으로 전진 압력 생성", "사람이 읽을 수 있고 git 친화적"]
+  },
+  "cons": {
+    "en": ["Schema discipline required for relay document quality", "Relay grows over time; needs periodic summarization", "Single-file relay is bottleneck for high-frequency loops", "Context window limits constrain relay size", "Sensitive state must never be written to relay file"],
+    "ko": ["릴레이 문서 품질을 위한 스키마 규율 필요", "릴레이가 시간이 지남에 따라 증가; 주기적 요약 필요", "단일 파일 릴레이가 고빈도 루프의 병목", "컨텍스트 윈도우 한계가 릴레이 크기를 제약", "민감한 상태는 릴레이 파일에 기록 금지"]
+  },
+  "code_example": "# auto-loop.sh — the minimal autonomous loop\nwhile true; do\n  # Each cycle reads the relay baton, executes, writes a new one\n  claude -p \"$(cat PROMPT.md)\" \\\n    --context \"$(cat memories/consensus.md)\"\n  sleep $CYCLE_INTERVAL\ndone\n\n# Atomic write protocol\ncat > memories/.consensus.tmp << EOF\n$(generate_updated_consensus)\nEOF\nmv memories/.consensus.tmp memories/consensus.md",
+  "tags": ["multi-agent", "state-management", "persistence", "long-running-tasks", "orchestration", "autonomous-loops"]
+}

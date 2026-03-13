@@ -1,0 +1,30 @@
+{
+  "id": "multi-step-analysis-pipeline-orchestration",
+  "title": "Artifact-Driven Analysis Pipeline Orchestration",
+  "title_ko": "아티팩트 기반 분석 파이프라인 오케스트레이션",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://github.com/shmlkv/dna-claude-analysis",
+  "problem": {
+    "en": "Complex data analysis tasks often require running many sequential or parallel processing steps, each producing intermediate artifacts that feed into subsequent stages. Manually coordinating these steps — ensuring correct ordering, aggregating outputs, and producing a final unified result — is tedious and error-prone. Traditional scripting approaches hardcode the pipeline, making it inflexible when steps need to be added, reordered, or debugged.",
+    "ko": "복잡한 데이터 분석 작업은 많은 순차적 또는 병렬 처리 단계를 실행해야 하며, 각 단계는 후속 단계에 입력되는 중간 아티팩트를 생성합니다. 이러한 단계를 수동으로 조정하는 것 — 올바른 순서 보장, 출력 집계, 최종 통합 결과 생성 — 은 지루하고 오류가 발생하기 쉽습니다. 전통적인 스크립팅 접근법은 파이프라인을 하드코딩하여 단계를 추가, 재정렬 또는 디버깅할 때 유연하지 않습니다."
+  },
+  "solution": {
+    "en": "Use an LLM agent as the orchestration layer for an artifact-driven analysis pipeline. Each step emits a structured intermediate artifact that the agent can inspect semantically. The agent manages independent analysis scripts, coordinates execution order, aggregates intermediate outputs by reading all generated reports, and produces final visualization. Unlike general workflow automation, this pattern centers on semantic aggregation of structured intermediate reports.",
+    "ko": "LLM 에이전트를 아티팩트 기반 분석 파이프라인의 오케스트레이션 계층으로 사용합니다. 각 단계는 에이전트가 의미론적으로 검사할 수 있는 구조화된 중간 아티팩트를 생성합니다. 에이전트는 독립적인 분석 스크립트를 관리하고, 실행 순서를 조정하며, 생성된 모든 보고서를 읽어 중간 출력을 집계하고, 최종 시각화를 생성합니다. 일반적인 워크플로우 자동화와 달리 이 패턴은 구조화된 중간 보고서의 의미론적 집계에 중점을 둡니다."
+  },
+  "when_to_use": {
+    "en": ["Collection of analysis scripts processing same input from different angles", "Intermediate outputs are structured text (markdown, JSON, CSV)", "Final deliverable is a unified report or visualization"],
+    "ko": ["동일한 입력을 다른 관점에서 처리하는 분석 스크립트 컬렉션", "중간 출력이 구조화된 텍스트(마크다운, JSON, CSV)", "최종 산출물이 통합 보고서 또는 시각화"]
+  },
+  "pros": {
+    "en": ["Flexible orchestration — no code changes needed to add/remove steps", "Content-aware aggregation across steps", "Low setup cost — no dedicated workflow engines needed", "Interactive debugging — agent can inspect failures and re-run steps"],
+    "ko": ["유연한 오케스트레이션 — 단계 추가/제거에 코드 변경 불필요", "단계 간 콘텐츠 인식 집계", "낮은 설정 비용 — 전용 워크플로우 엔진 불필요", "대화형 디버깅 — 에이전트가 실패를 검사하고 단계 재실행 가능"]
+  },
+  "cons": {
+    "en": ["Cost scales with output volume — tokens proportional to total output size", "Reproducibility concerns — LLM outputs may vary between runs", "Not suited for massive scale — works best with tens of steps", "Requires structured intermediates that agent can parse"],
+    "ko": ["비용이 출력량에 비례 — 총 출력 크기에 비례하는 토큰", "재현성 우려 — LLM 출력이 실행 간 다를 수 있음", "대규모에 부적합 — 수십 단계에서 가장 적합", "에이전트가 파싱할 수 있는 구조화된 중간물 필요"]
+  },
+  "ascii_diagram": "┌─────────────┐     ┌──────────────┐     ┌──────────────┐\n│ Raw Data     │────▶│ N Analysis   │────▶│ N Markdown   │\n│ (input file) │     │ Scripts      │     │ Reports      │\n└─────────────┘     └──────────────┘     └──────┬───────┘\n                                                │\n                                         ┌──────▼───────┐\n                                         │ Agent merges  │\n                                         │ + visualizes  │\n                                         └──────┬───────┘\n                                                │\n                                         ┌──────▼───────┐\n                                         │ Single HTML   │\n                                         │ output        │\n                                         └──────────────┘",
+  "tags": ["pipeline", "multi-step", "orchestration", "report-generation", "data-analysis", "claude-code"]
+}

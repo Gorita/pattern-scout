@@ -1,0 +1,29 @@
+{
+  "id": "static-service-manifest-for-agents",
+  "title": "Static Service Manifest for Agents",
+  "title_ko": "에이전트를 위한 정적 서비스 매니페스트",
+  "category": "Tool Use & Environment",
+  "status": "emerging",
+  "original_url": "https://llmstxt.org",
+  "problem": {
+    "en": "Before an agent can use an API, it needs to know what the API offers. Today, agents learn about services through hardcoded tool lists, runtime exploration, or human-written documentation. None of these scale well when agents need to interact with unfamiliar platforms exposing many services. The agent either wastes context window on a full catalog it may not need, or has no way to learn about the platform without human intervention.",
+    "ko": "에이전트가 API를 사용하기 전에 API가 무엇을 제공하는지 알아야 합니다. 현재 에이전트는 하드코딩된 도구 목록, 런타임 탐색 또는 사람이 작성한 문서를 통해 서비스를 학습합니다. 이 중 어느 것도 에이전트가 많은 서비스를 노출하는 익숙하지 않은 플랫폼과 상호작용할 때 잘 확장되지 않습니다. 에이전트는 필요하지 않을 수 있는 전체 카탈로그에 컨텍스트 윈도우를 낭비하거나, 인간 개입 없이 플랫폼에 대해 학습할 방법이 없습니다."
+  },
+  "solution": {
+    "en": "Serve a static, machine-readable manifest at a well-known URL that describes the platform's capabilities, available services, authentication requirements, and usage constraints. Two complementary formats: 1) llms.txt — a plain-text/markdown file at /llms.txt providing human-and-machine-readable summary (analogous to robots.txt). 2) agent.json — a structured JSON manifest declaring service endpoints, auth schemes, rate limits, and capability metadata. The agent fetches once, parses cheaply, and decides which services to invoke without runtime overhead.",
+    "ko": "잘 알려진 URL에서 플랫폼의 기능, 사용 가능한 서비스, 인증 요구사항, 사용 제약을 설명하는 정적이고 기계 판독 가능한 매니페스트를 제공합니다. 두 가지 상호 보완 형식: 1) llms.txt — /llms.txt에서 사람과 기계가 모두 읽을 수 있는 요약을 제공하는 플레인 텍스트/마크다운 파일(robots.txt와 유사). 2) agent.json — 서비스 엔드포인트, 인증 체계, 속도 제한, 기능 메타데이터를 선언하는 구조화된 JSON 매니페스트. 에이전트는 한 번 가져와서 저렴하게 파싱하고, 런타임 오버헤드 없이 어떤 서비스를 호출할지 결정합니다."
+  },
+  "when_to_use": {
+    "en": ["API platforms exposing multiple services behind a single base URL", "Infrastructure providers where agents need capability discovery before planning", "Multi-tenant platforms with different service subsets per API key"],
+    "ko": ["단일 기본 URL 뒤에 여러 서비스를 노출하는 API 플랫폼", "에이전트가 계획 전에 기능 발견이 필요한 인프라 제공자", "API 키별로 다른 서비스 하위 집합을 가진 멀티 테넌트 플랫폼"]
+  },
+  "pros": {
+    "en": ["Zero runtime overhead for capability discovery", "Works across any transport — not tied to specific framework", "Agents can plan before acting, reducing wasted tool calls", "Analogous to well-understood web conventions (robots.txt, sitemap.xml)", "Easy to implement — just a static file"],
+    "ko": ["기능 발견을 위한 런타임 오버헤드 제로", "모든 전송에서 작동 — 특정 프레임워크에 종속되지 않음", "에이전트가 행동 전 계획 가능, 낭비되는 도구 호출 감소", "잘 알려진 웹 관례(robots.txt, sitemap.xml)와 유사", "구현이 쉬움 — 정적 파일만 필요"]
+  },
+  "cons": {
+    "en": ["No established universal standard yet", "Static manifests can drift from actual API state", "Only describes what is available, not how to use in detail", "May expose surface area to adversarial agents without proper auth"],
+    "ko": ["아직 확립된 보편적 표준 없음", "정적 매니페스트가 실제 API 상태와 불일치할 수 있음", "무엇이 사용 가능한지만 설명, 상세 사용법은 별도 필요", "적절한 인증 없이 적대적 에이전트에 표면적 노출 가능"]
+  },
+  "tags": ["service-discovery", "agent-infrastructure", "llms-txt", "machine-readable", "api-design", "well-known", "tool-discovery"]
+}
