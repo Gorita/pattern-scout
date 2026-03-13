@@ -1,0 +1,30 @@
+{
+  "id": "transitive-vouch-chain-trust",
+  "title": "Transitive Vouch-Chain Trust",
+  "title_ko": "전이적 보증 체인 신뢰",
+  "category": "Security & Safety",
+  "status": "emerging",
+  "original_url": "https://github.com/nickzsche/aip-identity",
+  "problem": {
+    "en": "When autonomous agents interact without a central authority, trust decisions are binary: either you trust an agent completely or not at all. There is no mechanism to derive partial, evidence-based trust from indirect relationships. Central registries create single points of failure, self-asserted identity provides no verification, and binary web-of-trust (PGP model) only answers key validity but not competence or intent.",
+    "ko": "자율 에이전트가 중앙 기관 없이 상호작용할 때 신뢰 결정은 이진적입니다: 에이전트를 완전히 신뢰하거나 전혀 신뢰하지 않습니다. 간접적 관계에서 부분적이고 증거 기반의 신뢰를 도출하는 메커니즘이 없습니다. 중앙 레지스트리는 단일 장애점을 생성하고, 자기 주장 신원은 검증을 제공하지 않으며, 이진 신뢰 웹(PGP 모델)은 키 유효성만 답하고 역량이나 의도는 답하지 않습니다."
+  },
+  "solution": {
+    "en": "Implement a directed, signed vouch graph where each edge is a cryptographically signed attestation from one agent about another. Trust propagates transitively along chains, with configurable decay at each hop. Core components: 1) Agent identity via keypair (Ed25519). 2) Vouch — a signed statement asserting trust, optionally scoped. 3) Chain verification — trace trust chains and assign derived scores with decay. 4) Revocation — signed revocation statements to sever trust edges. The key difference from PGP: vouch chains carry semantic weight, support scoped trust categories, and are designed for automated agent verification.",
+    "ko": "각 엣지가 한 에이전트에서 다른 에이전트에 대한 암호학적 서명 증명인 방향 있는 서명된 보증 그래프를 구현합니다. 신뢰는 체인을 따라 전이적으로 전파되며 각 홉에서 구성 가능한 감쇠가 적용됩니다. 핵심 구성요소: 1) 키쌍(Ed25519)을 통한 에이전트 신원. 2) 보증 — 신뢰를 주장하는 서명된 성명, 선택적으로 범위 지정. 3) 체인 검증 — 신뢰 체인을 추적하고 감쇠와 함께 파생 점수 할당. 4) 철회 — 신뢰 엣지를 끊기 위한 서명된 철회 성명. PGP와의 핵심 차이: 보증 체인이 의미적 가중치를 가지고, 범위 지정 신뢰 카테고리를 지원하며, 자동화된 에이전트 검증을 위해 설계되었습니다."
+  },
+  "when_to_use": {
+    "en": ["Multi-agent systems where agents from different organizations collaborate", "Marketplaces where agents offer services to other agents", "Systems where agents must make trust decisions about unknown agents"],
+    "ko": ["다른 조직의 에이전트가 협업하는 멀티 에이전트 시스템", "에이전트가 다른 에이전트에게 서비스를 제공하는 마켓플레이스", "에이전트가 알 수 없는 에이전트에 대한 신뢰 결정을 해야 하는 시스템"]
+  },
+  "pros": {
+    "en": ["No central authority required — trust emerges from network", "Auditable — every trust decision traceable through chain", "Graceful degradation — losing one node only affects dependent chains", "Composable with other trust signals (reputation, behavioral history)"],
+    "ko": ["중앙 기관 불필요 — 네트워크에서 신뢰가 출현", "감사 가능 — 모든 신뢰 결정이 체인을 통해 추적 가능", "우아한 성능 저하 — 하나의 노드 손실이 의존 체인에만 영향", "다른 신뢰 신호와 조합 가능(평판, 행동 이력)"]
+  },
+  "cons": {
+    "en": ["Cold-start problem — new agents have zero derived trust", "Sybil vulnerability — attacker can create many identities", "Graph traversal cost grows with network size", "Trust decay parameters are subjective and application-dependent"],
+    "ko": ["콜드 스타트 문제 — 새 에이전트는 파생 신뢰가 제로", "시빌 취약성 — 공격자가 많은 신원을 생성할 수 있음", "그래프 순회 비용이 네트워크 크기에 따라 증가", "신뢰 감쇠 매개변수가 주관적이고 애플리케이션에 의존"]
+  },
+  "mermaid_diagram": "graph LR\n    C[Verifier C] -->|trusts| A[Agent A]\n    A -->|vouches for| B[Agent B]\n    A -->|vouches for| D[Agent D]\n    D -->|vouches for| E[Agent E]\n    C -.->|derived trust: high| B\n    C -.->|derived trust: low| E",
+  "tags": ["trust", "identity", "vouch", "trust-chain", "agent-identity", "decentralized-trust", "ed25519", "reputation"]
+}
