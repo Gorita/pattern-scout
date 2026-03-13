@@ -184,6 +184,28 @@ jobs:
             const commitCount = '${{ steps.check.outputs.commit_count }}' || '?';
             const upstreamCommit = '${{ steps.check.outputs.upstream_commit }}';
 
+            // 중복 이슈 방지: 동일한 upstream 커밋을 추적하는 열린 이슈가 있는지 확인
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'upstream,sync',
+              state: 'open',
+              sort: 'created',
+              direction: 'desc',
+              per_page: 1
+            });
+
+            if (existingIssues.data.length > 0) {
+              const lastIssue = existingIssues.data[0];
+              const commitMatch = lastIssue.body.match(/최신 커밋.*`([a-f0-9]{7,})`/);
+              const lastDetectedCommit = commitMatch?.[1];
+
+              if (lastDetectedCommit && upstreamCommit.startsWith(lastDetectedCommit)) {
+                console.log(`Skipped: upstream commit unchanged, already tracked by issue #${lastIssue.number}`);
+                return;
+              }
+            }
+
             let title = '🔄 Upstream 업데이트: ';
             const parts = [];
             if (hasNew) parts.push(`새 패턴 ${newCount}개`);
