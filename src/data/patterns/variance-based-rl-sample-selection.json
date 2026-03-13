@@ -3,7 +3,7 @@
   "title": "Variance-Based RL Sample Selection",
   "title_ko": "분산 기반 RL 샘플 선택",
   "category": "Learning & Adaptation",
-  "status": "emerging",
+  "status": "validated-in-production",
   "original_url": "https://youtu.be/1s_7RMG4O4U",
   "problem": {
     "en": "Not all training samples are equally valuable for RL. Zero-variance samples (always correct or always wrong) provide no learning signal, wasting expensive compute.",

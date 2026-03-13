@@ -3,7 +3,7 @@
   "title": "Plan-Then-Execute Pattern",
   "title_ko": "계획 후 실행 패턴",
   "category": "Orchestration & Control",
-  "status": "emerging",
+  "status": "established",
   "original_url": "https://arxiv.org/abs/2506.08837",
   "problem": {
     "en": "Agents that plan and execute simultaneously are vulnerable to prompt injection mid-execution.",

@@ -3,7 +3,7 @@
   "title": "Factory over Assistant",
   "title_ko": "어시스턴트보다 팩토리 모델",
   "category": "Orchestration & Control",
-  "status": "emerging",
+  "status": "validated-in-production",
   "original_url": "https://www.youtube.com/watch?v=2wjnV6F2arc",
   "problem": {
     "en": "The 'assistant' model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability. The human becomes the bottleneck as the feedback loop. You can only run one agent at a time when watching it in a sidebar.",

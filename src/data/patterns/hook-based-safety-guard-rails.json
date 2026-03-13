@@ -1,0 +1,30 @@
+{
+  "id": "hook-based-safety-guard-rails",
+  "title": "Hook-Based Safety Guard Rails for Autonomous Code Agents",
+  "title_ko": "자율 코드 에이전트를 위한 훅 기반 안전 가드레일",
+  "category": "Security & Safety",
+  "status": "validated-in-production",
+  "original_url": "https://docs.anthropic.com/en/docs/claude-code/hooks",
+  "problem": {
+    "en": "Autonomous code agents running unattended can execute destructive commands (rm -rf, git reset --hard), exhaust their context window without saving state, leak secrets via git push, or silently produce syntax errors that cascade into later failures. The agent itself can't reliably self-police because it operates within the same context that produces the mistakes.",
+    "ko": "무인으로 실행되는 자율 코드 에이전트는 파괴적 명령(rm -rf, git reset --hard)을 실행하거나, 상태 저장 없이 컨텍스트 윈도우를 소진하거나, git push를 통해 비밀을 유출하거나, 이후 실패로 이어지는 구문 오류를 조용히 생성할 수 있습니다. 에이전트 자체는 실수를 만드는 동일한 컨텍스트 내에서 작동하기 때문에 자체 감시를 신뢰할 수 없습니다."
+  },
+  "solution": {
+    "en": "Use the agent framework's hook system (PreToolUse / PostToolUse events) to inject safety checks that run outside the agent's reasoning loop. Four guard rails: 1) Dangerous command blocker (PreToolUse: Bash) - pattern-matches commands for rm -rf, git reset --hard, DROP TABLE, etc. and blocks before execution. 2) Syntax checker (PostToolUse: Edit/Write) - runs appropriate linter after every file edit. 3) Context window monitor (PostToolUse: all) - counts tool calls as proxy for context consumption, issues graduated warnings. 4) Autonomous decision enforcer (PreToolUse: AskUserQuestion) - blocks the agent from asking questions during unattended sessions.",
+    "ko": "에이전트 프레임워크의 훅 시스템(PreToolUse / PostToolUse 이벤트)을 사용하여 에이전트의 추론 루프 외부에서 실행되는 안전 검사를 주입합니다. 네 가지 가드레일: 1) 위험 명령 차단기(PreToolUse: Bash) - rm -rf, git reset --hard, DROP TABLE 등의 명령을 패턴 매칭하여 실행 전 차단. 2) 구문 검사기(PostToolUse: Edit/Write) - 모든 파일 편집 후 적절한 린터 실행. 3) 컨텍스트 윈도우 모니터(PostToolUse: all) - 도구 호출을 컨텍스트 소비의 프록시로 카운팅하여 단계적 경고 발행. 4) 자율 결정 강제기(PreToolUse: AskUserQuestion) - 무인 세션 중 에이전트의 질문을 차단."
+  },
+  "when_to_use": {
+    "en": ["Autonomous code agents running unattended", "Environments with destructive command risk", "Long-running agent sessions with context exhaustion risk"],
+    "ko": ["무인으로 실행되는 자율 코드 에이전트", "파괴적 명령 위험이 있는 환경", "컨텍스트 소진 위험이 있는 장시간 에이전트 세션"]
+  },
+  "pros": {
+    "en": ["Runs outside agent's context - immune to prompt injection", "Language-agnostic shell scripts", "Independently deployable hooks", "Zero performance overhead for the agent"],
+    "ko": ["에이전트 컨텍스트 외부에서 실행 - 프롬프트 인젝션에 면역", "언어에 구애받지 않는 셸 스크립트", "독립적으로 배포 가능한 훅", "에이전트에 대한 성능 오버헤드 제로"]
+  },
+  "cons": {
+    "en": ["Pattern matching is inherently incomplete", "Context monitoring via tool-call counting is a proxy", "Can't prevent reasoning about dangerous actions, only executing them", "Requires framework to support PreToolUse/PostToolUse events"],
+    "ko": ["패턴 매칭은 본질적으로 불완전함", "도구 호출 카운팅을 통한 컨텍스트 모니터링은 프록시", "위험한 행동에 대한 추론은 방지 불가, 실행만 방지", "프레임워크가 PreToolUse/PostToolUse 이벤트를 지원해야 함"]
+  },
+  "code_example": "#!/bin/bash\n# Example: dangerous command blocker (simplified)\nINPUT=\"$(cat)\"\nCMD=\"$(echo \"$INPUT\" | jq -r '.tool_input.command // empty')\"\n\nif echo \"$CMD\" | grep -qE 'rm\\s+-rf|git\\s+reset\\s+--hard|git\\s+clean\\s+-fd'; then\n  echo \"BLOCKED: Destructive command detected: $(echo \"$CMD\" | head -c 100)\"\n  exit 2  # non-zero = block the tool call\nfi\nexit 0  # 0 = allow",
+  "tags": ["hooks", "guard-rails", "safety", "autonomous-operation", "destructive-command-blocking", "context-monitoring", "pre-tool-use", "post-tool-use"]
+}

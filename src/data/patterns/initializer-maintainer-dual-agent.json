@@ -3,7 +3,7 @@
   "title": "Initializer-Maintainer Dual Agent Architecture",
   "title_ko": "초기화-유지관리 이중 에이전트 아키텍처",
   "category": "Orchestration & Control",
-  "status": "emerging",
+  "status": "validated-in-production",
   "original_url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
   "problem": {
     "en": "Long-running agent projects face distinct failure modes at different lifecycle stages. Single-agent approaches either over-engineer each session or under-invest in foundations.",

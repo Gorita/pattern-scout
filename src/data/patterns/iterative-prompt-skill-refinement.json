@@ -3,7 +3,7 @@
   "title": "Iterative Prompt & Skill Refinement",
   "title_ko": "반복적 프롬프트 및 스킬 개선",
   "category": "Feedback Loops",
-  "status": "proposed",
+  "status": "established",
   "original_url": "https://lethain.com/agents-iterative-refinement/",
   "problem": {
     "en": "Agent usage reveals gaps in prompts, skills, and tools, but there's no systematic way to improve them.",

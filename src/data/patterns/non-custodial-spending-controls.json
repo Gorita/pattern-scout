@@ -1,0 +1,29 @@
+{
+  "id": "non-custodial-spending-controls",
+  "title": "Non-Custodial Spending Controls",
+  "title_ko": "비수탁형 지출 통제",
+  "category": "Security & Safety",
+  "status": "emerging",
+  "original_url": "https://policylayer.com",
+  "problem": {
+    "en": "AI agents that can initiate wallet actions may issue unsafe transactions under prompt drift, buggy loops, or compromised prompts. If spending approvals are handled directly inside agent prompts or application logic, safety constraints are easy to bypass. This is a specific instance of the lethal trifecta threat model: combining wallet access with untrusted inputs and external communication creates exploitation paths.",
+    "ko": "지갑 작업을 시작할 수 있는 AI 에이전트는 프롬프트 드리프트, 버그 루프 또는 손상된 프롬프트에서 안전하지 않은 트랜잭션을 발행할 수 있습니다. 지출 승인이 에이전트 프롬프트나 애플리케이션 로직 내부에서 직접 처리되면 안전 제약을 쉽게 우회할 수 있습니다. 이는 치명적 삼중 위협 모델의 구체적 사례입니다: 지갑 접근, 신뢰할 수 없는 입력, 외부 통신의 결합이 공격 경로를 만듭니다."
+  },
+  "solution": {
+    "en": "Insert an explicit policy enforcement layer between the agent and transaction signing. The agent submits transaction intent, the policy layer validates it against rules, and only approved intents are forwarded to a signer. Core mechanics: intent-first workflow (agent never signs directly), non-custodial boundary (policy service never stores keys), fail-closed behavior (deny when unavailable), two-gate control (policy evaluation + authorization check), tool-layer integration (transparent to agent).",
+    "ko": "에이전트와 트랜잭션 서명 사이에 명시적 정책 시행 계층을 삽입합니다. 에이전트가 트랜잭션 의도를 제출하면 정책 계층이 규칙에 따라 검증하고, 승인된 의도만 서명자에게 전달됩니다. 핵심 메커니즘: 의도 우선 워크플로우(에이전트가 직접 서명하지 않음), 비수탁 경계(정책 서비스가 키를 저장하지 않음), 실패 시 차단 동작(불가용 시 거부), 이중 게이트 제어(정책 평가 + 인가 확인), 도구 계층 통합(에이전트에 투명)."
+  },
+  "when_to_use": {
+    "en": ["AI agents with wallet/transaction capabilities", "Environments with untrusted inputs and wallet access", "Need for auditable transaction governance"],
+    "ko": ["지갑/트랜잭션 기능이 있는 AI 에이전트", "신뢰할 수 없는 입력과 지갑 접근이 있는 환경", "감사 가능한 트랜잭션 거버넌스 필요"]
+  },
+  "pros": {
+    "en": ["Prevents direct misuse of signing credentials", "Supports policy changes without touching prompt logic", "Clear audit trail for governance and incident review"],
+    "ko": ["서명 자격 증명의 직접적 오용 방지", "프롬프트 로직 수정 없이 정책 변경 지원", "거버넌스 및 인시던트 검토를 위한 명확한 감사 추적"]
+  },
+  "cons": {
+    "en": ["Adds latency for each transaction", "Requires high availability of policy service", "Misconfigured policies can block legitimate work", "More operational complexity than embedded prompt checks"],
+    "ko": ["각 트랜잭션에 지연시간 추가", "정책 서비스의 고가용성 필요", "잘못된 정책 구성이 정당한 작업을 차단할 수 있음", "내장 프롬프트 검사보다 높은 운영 복잡성"]
+  },
+  "tags": ["wallet-controls", "spend-limits", "policy-enforcement", "non-custodial", "AI-agents", "safety"]
+}

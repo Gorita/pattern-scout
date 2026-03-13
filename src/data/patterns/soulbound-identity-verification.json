@@ -1,0 +1,30 @@
+{
+  "id": "soulbound-identity-verification",
+  "title": "Soulbound Identity Verification",
+  "title_ko": "소울바운드 신원 검증",
+  "category": "Security & Safety",
+  "status": "emerging",
+  "original_url": "https://eips.ethereum.org/EIPS/eip-5192",
+  "problem": {
+    "en": "As autonomous agents interact across networks, verifying identity and detecting prompt/operator drift becomes difficult. Without durable identity and an immutable change history, agents can impersonate others or silently diverge from authorized configurations.",
+    "ko": "자율 에이전트가 네트워크를 통해 상호작용할 때 신원 검증과 프롬프트/운영자 드리프트 감지가 어려워집니다. 내구성 있는 신원과 불변의 변경 이력이 없으면 에이전트가 다른 에이전트를 사칭하거나 인가된 구성에서 조용히 이탈할 수 있습니다."
+  },
+  "solution": {
+    "en": "Bind agent identity and mutable metadata to a non-transferable credential and record identity-bearing state transitions in a tamper-resistant log. Pattern flow: 1) Compute a stable hash of the normalized system prompt/state and commit it at registration. 2) Issue a non-transferable identity credential (SBT-style token). 3) Record meaningful changes (prompt updates, operator changes, policy updates) as signed events. 4) Require verifiers to check both credential validity and state continuity before trusting outputs.",
+    "ko": "에이전트 신원과 가변 메타데이터를 양도 불가능한 자격 증명에 바인딩하고 신원을 포함하는 상태 전환을 변조 방지 로그에 기록합니다. 패턴 흐름: 1) 정규화된 시스템 프롬프트/상태의 안정적 해시를 계산하고 등록 시 커밋합니다. 2) 양도 불가능한 신원 자격 증명(SBT 스타일 토큰)을 발행합니다. 3) 의미 있는 변경(프롬프트 업데이트, 운영자 변경, 정책 업데이트)을 서명된 이벤트로 기록합니다. 4) 검증자가 출력을 신뢰하기 전에 자격 증명 유효성과 상태 연속성을 모두 확인하도록 요구합니다."
+  },
+  "when_to_use": {
+    "en": ["Before delegating work to another agent", "Agent marketplaces or multi-org delegations", "Compliance workflows requiring auditable agent-state continuity"],
+    "ko": ["다른 에이전트에 작업을 위임하기 전", "에이전트 마켓플레이스 또는 다중 조직 위임", "감사 가능한 에이전트 상태 연속성이 필요한 컴플라이언스 워크플로우"]
+  },
+  "pros": {
+    "en": ["Non-transferability prevents credential delegation and theft", "Tamper-resistant logging provides auditable state history", "Enables verification without identity disclosure"],
+    "ko": ["양도 불가능성으로 자격 증명 위임 및 도난 방지", "변조 방지 로깅으로 감사 가능한 상태 이력 제공", "신원 공개 없이 검증 가능"]
+  },
+  "cons": {
+    "en": ["Requires external registry and append-only log infrastructure", "Hash commitments verify state integrity but not semantic correctness", "Operational overhead for issuing/rotating credentials"],
+    "ko": ["외부 레지스트리 및 추가 전용 로그 인프라 필요", "해시 커밋은 상태 무결성은 검증하지만 의미적 정확성은 검증하지 않음", "자격 증명 발행/교체를 위한 운영 오버헤드"]
+  },
+  "mermaid_diagram": "graph TD\n    A[Agent State] --> B[Normalize + Hash]\n    B --> C[Non-transferable Identity Credential]\n    C --> D[Verifier Checks Credential]\n    E[Agent B] --> F[Verify Hash + Chronicle]\n    F --> G[Trust Decision]",
+  "tags": ["identity", "verification", "trust", "soulbound-token", "blockchain", "agent-identity"]
+}

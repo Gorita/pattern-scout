@@ -3,7 +3,7 @@
   "title": "Spec-As-Test Feedback Loop",
   "title_ko": "스펙을 테스트로 사용하는 피드백 루프",
   "category": "Feedback Loops",
-  "status": "proposed",
+  "status": "emerging",
   "original_url": "http://jorypestorious.com/blog/ai-engineer-spec/",
   "problem": {
     "en": "Even in spec-first projects, implementations can drift as code evolves. Silent divergence erodes trust.",

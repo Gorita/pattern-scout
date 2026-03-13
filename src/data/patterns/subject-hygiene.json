@@ -3,7 +3,7 @@
   "title": "Subject Hygiene for Task Delegation",
   "title_ko": "작업 위임을 위한 제목 위생 관리",
   "category": "Orchestration & Control",
-  "status": "emerging",
+  "status": "validated-in-production",
   "original_url": "https://github.com/nibzard/SKILLS-AGENTIC-LESSONS",
   "problem": {
     "en": "When delegating work to subagents via the Task tool, empty or generic task subjects make conversations untraceable, unreferencable, and confusing. Multiple subagents with empty subjects are indistinguishable. From 48 Task invocations across 88 sessions, empty task subjects were identified as a major pain point.",

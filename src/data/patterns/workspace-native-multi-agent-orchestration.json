@@ -1,0 +1,30 @@
+{
+  "id": "workspace-native-multi-agent-orchestration",
+  "title": "Workspace-Native Multi-Agent Orchestration",
+  "title_ko": "워크스페이스 네이티브 멀티 에이전트 오케스트레이션",
+  "category": "Orchestration & Control",
+  "status": "emerging",
+  "original_url": "https://taskade.com/agents",
+  "problem": {
+    "en": "Many teams struggle to run agentic workflows because their agent tooling is separate from their day-to-day collaboration environment. The result is fragmented context, brittle integrations, and high setup overhead. Agents are difficult to create and version for non-engineering users, context and memory are spread across ad hoc systems, multi-agent workflows require custom glue, and integrating with operational tools is expensive.",
+    "ko": "많은 팀이 에이전트 도구가 일상적인 협업 환경과 분리되어 있어 에이전트 워크플로우 실행에 어려움을 겪습니다. 그 결과 컨텍스트가 파편화되고, 통합이 취약하며, 설정 오버헤드가 높습니다. 비엔지니어 사용자에게 에이전트 생성과 버전 관리가 어렵고, 컨텍스트와 메모리가 임시 시스템에 분산되어 있으며, 멀티 에이전트 워크플로우에 커스텀 글루가 필요하고, 운영 도구와의 통합 비용이 높습니다."
+  },
+  "solution": {
+    "en": "Make agents native participants in the workspace platform itself, so they share the same context, memory, and lifecycle as human collaborators. Built on blackboard architecture and tuple spaces. Core components: 1) Agent definitions as shared, versioned artifacts. 2) Shared workspace memory (episodic, semantic, procedural). 3) Workflow orchestration via event-driven triggers (direct, conditional, composite, temporal). 4) Standardized integration surface (MCP-compatible). 5) Cross-platform accessibility.",
+    "ko": "에이전트를 워크스페이스 플랫폼의 네이티브 참여자로 만들어 인간 협업자와 동일한 컨텍스트, 메모리, 라이프사이클을 공유합니다. 블랙보드 아키텍처와 튜플 스페이스를 기반으로 합니다. 핵심 구성요소: 1) 공유되고 버전 관리되는 아티팩트로서의 에이전트 정의. 2) 공유 워크스페이스 메모리(에피소딕, 시맨틱, 절차적). 3) 이벤트 기반 트리거를 통한 워크플로우 오케스트레이션(직접, 조건부, 복합, 시간적). 4) 표준화된 통합 표면(MCP 호환). 5) 크로스 플랫폼 접근성."
+  },
+  "when_to_use": {
+    "en": ["Teams without heavy automation infrastructure", "Multi-agent workflows needing shared persistent memory", "Need for standardized integration surface across platforms"],
+    "ko": ["무거운 자동화 인프라가 없는 팀", "공유 영속 메모리가 필요한 멀티 에이전트 워크플로우", "플랫폼 간 표준화된 통합 표면 필요"]
+  },
+  "pros": {
+    "en": ["Lowers onboarding friction", "Preserves context across sessions via shared memory", "Improves handoff quality between agents and humans", "Reduces integration effort through standardized action surfaces"],
+    "ko": ["온보딩 마찰 감소", "공유 메모리를 통한 세션 간 컨텍스트 보존", "에이전트와 인간 간 핸드오프 품질 향상", "표준화된 액션 표면을 통한 통합 노력 감소"]
+  },
+  "cons": {
+    "en": ["Strong coupling to chosen workspace platform", "Advanced behaviors may still require custom agent code", "Workflow chains can become difficult to debug", "Operational dependency on platform settings"],
+    "ko": ["선택한 워크스페이스 플랫폼에 강한 결합", "고급 동작에 여전히 커스텀 에이전트 코드 필요 가능", "워크플로우 체인 디버깅이 어려워질 수 있음", "플랫폼 설정에 대한 운영 의존성"]
+  },
+  "mermaid_diagram": "graph TD\n  A[User task/trigger] --> B[Workspace state + memory]\n  B --> C[Agent workflow coordinator]\n  C --> D1[Agent A: Research]\n  C --> D2[Agent B: Synthesis]\n  C --> D3[Agent C: Delivery]\n  D1 --> B\n  D2 --> B\n  D3 --> E[Tool integrations / external actions]",
+  "tags": ["multi-agent", "orchestration", "workflow-automation", "workspace", "mcp", "knowledge-base", "persistent-memory", "integrations", "collaboration"]
+}
