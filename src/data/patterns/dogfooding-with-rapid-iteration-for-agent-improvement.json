@@ -6,27 +6,27 @@
   "status": "best-practice",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "Developing effective AI agents requires understanding real-world usage and quickly identifying improvements. External feedback loops are slow, and simulated environments may not capture all nuances of actual use.",
-    "ko": "효과적인 AI 에이전트를 개발하려면 실제 사용을 이해하고 개선 사항을 빠르게 식별해야 합니다. 외부 피드백 루프는 느리고, 시뮬레이션 환경은 실제 사용의 모든 뉘앙스를 포착하지 못할 수 있습니다."
+    "en": "Developing effective AI agents requires understanding real-world usage and quickly identifying areas for improvement. External feedback loops can be slow, and simulated environments may not capture all nuances.",
+    "ko": "효과적인 AI 에이전트를 개발하려면 실제 사용을 이해하고 개선이 필요한 영역을 빠르게 식별해야 합니다. 외부 피드백 루프는 느릴 수 있고, 시뮬레이션 환경은 모든 뉘앙스를 포착하지 못할 수 있습니다."
   },
   "solution": {
-    "en": "Development team extensively uses their own agent product (dogfooding) for daily tasks. Provides direct feedback, real-world testing, internal experimentation, rapid iteration, and honest assessment of feature utility.",
-    "ko": "개발팀이 일상 작업에 자체 에이전트 제품을 광범위하게 사용합니다(도그푸딩). 직접적인 피드백, 실제 테스트, 내부 실험, 빠른 반복, 기능 유용성에 대한 솔직한 평가를 제공합니다."
+    "en": "The development team extensively uses their own AI agent product (\"dogfooding\") for their daily software development tasks. This provides:\n\n1. **Direct, Immediate Feedback:** Developers encounter the agent's strengths and weaknesses firsthand.\n2. **Real-World Problem Solving:** The agent is tested on actual, complex development problems faced by the team.\n3. **Internal Experimentation:** The team can quickly try out new agent features or modifications on themselves.\n4. **Rapid Iteration:** Shortcomings identified through dogfooding can be rapidly addressed and new features prototyped and validated internally before wider release.\n5. **Honest Assessment:** The team can be brutally honest about a feature's utility if they themselves don't find it useful, leading to quick pivots or discarding ineffective ideas.\n\nThis creates a tight, high-velocity feedback loop where the agent is continuously improved based on the practical needs and experiences of its own creators.",
+    "ko": "개발팀이 일상적인 소프트웨어 개발 작업에 자체 AI 에이전트 제품을 광범위하게 사용합니다(\"도그푸딩\"). 이를 통해 다음을 제공합니다:\n\n1. **직접적이고 즉각적인 피드백:** 개발자가 에이전트의 강점과 약점을 직접 경험합니다.\n2. **실제 문제 해결:** 팀이 직면하는 실제 복잡한 개발 문제에서 에이전트를 테스트합니다.\n3. **내부 실험:** 팀이 새로운 에이전트 기능이나 수정 사항을 자체적으로 빠르게 시험합니다.\n4. **빠른 반복:** 도그푸딩을 통해 식별된 단점을 신속하게 해결하고, 새 기능을 내부에서 프로토타입 및 검증한 후 출시합니다.\n5. **솔직한 평가:** 팀이 기능의 유용성에 대해 철저히 솔직할 수 있어 비효과적인 아이디어를 빠르게 전환하거나 폐기합니다.\n\n이를 통해 에이전트가 창작자의 실질적인 필요와 경험에 기반하여 지속적으로 개선되는 긴밀하고 빠른 피드백 루프가 만들어집니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   Agent Development Team        │\n│   Uses Agent for Daily Work     │\n└───────────────┬─────────────────┘\n                │\n    ┌───────────┼───────────┐\n    │           │           │\n┌───▼───┐ ┌─────▼─────┐ ┌───▼───────┐\n│Direct │ │Real-World │ │ Honest    │\n│Feedback│ │Testing    │ │Assessment │\n└───┬───┘ └─────┬─────┘ └───┬───────┘\n    │           │           │\n    └───────────┼───────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Rapid Iteration Loop          │\n│   • Identify pain points        │\n│   • Prototype solutions         │\n│   • Validate internally         │\n│   • Ship or discard quickly     │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Improved Agent Product        │\n└─────────────────────────────────┘\n\n   Anthropic: 70-80% daily usage\n   Feedback post every 5 minutes",
   "mermaid_diagram": "flowchart TD\n    A[Dev Team Uses Agent Daily] --> B[Encounter Strengths/Weaknesses]\n    B --> C[Report via Feedback Channel]\n    C --> D[Identify Patterns]\n    D --> E{Useful Feature?}\n    E -->|Yes| F[Ship to External Users]\n    E -->|No| G[Discard Quickly]\n    F --> A\n    G --> A",
   "code_example": "# Dogfooding workflow at Anthropic/Cursor\n\n# 1. Internal adoption\n# 70-80% of technical employees use the agent daily\n\n# 2. Feedback channel\n# Posts every 5 minutes with:\n# - Pain points encountered\n# - Feature suggestions\n# - Bug reports\n# - Success stories\n\n# 3. Rapid iteration\nclass DogfoodingLoop:\n    def process_feedback(self, feedback):\n        # Quick signal on whether people like it\n        if feedback.is_bug:\n            self.prioritize_fix(feedback)\n        elif feedback.is_pain_point:\n            self.prototype_solution(feedback)\n        elif feedback.is_feature_request:\n            self.evaluate_for_internal_testing(feedback)\n    \n    def ship_feature(self, feature):\n        # Push to internal users first\n        self.deploy_internal(feature)\n        \n        # Get rapid validation\n        if self.internal_feedback_positive(feature):\n            self.deploy_external(feature)\n        else:\n            self.iterate_or_discard(feature)\n\n# Example: To-do lists, sub-agents, hooks all originated\n# from internal team members solving their own problems",
   "when_to_use": {
-    "en": ["Agent product development", "Creating tight feedback loops", "Validating features before release", "Building features developers actually want"],
-    "ko": ["에이전트 제품 개발", "긴밀한 피드백 루프 생성", "출시 전 기능 검증", "개발자가 실제로 원하는 기능 구축"]
+    "en": ["Encourage all members of the agent development team to use the agent as their primary tool for relevant tasks.", "Establish low-friction feedback channels (e.g., dedicated Slack/Discord) for reporting issues and suggestions.", "Store prompts and agent instructions in editable documents that anyone can update.", "Push experimental features to internal users first for rapid validation; be willing to discard what doesn't work.", "Prioritize fixing pain points experienced by the internal team."],
+    "ko": ["에이전트 개발팀 전원이 관련 작업의 주요 도구로 에이전트를 사용하도록 장려", "이슈와 제안 보고를 위한 저마찰 피드백 채널(예: 전용 Slack/Discord) 구축", "누구나 수정 가능한 문서에 프롬프트와 에이전트 지침 저장", "빠른 검증을 위해 실험적 기능을 내부 사용자에게 먼저 배포하고, 효과가 없으면 폐기", "내부 팀이 경험한 문제점 수정 우선순위화"]
   },
   "pros": {
-    "en": ["Direct, immediate feedback", "Real-world problem testing", "Brutally honest assessment", "Rapid iteration speed", "Features validated before release"],
-    "ko": ["직접적이고 즉각적인 피드백", "실제 문제 테스트", "철저히 솔직한 평가", "빠른 반복 속도", "출시 전 기능 검증"]
+    "en": ["Real-world problem solving", "Rapid feature validation", "Quick pivots from ineffective approaches", "Reduced risk of shipping unwanted features"],
+    "ko": ["실제 문제 해결", "빠른 기능 검증", "비효과적인 접근 방식에서 신속한 전환", "원하지 않는 기능 출시 위험 감소"]
   },
   "cons": {
-    "en": ["Team may not represent all users", "Can create echo chamber", "Requires discipline to use own product", "Pain points may differ from external users"],
-    "ko": ["팀이 모든 사용자를 대표하지 않을 수 있음", "에코 챔버 생성 가능", "자체 제품 사용 규율 필요", "고통점이 외부 사용자와 다를 수 있음"]
+    "en": ["Requires high internal adoption to be effective", "Internal users may not represent all customer segments"],
+    "ko": ["효과를 위해 높은 내부 채택률 필요", "내부 사용자가 모든 고객 세그먼트를 대표하지 않을 수 있음"]
   },
   "tags": ["dogfooding", "iterative-development", "feedback-loop", "agent-improvement", "internal-testing", "product-development"]
 }

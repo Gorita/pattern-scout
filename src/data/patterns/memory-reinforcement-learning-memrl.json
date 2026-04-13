@@ -6,12 +6,12 @@
   "status": "proposed",
   "original_url": "https://arxiv.org/html/2601.03192v1",
   "problem": {
-    "en": "LLMs struggle with runtime self-evolution. Fine-tuning causes catastrophic forgetting, and RAG relies on semantic similarity that retrieves noise rather than actually useful memories.",
-    "ko": "LLM은 런타임 자기 진화에 어려움을 겪습니다. 미세조정은 치명적 망각을 유발하고, RAG는 실제로 유용한 메모리보다 노이즈를 검색하는 의미적 유사성에 의존합니다."
+    "en": "LLMs struggle with runtime self-evolution due to the stability-plasticity dilemma:\n\n- **Fine-tuning**: Computationally expensive and prone to catastrophic forgetting\n- **RAG/memory systems**: Rely on semantic similarity that retrieves noise\n- **No utility learning**: Can't distinguish high-value strategies from semantically similar but ineffective ones\n\nStandard retrieval assumes \"similar implies useful,\" but that's often wrong. A semantically relevant past solution might actually be a bad approach for the current task.",
+    "ko": "LLM은 안정성-가소성 딜레마로 인해 런타임 자기 진화에 어려움을 겪습니다:\n\n- **미세조정**: 계산 비용이 크고 치명적 망각이 발생하기 쉽습니다\n- **RAG/메모리 시스템**: 노이즈를 검색하는 의미적 유사성에 의존합니다\n- **유틸리티 학습 부재**: 의미적으로 유사하지만 비효과적인 전략과 고가치 전략을 구분할 수 없습니다\n\n표준 검색은 \"유사하면 유용하다\"고 가정하지만 이는 종종 잘못된 판단입니다. 의미적으로 관련된 과거 솔루션이 현재 작업에 실제로는 나쁜 접근 방식일 수 있습니다."
   },
   "solution": {
-    "en": "Add learned utility scores to episodic memory. Rank memories by past success rather than just semantic similarity, filtering out look-alike bad solutions.",
-    "ko": "에피소딕 메모리에 학습된 유틸리티 점수를 추가합니다. 의미적 유사성만이 아닌 과거 성공을 기준으로 메모리를 순위화하여 유사해 보이는 나쁜 솔루션을 필터링합니다."
+    "en": "**MemRL** transfers reinforcement learning from parameter space to context space: instead of updating model weights, it learns utility scores on episodic memories. The LLM stays frozen; only memory utilities evolve.\n\n**Core idea:** Instead of just retrieving by similarity, rank memories by how well they've worked in the past.\n\n**Memory triplet structure:**\n\n- **Intent**: What the user asked for (embedded)\n- **Experience**: What the agent tried (solution trace)\n- **Utility**: How well it worked (learned score, updated over time)\n\n**Two-phase retrieval:**\n\n1. **Phase A - Semantic filter**: Find semantically similar memories\n2. **Phase B - Utility ranking**: Re-rank by learned utility scores\n\nThis filters out \"distractor\" memories that look relevant but historically lead to poor outcomes.",
+    "ko": "**MemRL**은 강화 학습을 파라미터 공간에서 컨텍스트 공간으로 이전합니다: 모델 가중치를 업데이트하는 대신 에피소딕 메모리의 유틸리티 점수를 학습합니다. LLM은 동결된 상태를 유지하고 메모리 유틸리티만 진화합니다.\n\n**핵심 아이디어:** 유사성으로만 검색하는 대신 과거에 얼마나 잘 작동했는지에 따라 메모리를 순위화합니다.\n\n**메모리 트리플릿 구조:**\n\n- **의도(Intent)**: 사용자가 요청한 것 (임베딩)\n- **경험(Experience)**: 에이전트가 시도한 것 (솔루션 추적)\n- **유틸리티(Utility)**: 얼마나 잘 작동했는지 (학습된 점수, 시간이 지남에 따라 업데이트)\n\n**2단계 검색:**\n\n1. **단계 A - 의미적 필터**: 의미적으로 유사한 메모리를 찾습니다\n2. **단계 B - 유틸리티 순위화**: 학습된 유틸리티 점수로 재순위화합니다\n\n이를 통해 관련성이 있어 보이지만 역사적으로 좋지 않은 결과를 초래하는 \"방해\" 메모리를 필터링합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Query     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Phase A:     │\n│Find Similar │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Phase B:     │\n│Rank by      │\n│Utility Score│\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Use Top Mems │\n│Get Result   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Update       │\n│Utilities    │\n└─────────────┘",
   "mermaid_diagram": "graph LR\n    A[Query] --> B[Find Similar Memories]\n    B --> C[Rank by Utility Scores]\n    C --> D[Use Top Memories]\n    D --> E[Get Result]\n    E --> F[Update Utilities]\n    F --> G[Store New Experience]",
@@ -21,12 +21,12 @@
     "ko": ["명확한 성공 신호가 있는 다단계 작업", "재사용 가능한 문제 해결 패턴", "미세조정 비용을 감당할 수 없을 때"]
   },
   "pros": {
-    "en": ["No catastrophic forgetting", "Self-improves from experience", "No retraining needed"],
-    "ko": ["치명적 망각 없음", "경험으로 자기 개선", "재훈련 불필요"]
+    "en": ["No catastrophic forgetting (frozen LLM)", "Self-improves from experience", "Filters out \"look-alike\" bad solutions", "No retraining needed"],
+    "ko": ["치명적 망각 없음 (동결된 LLM)", "경험으로 자기 개선", "\"유사해 보이는\" 나쁜 솔루션 필터링", "재훈련 불필요"]
   },
   "cons": {
-    "en": ["Needs reliable success/failure signals", "Memory overhead grows", "Cold start problem"],
-    "ko": ["신뢰할 수 있는 성공/실패 신호 필요", "메모리 오버헤드 증가", "콜드 스타트 문제"]
+    "en": ["Need reliable success/failure signals", "Memory overhead grows over time", "Cold start: needs episodes to learn", "More complex than basic RAG"],
+    "ko": ["신뢰할 수 있는 성공/실패 신호 필요", "시간이 지남에 따라 메모리 오버헤드 증가", "콜드 스타트: 학습을 위한 에피소드 필요", "기본 RAG보다 복잡"]
   },
   "tags": ["reinforcement-learning", "episodic-memory", "self-evolution", "value-aware-retrieval", "runtime-learning"]
 }

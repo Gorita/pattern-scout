@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "Single-agent decision making suffers from confirmation bias, limited perspectives, insufficient scrutiny, and unexamined assumptions.",
-    "ko": "단일 에이전트 의사 결정은 확증 편향, 제한된 관점, 불충분한 검토, 검토되지 않은 가정으로 어려움을 겪습니다."
+    "en": "Single-agent decision making can suffer from: confirmation bias (agent finds evidence supporting initial hypothesis), limited perspectives (one context window misses alternative approaches), insufficient scrutiny (no adversarial pressure to defend decisions), and unexamined assumptions (agent doesn't challenge its own reasoning).",
+    "ko": "단일 에이전트 의사 결정은 다음과 같은 문제를 겪을 수 있습니다: 확증 편향(에이전트가 초기 가설을 지지하는 증거를 찾음), 제한된 관점(하나의 컨텍스트 윈도우가 대안적 접근을 놓침), 불충분한 검토(결정을 방어해야 하는 적대적 압력 없음), 검토되지 않은 가정(에이전트가 자신의 추론에 의문을 제기하지 않음)."
   },
   "solution": {
-    "en": "Spawn opposing agents with different goals or perspectives to debate each other's positions. The conflict surfaces blind spots, biases, and unconsidered alternatives.",
-    "ko": "서로 다른 목표나 관점을 가진 반대 에이전트를 생성하여 서로의 입장을 토론하게 합니다. 충돌이 사각지대, 편향, 고려하지 않은 대안을 표면화합니다."
+    "en": "Spawn opposing agents with different goals or perspectives to debate each other's positions. The conflict between agents surfaces blind spots, biases, and unconsidered alternatives.\n\n**Key mechanism**: Create agents with opposing incentives or roles, let them critique each other's work, then synthesize results.\n\n**Example configurations**: Pro vs. Con (one agent argues for acceptance, another for rejection), Optimistic vs. Conservative (different risk tolerances), User advocate vs. Company auditor (competing interests), Frontend dev vs. Backend dev (different technical perspectives).",
+    "ko": "서로 다른 목표나 관점을 가진 반대 에이전트를 생성하여 서로의 입장을 토론하게 합니다. 에이전트 간의 충돌이 사각지대, 편향, 고려하지 않은 대안을 표면화합니다.\n\n**핵심 메커니즘**: 반대 인센티브나 역할을 가진 에이전트를 생성하고, 서로의 작업을 비판하게 한 다음 결과를 종합합니다.\n\n**구성 예시**: 찬성 vs. 반대(한 에이전트는 수락을 주장하고, 다른 에이전트는 거부를 주장), 낙관적 vs. 보수적(다른 위험 허용 범위), 사용자 옹호자 vs. 회사 감사자(경쟁하는 이익), 프론트엔드 개발자 vs. 백엔드 개발자(다른 기술적 관점)."
   },
   "ascii_diagram": "┌─────────────────┐\n│    Main Task    │\n└────────┬────────┘\n    ┌────┴────┐\n    ▼         ▼\n┌──────┐  ┌──────┐\n│Agent1│  │Agent2│\n│Advoc │  │Critic│\n└──┬───┘  └───┬──┘\n   │          │\n   ▼          ▼\n┌──────┐  ┌──────┐\n│Propose│  │Challenge│\n│Soln  │  │Solution│\n└──┬───┘  └───┬──┘\n   └────┬─────┘\n        ▼\n┌─────────────────┐\n│  Debate/Iterate │\n└────────┬────────┘\n         ▼\n┌─────────────────┐\n│Synthesized Decn │\n└─────────────────┘",
   "mermaid_diagram": "graph TD\n    A[Main Task] --> B[Agent 1: Advocate]\n    A --> C[Agent 2: Critic/Auditor]\n    B --> D[Proposes Solution]\n    C --> E[Challenges Solution]\n    D --> F[Debate / Iteration]\n    E --> F\n    F --> G[Synthesized Decision]",
   "code_example": "# Example: Expense filing with opposing agents\n# \"I have two subagents, one that represents me and one \n#  that represents the company. They do battle to figure \n#  out what's the proper actual set of expenses.\"\n\nclass DebateOrchestrator:\n    def debate(self, task):\n        advocate = Agent(role='pro_user')\n        auditor = Agent(role='pro_company')\n        \n        proposal = advocate.propose(task)\n        critique = auditor.challenge(proposal)\n        \n        for _ in range(max_rounds):\n            response = advocate.defend(critique)\n            critique = auditor.challenge(response)\n            if consensus_reached(response, critique):\n                break\n        \n        return synthesize(proposal, critiques)",
   "when_to_use": {
-    "en": ["Bias-prone decisions", "Trade-off heavy scenarios", "Code review with security focus"],
-    "ko": ["편향되기 쉬운 결정", "트레이드오프가 많은 시나리오", "보안 중심 코드 리뷰"]
+    "en": ["Define opposing roles with clear incentives", "Spawn both agents with same context but different system prompts", "Have them work independently (uncorrelated context windows)", "Collect outputs and synthesize automatically (third agent), use weighted aggregation, or present trade-offs for human-in-the-loop decision", "Use max_rounds and deadlock detection to prevent infinite debate"],
+    "ko": ["명확한 인센티브를 가진 반대 역할 정의", "동일한 컨텍스트지만 다른 시스템 프롬프트로 두 에이전트 생성", "독립적으로 작업하도록 함 (비상관 컨텍스트 윈도우)", "출력을 수집하고 자동 종합(제3 에이전트), 가중 집계 사용, 또는 인간 참여 결정을 위한 트레이드오프 제시", "무한 토론 방지를 위한 최대 라운드 및 교착 상태 감지 사용"]
   },
   "pros": {
-    "en": ["Reduces bias", "Better decisions through scrutiny", "Explicit trade-offs"],
-    "ko": ["편향 감소", "검토를 통한 더 나은 결정", "명시적 트레이드오프"]
+    "en": ["Reduces bias - opposing views surface blind spots", "Better decisions through adversarial pressure", "Uncorrelated context - independent reasoning prevents groupthink", "Explicit trade-offs - forces articulation of competing values", "Checks and balances - no single agent has unchallenged authority"],
+    "ko": ["편향 감소 - 반대 관점이 사각지대를 표면화", "적대적 압력을 통한 더 나은 결정", "비상관 컨텍스트 - 독립적 추론이 집단사고 방지", "명시적 트레이드오프 - 경쟁하는 가치의 명확한 표현 강제", "견제와 균형 - 단일 에이전트가 도전받지 않는 권한을 갖지 않음"]
   },
   "cons": {
-    "en": ["2x+ token cost", "Slower execution", "May produce deadlocks"],
-    "ko": ["2배 이상 토큰 비용", "느린 실행", "교착 상태 발생 가능"]
+    "en": ["2x+ token cost - multiple agents processing same information", "Slower execution - debate takes time compared to single decision", "May produce conflict - agents might deadlock without resolution mechanism", "Requires synthesis - need method to reconcile opposing views", "Over-engineering for simple tasks - not every decision needs debate"],
+    "ko": ["2배 이상 토큰 비용 - 여러 에이전트가 동일 정보 처리", "느린 실행 - 토론이 단일 결정에 비해 시간 소요", "충돌 발생 가능 - 해결 메커니즘 없이 교착 상태 발생 가능", "종합 필요 - 반대 관점을 조정하는 방법 필요", "단순 작업에 과도한 엔지니어링 - 모든 결정에 토론이 필요한 것은 아님"]
   },
-  "tags": ["multi-agent", "debate", "adversarial", "bias-reduction", "validation"]
+  "tags": ["multi-agent", "debate", "adversarial", "bias-reduction", "uncorrelated-context", "validation"]
 }
