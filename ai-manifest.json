@@ -334,28 +334,27 @@
     "title": "Layered Configuration Context",
     "title_ko": "계층화된 구성 컨텍스트",
     "category": "Context & Memory",
-    "description": "Agents need different configurations at global, project, and task levels, but flat config systems don't support this hierarchy Implement multi-level configuration that merges global defaults, project ",
-    "problem": "Agents need different configurations at global, project, and task levels, but flat config systems don't support this hierarchy.",
-    "solution": "Implement multi-level configuration that merges global defaults, project settings, and task-specific overrides.",
+    "description": "AI agents require relevant context to perform effectively Implement a system of layered configuration files (e",
+    "problem": "AI agents require relevant context to perform effectively. Providing this context manually in every prompt is cumbersome, and a one-size-fits-all global context is often too broad or too narrow. Different projects, users, and organizational policies may require different baseline information for the agent.",
+    "solution": "Implement a system of layered configuration files (e.g., named `CLAUDE.md` or a similar convention) that the agent automatically discovers and loads based on their location in the file system hierarchy. This allows for:\n\n- **Enterprise/Organizational Context:** A root-level file (`/<enterprise_root>/CLAUDE.md`) for policies or information shared across all projects in an organization.\n- **User-Specific Global Context:** A file in the user's home directory (`~/.claude/CLAUDE.md`) for personal preferences, common tools, or notes shared across all their projects.\n- **Project-Specific Context:** A file within the project's root directory (`<project_root>/CLAUDE.md`), typically version-controlled, for project-specific instructions, architectural overviews, or key file descriptions.\n- **Project-Local Context:** A local, non-version-controlled file (`<project_root>/CLAUDE.local.md`) for individual overrides, temporary notes, or secrets relevant to the project for that user.\n\nThe agent intelligently merges or prioritizes these context layers, providing a rich, tailored baseline of information without manual intervention in each query.",
     "when_to_use": [
-      "Multi-project environments",
-      "Team shared configurations",
-      "Task-specific tuning"
+      "Use this when model quality depends on selecting or retaining the right context.",
+      "Start with strict context budgets and explicit memory retention rules.",
+      "Measure relevance and retrieval hit-rate before increasing memory breadth.",
+      "Version-control project context (`CLAUDE.md`); exclude local overrides (`CLAUDE.local.md`) from VCS."
     ],
     "pros": [
-      "Flexibility",
-      "DRY configuration",
-      "Easy overrides"
+      "Raises answer quality by keeping context relevant and reducing retrieval noise; enables enterprise-wide policy enforcement; supports automatic context loading without manual intervention"
     ],
     "cons": [
-      "Debugging complexity",
-      "Merge conflict resolution"
+      "Requires ongoing tuning of memory policies and indexing quality; context window limits may truncate layers; potential for configuration conflicts"
     ],
     "tags": [
+      "context management",
       "configuration",
-      "layered-config",
-      "context-management",
-      "hierarchy"
+      "scoped context",
+      "automatic loading",
+      "CLAUDE.md"
     ],
     "related": []
   },
@@ -1763,22 +1762,29 @@
     "title": "Discrete Phase Separation",
     "title_ko": "분리된 단계 분리",
     "category": "Orchestration & Control",
-    "description": "Mixing research, planning, and implementation in one context degrades output quality and causes context pollution Break workflows into isolated phases with clean handoffs and fresh contexts, using dif",
-    "problem": "Mixing research, planning, and implementation in one context degrades output quality and causes context pollution.",
-    "solution": "Break workflows into isolated phases with clean handoffs and fresh contexts, using different models optimized for each phase.",
+    "description": "When AI agents attempt to simultaneously research, plan, and implement solutions, context contamination occurs Break development workflows into isolated phases with clean handoffs between them",
+    "problem": "When AI agents attempt to simultaneously research, plan, and implement solutions, context contamination occurs. Competing priorities within a single conversation degrade output quality as the agent struggles to balance exploration, strategic thinking, and execution. This results in incomplete research, unclear plans, and suboptimal implementations.",
+    "solution": "Break development workflows into isolated phases with clean handoffs between them. Each phase runs in a separate conversation with a fresh context window, focusing exclusively on its objective:\n\n**Research Phase (Opus 4.1):**\n- Deep exploration of requirements, existing code, and constraints\n- Comprehensive background investigation\n- No implementation concerns\n\n**Planning Phase (Opus 4.1):**\n- Create structured implementation roadmap\n- Define clear steps and dependencies\n- No coding distractions\n\n**Implementation Phase (Sonnet 4.5):**\n- Execute each plan step systematically\n- Focus purely on code quality and functionality\n- Leverage the distilled outputs from previous phases\n\n**Key principle:** Pass only distilled conclusions between phases, not full conversation history. This prevents context pollution while maintaining necessary information flow.",
     "when_to_use": [
-      "Complex feature development",
-      "New codebase exploration",
-      "Large-scale refactoring"
+      "Complex features requiring significant background research",
+      "Refactoring projects where understanding existing code is critical",
+      "New codebases where architectural decisions need careful consideration",
+      "Any task where mixing research and implementation degrades quality"
     ],
     "pros": [
-      "Higher quality output",
-      "Context pollution prevention",
-      "Model strength utilization"
+      "Higher quality outputs in each phase due to focused attention",
+      "Prevents context contamination from competing objectives",
+      "Deliberation before action improves tool use accuracy from 72% to 94% (Parisien et al. 2024)",
+      "Leverages model-specific strengths (Opus for reasoning, Sonnet for execution)",
+      "Clearer mental model for complex projects",
+      "Easier to debug which phase introduced issues"
     ],
     "cons": [
-      "Requires explicit management",
-      "Overkill for simple tasks"
+      "Requires more explicit phase management and handoffs",
+      "Planning overhead adds ~35% latency (Parisien et al. 2024)",
+      "Requires discipline to maintain phase boundaries",
+      "Information loss risk if handoffs are poorly structured",
+      "Higher total token usage across multiple conversations"
     ],
     "tags": [
       "orchestration",
@@ -1927,23 +1933,23 @@
     "title": "Explicit Posterior-Sampling Planner",
     "title_ko": "명시적 사후 샘플링 플래너",
     "category": "Orchestration & Control",
-    "description": "Agents relying on ad-hoc heuristics explore poorly, wasting tokens and API calls on dead ends Embed PSRL (Posterior Sampling for RL) inside the LLM's reasoning: maintain Bayesian posterior over task m",
-    "problem": "Agents relying on ad-hoc heuristics explore poorly, wasting tokens and API calls on dead ends.",
-    "solution": "Embed PSRL (Posterior Sampling for RL) inside the LLM's reasoning: maintain Bayesian posterior over task models, sample, compute optimal plan, execute, observe reward, update posterior.",
+    "description": "Heuristic planning loops often over-exploit the first plausible strategy and under-explore alternatives Embed a *fully specified* RL algorithm—Posterior Sampling for Reinforcement Learning (PSRL)—insi",
+    "problem": "Heuristic planning loops often over-exploit the first plausible strategy and under-explore alternatives. In uncertain environments, this drives repeated dead ends, unstable learning, and high token/API spend with little information gain.",
+    "solution": "Embed a *fully specified* RL algorithm—Posterior Sampling for Reinforcement Learning (PSRL)—inside the LLM's reasoning:\n\n- Maintain a Bayesian posterior over task models.\n- Sample a model, compute an optimal plan/policy, execute, observe reward, update posterior.\n- Express each step in natural language so the core LLM can carry it out with tool calls.\n\nThe planner becomes an explicit exploration policy instead of an improvised chain of thoughts. By repeatedly sampling from the posterior, the agent balances exploration and exploitation with a principled uncertainty model rather than ad-hoc retries. This is Thompson sampling generalized to multi-state MDPs, with near-optimal regret bounds of O(√T).",
     "when_to_use": [
-      "Exploration-heavy tasks",
-      "Unknown environments",
-      "Multi-step decision making"
+      "Wrap PSRL in a reusable prompt template or controller skeleton with explicit state variables (posterior, reward, horizon).",
+      "Start in bounded environments with measurable reward signals and instrument posterior updates for debugging.",
+      "For text-based environments, design a state abstraction (e.g., semantic hashing or embedding-based clustering) to map unstructured context to discrete MDP states."
     ],
     "pros": [
-      "Principled exploration",
-      "Theoretically grounded",
-      "Efficient token usage"
+      "More sample-efficient exploration",
+      "Better decision consistency under uncertainty"
     ],
     "cons": [
-      "Complex to implement",
-      "Requires RL understanding",
-      "May be overkill for simple tasks"
+      "Higher implementation complexity",
+      "Sensitive reward design",
+      "Additional compute overhead",
+      "Requires careful state abstraction for text environments"
     ],
     "tags": [
       "RL",
@@ -2615,21 +2621,25 @@
     "title": "Self-Rewriting Meta-Prompt Loop",
     "title_ko": "자기 재작성 메타 프롬프트 루프",
     "category": "Orchestration & Control",
-    "description": "Static system prompts become stale or overly brittle as an agent encounters new tasks and edge cases Let the agent rewrite its own system prompt after each interaction, validating changes before apply",
-    "problem": "Static system prompts become stale or overly brittle as an agent encounters new tasks and edge cases.",
-    "solution": "Let the agent rewrite its own system prompt after each interaction, validating changes before applying them.",
+    "description": "Static system prompts become stale or overly brittle as an agent encounters new tasks and edge-cases Let the agent **rewrite its own system prompt** after each interaction:\n\n1",
+    "problem": "Static system prompts become stale or overly brittle as an agent encounters new tasks and edge-cases. Manually editing them is slow and error-prone.",
+    "solution": "Let the agent **rewrite its own system prompt** after each interaction:\n\n1. **Reflect** on the latest dialogue or episode.\n2. Draft improvements to the instructions (add heuristics, refine tool advice, retire bad rules).\n3. **Validate** the draft (internal sanity-check or external gate).\n4. Replace the old system prompt with the revised version; persist in version control.\n5. Use the new prompt on the next episode, closing the self-improvement loop.\n\n```python\n# pseudo-code\ndialogue = run_episode()\ndelta = LLM(\"Reflect on dialogue and propose prompt edits\", dialogue)\nif passes_guardrails(delta):\n    system_prompt += delta\n    save(system_prompt)\n```",
     "when_to_use": [
-      "Long-running agents",
-      "Adaptive systems",
-      "Continuous improvement"
+      "Best for low-risk domains with high-volume, well-defined workflows (e.g., formatting, style)",
+      "Requires strong guardrails: structural validation, intent preservation checks, change magnitude limits",
+      "Include version control integration and rollback capability",
+      "Consider dual-agent architecture (executor + critic) for safer delta generation",
+      "Avoid in safety-critical or high-regulation domains without human approval gates"
     ],
     "pros": [
       "Rapid adaptation",
-      "No human in loop for minor tweaks"
+      "Data-driven improvements",
+      "No training infrastructure required"
     ],
     "cons": [
       "Risk of drift or jailbreak",
-      "Needs strong guardrails"
+      "Prompt bloat",
+      "Oscillation and instability"
     ],
     "tags": [
       "meta-prompting",
@@ -2849,29 +2859,26 @@
     "title": "Tool Capability Compartmentalization",
     "title_ko": "도구 기능 구획화",
     "category": "Orchestration & Control",
-    "description": "MCP encourages mix-and-match tools, often combining private-data readers, web fetchers, and writers in a single callable unit Split monolithic tools into reader, processor, and writer micro-tools",
-    "problem": "MCP encourages mix-and-match tools, often combining private-data readers, web fetchers, and writers in a single callable unit. This amplifies the lethality of prompt-injection chains.",
-    "solution": "Split monolithic tools into reader, processor, and writer micro-tools. Require explicit per-call user consent when composing tools across capability classes. Run each class in isolated subprocess with scoped permissions.",
+    "description": "Model Context Protocol (MCP) and agent frameworks often combine three capability classes in a single tool: private-data readers (email, filesystem), web fetchers (HTTP clients), and writers (API mutat",
+    "problem": "Model Context Protocol (MCP) and agent frameworks often combine three capability classes in a single tool: private-data readers (email, filesystem), web fetchers (HTTP clients), and writers (API mutators). This creates the \"lethal trifecta\"--malicious input can trigger chains that read sensitive data, exfiltrate it, and modify systems in one operation.",
+    "solution": "Adopt **capability compartmentalization** at the tool layer:\n\n- Split monolithic tools into *reader*, *processor*, and *writer* micro-tools.\n- Require explicit, per-call user consent when composing tools across capability classes.\n- Run each class in an isolated subprocess with scoped API keys and file permissions.\n\nTreat each capability class as a separate trust zone with its own runtime identity and policy checks. Cross-zone composition should require explicit policy evaluation and short-lived delegation tokens so the agent cannot silently chain read+fetch+write into a high-risk path.\n\n```yaml\n# tool-manifest.yml\nemail_reader:\n  capabilities: [private_data, untrusted_input]\n  permissions:\n    fs: read-only:/mail\n    net: none\n\nissue_creator:\n  capabilities: [external_comm]\n  permissions:\n    net: allowlist:github.com\n```",
     "when_to_use": [
-      "MCP tool design",
-      "Security-sensitive agent systems",
-      "Multi-tenant environments"
+      "Generate the manifest automatically from CI.",
+      "Your agent runner consults the manifest before constructing action plans.",
+      "Flag any attempt to chain tools that would recreate the lethal trifecta.",
+      "Group tools by capability class (fs, web, runtime, memory) and assign profiles (minimal, coding, messaging) to prevent mixing.",
+      "Validate tool chains at call time: reject if all three capability classes are present."
     ],
     "pros": [
-      "Fine-grained security",
-      "Plays well with modular architectures",
-      "Clear audit trail"
+      "Fine-grained; plays well with modular architectures"
     ],
     "cons": [
-      "More tooling overhead",
-      "Risk of permission creep over time",
-      "Complexity in tool composition"
+      "More tooling overhead; risk of permission creep over time"
     ],
     "tags": [
       "capability-segregation",
       "least-privilege",
-      "tool-permissions",
-      "security"
+      "tool-permissions"
     ],
     "related": []
   },
@@ -3528,26 +3535,19 @@
     "title": "Versioned Constitution Governance",
     "title_ko": "버전 관리 헌법 거버넌스",
     "category": "Reliability & Eval",
-    "description": "When an agent rewrites its own constitution (alignment rules), it may accidentally violate safety constraints or regress on alignment objectives if changes aren't properly reviewed and tracked Store t",
-    "problem": "When an agent rewrites its own constitution (alignment rules), it may accidentally violate safety constraints or regress on alignment objectives if changes aren't properly reviewed and tracked.",
-    "solution": "Store the constitution in a version-controlled, signed repository. YAML/TOML rules live in Git with signed commits (Sigstore). CI runs automated policy checks. Agent can propose changes but only approved reviewers can merge.",
+    "description": "When agents can modify policy/constitution text, safety regressions can be introduced gradually and go unnoticed Store the constitution in a **version-controlled, signed repository**:\n\n- YAML/TOML rul",
+    "problem": "When agents can modify policy/constitution text, safety regressions can be introduced gradually and go unnoticed. Without versioning, signatures, and policy review gates, teams cannot prove who changed what, why it changed, or whether critical safeguards were weakened.",
+    "solution": "Store the constitution in a **version-controlled, signed repository**:\n\n- YAML/TOML rules live in Git for automated rule enforcement; natural language principles guide LLM-based evaluation.\n- Each commit is signed (e.g., Sigstore); CI runs automated policy checks.\n- Only commits signed by approved reviewers or automated tests are merged.\n- The agent can *propose* changes, but a gatekeeper merges them.\n- Use semantic versioning: MAJOR for core safety principle changes, MINOR for additions, PATCH for clarifications.\n\nCombine policy-as-code with release discipline: every constitutional change is diffable, reviewable, and test-gated before activation. This gives governance history, rollback capability, and auditable control over alignment policy evolution.",
     "when_to_use": [
-      "Self-modifying agent systems",
-      "Safety-critical alignment rules",
-      "Multi-stakeholder AI governance",
-      "Auditable AI systems"
+      "Require `git commit -S` or similar.",
+      "Run diff-based linting to flag deletions of critical rules.",
+      "Expose constitution `HEAD` as read-only context in every agent episode."
     ],
     "pros": [
-      "Complete audit trail of changes",
-      "Prevents accidental safety regression",
-      "Multiple stakeholders can review",
-      "Cryptographic integrity via signing"
+      "Strong auditability, safer policy evolution, and fast rollback of bad constitutional changes"
     ],
     "cons": [
-      "Slower iteration on rules",
-      "Requires governance process",
-      "May bottleneck rapid experimentation",
-      "Git complexity for non-technical reviewers"
+      "Slower policy iteration and extra operational burden for signing, review, and CI checks"
     ],
     "tags": [
       "constitution",
@@ -3555,7 +3555,8 @@
       "governance",
       "signed-commits",
       "policy",
-      "safety"
+      "rlaif",
+      "critique-revise"
     ],
     "related": []
   },
@@ -4026,25 +4027,30 @@
     "title": "Agentic Search Over Vector Embeddings",
     "title_ko": "벡터 임베딩 대신 에이전틱 검색",
     "category": "Tool Use & Environment",
-    "description": "Vector embeddings for code search require continuous re-indexing, handling local changes, additional security surface area, and infrastructure overhead Replace vector search with agentic search using ",
-    "problem": "Vector embeddings for code search require continuous re-indexing, handling local changes, additional security surface area, and infrastructure overhead. Traditional RAG adds complexity that may not be necessary.",
-    "solution": "Replace vector search with agentic search using bash, grep, file traversal. Modern LLMs are skilled at using search tools iteratively to achieve comparable accuracy without maintenance burden.",
+    "description": "Vector embeddings for code search require:\n\n- Continuous re-indexing as code changes\n- Handling local uncommitted changes\n- Additional security surface area for enterprise deployments\n- Infrastructure",
+    "problem": "Vector embeddings for code search require:\n\n- Continuous re-indexing as code changes\n- Handling local uncommitted changes\n- Additional security surface area for enterprise deployments\n- Infrastructure overhead (embedding models, vector databases)\n- Stale indices when developers work on multiple branches\n\nTraditional RAG approaches add complexity that may not be necessary with modern capable LLMs.",
+    "solution": "Replace vector search with **agentic search** using bash, grep, file traversal, and other command-line tools. Modern LLMs are skilled enough at using search tools iteratively to achieve comparable accuracy without the maintenance burden of vector indices.\n\n**Key approach:**\n\n1. **Tool-based search**: Provide grep, ripgrep, find, ls, and other search utilities\n2. **Iterative refinement**: Let the agent search multiple times, narrowing results\n3. **No pre-indexing**: Search happens on-demand against current file state\n4. **Optional MCP integration**: If teams want semantic search, expose it via MCP tool\n\n```pseudo\n# Instead of:\nvector_db.index(codebase)  # requires continuous updates\nresults = vector_db.query(embedding(query))\n\n# Use:\nagent.call_tool(\"grep\", pattern=\"function.*authenticate\")\nagent.call_tool(\"find\", pattern=\"**/auth/*.ts\")\nagent.refine_search_based_on_results()\n```",
     "when_to_use": [
-      "Frequently changing codebases",
-      "Security-sensitive deployments",
-      "Local development",
-      "No vector infrastructure"
+      "Code bases with frequent changes",
+      "Teams without dedicated vector infrastructure",
+      "Security-sensitive deployments (fewer external dependencies)",
+      "Local development where files change constantly",
+      "Multi-branch workflows"
     ],
     "pros": [
-      "No indexing to maintain",
-      "Always current state",
+      "No indexing infrastructure to maintain",
+      "Always searches current state (no stale results)",
+      "Works with local uncommitted changes",
       "Simpler security model",
-      "No embedding costs"
+      "Faster setup for new repositories",
+      "No embedding model costs"
     ],
     "cons": [
-      "Multiple iterations needed",
-      "Slower on very large codebases",
-      "Less semantic understanding"
+      "May require multiple search iterations (more tokens)",
+      "Slower on very large codebases (millions of files)",
+      "Less semantic understanding (e.g., \"authentication\" vs \"login\")",
+      "Requires capable models (Sonnet 4+) for good results",
+      "Higher latency for complex queries"
     ],
     "tags": [
       "search",
@@ -4380,28 +4386,26 @@
     "title": "LLM-Friendly API Design",
     "title_ko": "LLM 친화적 API 설계",
     "category": "Tool Use & Environment",
-    "description": "APIs designed solely for human consumption might be ambiguous or overly complex for an LLM to use correctly without extensive fine-tuning or elaborate prompting Design APIs with LLM consumption in min",
-    "problem": "APIs designed solely for human consumption might be ambiguous or overly complex for an LLM to use correctly without extensive fine-tuning or elaborate prompting.",
-    "solution": "Design APIs with LLM consumption in mind: explicit versioning visible to model, self-descriptive function names, simplified interaction patterns, clear error messaging, reduced indirection levels.",
+    "description": "For AI agents to reliably and effectively use tools, especially APIs or internal libraries, the design of these interfaces matters Design or adapt software APIs (including internal libraries and modul",
+    "problem": "For AI agents to reliably and effectively use tools, especially APIs or internal libraries, the design of these interfaces matters. APIs designed solely for human consumption might be ambiguous or overly complex for an LLM to use correctly without extensive fine-tuning or elaborate prompting.",
+    "solution": "Design or adapt software APIs (including internal libraries and modules) with explicit consideration for LLM consumption. This involves:\n\n- **Explicit Versioning:** Making API version information clearly visible and understandable to the LLM, so it can request or adapt to specific versions.\n- **Self-Descriptive Functionality:** Ensuring function names, parameter names, type schemas (JSON Schema/OpenAPI), and documentation clearly describe what the API does and how to use it.\n- **Simplified Interaction Patterns:** Favoring simpler, more direct API calls over highly nested or complex interaction sequences where possible, to reduce the chances of the LLM making errors.\n- **Clear Error Messaging:** Designing error responses that are informative and actionable for an LLM, helping it to self-correct or understand why a call failed.\n- **Reduced Indirection:** Structuring code and libraries to minimize layers of indirection (target: 2 levels instead of n-levels), making it easier for the model to reason about the codebase.\n\nThe aim is to create interfaces that are robust and intuitive for LLMs to interact with, thereby improving the reliability and effectiveness of agent tool use.",
     "when_to_use": [
-      "Building tools for AI agents",
-      "Internal libraries for automation",
-      "Public APIs expecting AI consumers"
+      "Use this when agent success depends on reliable tool invocation and environment setup.",
+      "Start with a narrow tool surface and explicit parameter validation.",
+      "Add observability around tool latency, failures, and fallback paths."
     ],
     "pros": [
-      "Improved reliability",
-      "Fewer LLM errors",
-      "Better self-correction"
+      "Improves execution success and lowers tool-call failure rates"
     ],
     "cons": [
-      "May sacrifice human ergonomics",
-      "Requires intentional design effort"
+      "Introduces integration coupling and environment-specific upkeep"
     ],
     "tags": [
       "api-design",
       "llm-interaction",
       "tool-use",
       "system-design",
+      "code-structure",
       "agent-compatibility"
     ],
     "related": []
@@ -4550,22 +4554,26 @@
     "title": "Shell Command Contextualization",
     "title_ko": "셸 명령 컨텍스트화",
     "category": "Tool Use & Environment",
-    "description": "Manually copying shell command output into prompts is tedious and error-prone Provide a mechanism (e",
-    "problem": "Manually copying shell command output into prompts is tedious and error-prone.",
-    "solution": "Provide a mechanism (e.g., ! prefix) to execute shell commands and automatically inject both command and output into agent context.",
+    "description": "When an AI agent interacts with a local development environment, it often needs to execute shell commands (e Provide a dedicated mechanism within the agent's interface (e",
+    "problem": "When an AI agent interacts with a local development environment, it often needs to execute shell commands (e.g., run linters, check git status, list files) and then use the output of these commands as context for its subsequent reasoning or actions. Manually copying and pasting command output into the prompt is tedious and error-prone.",
+    "solution": "Provide a dedicated mechanism within the agent's interface (e.g., a special prefix like `!` or a specific command mode) that allows the user to directly issue a shell command to be executed in the local environment. Crucially, both the command itself and its full output (stdout and stderr) are automatically captured and injected into the agent's current conversational or working context.\n\nThe `!` prefix syntax originates from IPython (2001) and has become the de facto standard across AI coding platforms (Claude Code, Cursor, GitHub Copilot, Continue.dev, Aider, Replit Agent).\n\nThis ensures that the agent is immediately aware of the command that was run and its results, allowing it to seamlessly incorporate this information into its ongoing tasks without requiring manual data transfer by the user.",
     "when_to_use": [
-      "Development environments",
-      "System administration tasks",
-      "Build/test workflows"
+      "When agent success depends on reliable tool invocation and environment setup",
+      "Implement PTY-aware execution with graceful fallback for non-interactive commands",
+      "Validate commands before execution (allowlist-based, dangerous pattern detection)",
+      "Capture full output (stdout, stderr, exit codes) for complete context",
+      "Add observability around tool latency, failures, and fallback paths"
     ],
     "pros": [
-      "Seamless integration",
-      "Real-time system awareness",
-      "Reduced copy-paste"
+      "Eliminates manual copy-paste workflow",
+      "Enables seamless context injection",
+      "Universal adoption provides mature implementations",
+      "Strong academic foundations (ToolFormer, ReAct, RAG)"
     ],
     "cons": [
-      "Security considerations for arbitrary execution",
-      "Output size limits"
+      "Introduces integration coupling and environment-specific upkeep",
+      "Requires security considerations (validation, sandboxing)",
+      "Output size can impact token costs"
     ],
     "tags": [
       "shell-integration",
@@ -4837,26 +4845,26 @@
     "title": "AI-Accelerated Learning and Skill Development",
     "title_ko": "AI 가속 학습 및 스킬 개발",
     "category": "UX & Collaboration",
-    "description": "Developing strong software engineering skills, including 'taste' for clean code, traditionally requires extensive experience and mentorship Utilize AI agents as interactive learning tools that acceler",
-    "problem": "Developing strong software engineering skills, including 'taste' for clean code, traditionally requires extensive experience and mentorship. This is a slow process, especially for junior developers who learn through trial-and-error over years.",
-    "solution": "Utilize AI agents as interactive learning tools that accelerate skill acquisition. Developers iterate faster, learn from mistakes efficiently with AI explanations, observe best practices in AI-generated code, get on-demand explanations, and experiment without fear.",
+    "description": "Developing strong software engineering skills, including \"taste\" for clean and effective code, traditionally requires extensive experience, trial-and-error, and mentorship, which can be a slow process",
+    "problem": "Developing strong software engineering skills, including \"taste\" for clean and effective code, traditionally requires extensive experience, trial-and-error, and mentorship, which can be a slow process, especially for junior developers.",
+    "solution": "Utilize AI agents as interactive learning tools that accelerate a developer's skill acquisition and \"taste\" development. By using AI coding assistants, developers can:\n\n1. **Iterate Faster:** Quickly try out different approaches and see immediate results or feedback (e.g., compiler errors, test failures, AI-generated alternatives).\n2. **Learn from Mistakes Efficiently:** The AI can help identify and explain errors, allowing developers to understand why something failed more quickly.\n3. **Observe Best Practices:** By examining AI-generated code (which ideally reflects good practices), developers can learn new patterns and techniques.\n4. **Get Explanations on Demand:** Developers can ask the AI to explain complex concepts or unfamiliar code, acting as an always-available tutor.\n5. **Reduce Fear of Experimentation:** The ease of generating or refactoring code with AI can encourage developers to explore more, knowing they can easily revert or try again.\n\n**Key mechanisms:**\n\n* **Skill Leveling Effect:** Less experienced developers benefit more from AI assistance, helping bridge gaps between junior and senior developers.\n* **Adaptive Scaffolding:** AI provides guidance at the edge of the learner's ability (Zone of Proximal Development), with support fading as competence grows.\n* **Deliberate Practice at Scale:** 24/7 availability enables goal-oriented, feedback-driven practice with infinite patience for repetition.\n\nThis creates an environment where developers, particularly those less experienced, can learn and refine their skills at an accelerated pace by having a powerful, responsive partner in the coding process.",
     "when_to_use": [
-      "Junior developer onboarding",
-      "Learning new languages/frameworks",
-      "Understanding unfamiliar codebases",
-      "Developing 'code taste' faster"
+      "Learning new frameworks or domains: Use AI to accelerate onboarding while maintaining independent problem-solving.",
+      "Deliberate practice: Ask for explanations and rationale, not just code. Request alternatives to compare approaches.",
+      "Fade support gradually: Start with heavy AI assistance, then reduce as competence builds to preserve skill development.",
+      "Socratic interaction: Have AI ask questions rather than give answers to build understanding and judgment.",
+      "Code review partnerships: Use AI as a first-pass reviewer to expose different perspectives and patterns."
     ],
     "pros": [
-      "Vastly accelerated iteration cycles",
-      "Always-available tutor",
-      "Safe experimentation environment",
-      "Learn patterns from AI-generated code"
+      "Accelerated skill acquisition, particularly for junior developers",
+      "24/7 availability with infinite patience",
+      "Personalized learning paths",
+      "Reduced fear of experimentation"
     ],
     "cons": [
-      "May develop dependency on AI",
-      "AI explanations may have errors",
-      "Could skip fundamental understanding",
-      "Less struggle may mean less retention"
+      "Risk of superficial learning without independent problem-solving",
+      "Overreliance can inhibit skill formation",
+      "Requires metacognitive discipline to fade support appropriately"
     ],
     "tags": [
       "developer-productivity",
@@ -4864,6 +4872,7 @@
       "skill-acquisition",
       "iteration",
       "feedback",
+      "taste-development",
       "education",
       "junior-developer"
     ],
