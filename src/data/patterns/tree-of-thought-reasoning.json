@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://arxiv.org/abs/2305.10601",
   "problem": {
-    "en": "Linear chain-of-thought limits exploration of alternative solution paths and can get stuck in local optima.",
-    "ko": "선형 사고 연쇄가 대안적 솔루션 경로 탐색을 제한하고 지역 최적점에 갇힐 수 있습니다."
+    "en": "Linear reasoning commits early to one path and can fail silently when intermediate assumptions are wrong. On complex planning or synthesis tasks, this causes premature convergence, weak recovery from mistakes, and missed alternatives that a broader search would discover.",
+    "ko": "선형 추론은 하나의 경로에 일찍 확정되어 중간 가정이 틀렸을 때 조용히 실패할 수 있습니다. 복잡한 계획이나 합성 작업에서 이는 조기 수렴, 실수로부터의 약한 복구, 그리고 더 넓은 탐색이 발견했을 대안의 누락을 초래합니다."
   },
   "solution": {
-    "en": "Explore multiple reasoning branches in parallel, evaluating and pruning paths systematically to find optimal solutions.",
-    "ko": "여러 추론 분기를 병렬로 탐색하고, 체계적으로 경로를 평가하고 가지치기하여 최적의 솔루션을 찾습니다."
+    "en": "Explore a search tree of intermediate thoughts instead of a single chain. Generate multiple candidate continuations, score partial states, prune weak branches, and continue expanding the most promising paths until a stopping condition is met.\n\nThis turns reasoning into guided search: backtracking is explicit, branch quality is measurable, and the final answer can be chosen from competing candidates rather than the first trajectory.\n\nThe quality of the evaluation function significantly impacts performance—external verifiers (code execution, tests) outperform self-reflection scoring.\n\n```pseudo\nqueue = [root_problem]\nwhile queue:\n    thought = queue.pop()\n    for step in expand(thought):\n        score = evaluate(step)\n        queue.push((score, step))\n    prune_weak_branches(queue)\nselect_best(queue)\n```",
+    "ko": "단일 체인 대신 중간 사고의 탐색 트리를 탐색합니다. 여러 후보 연속을 생성하고, 부분 상태를 점수화하고, 약한 분기를 가지치기하고, 중지 조건이 충족될 때까지 가장 유망한 경로를 계속 확장합니다.\n\n이는 추론을 가이드된 탐색으로 전환합니다: 백트래킹이 명시적이고, 분기 품질이 측정 가능하며, 최종 답변은 첫 번째 궤적이 아닌 경쟁 후보들 중에서 선택할 수 있습니다.\n\n평가 함수의 품질이 성능에 크게 영향을 미칩니다—외부 검증기(코드 실행, 테스트)가 자기 반성 점수화보다 뛰어납니다."
   },
   "ascii_diagram": "         ┌───────┐\n         │Problem│\n         └───┬───┘\n        ┌────┼────┐\n        ▼    ▼    ▼\n      ┌───┐┌───┐┌───┐\n      │ A ││ B ││ C │\n      └─┬─┘└─┬─┘└─┬─┘\n       ┌┴┐  ┌┴┐   ✗\n       ▼ ▼  ▼ ▼\n      A1 A2 B1 B2\n       ✓  ✗  ✓  ✗\n       │     │\n       └──┬──┘\n       ┌──▼──┐\n       │Best │\n       └─────┘",
   "mermaid_diagram": "flowchart TD\n    A[Problem] --> B[Branch A]\n    A --> C[Branch B]\n    A --> D[Branch C]\n    B --> E[Evaluate A]\n    C --> F[Evaluate B]\n    D --> G[Prune C]\n    E & F --> H[Select Best]",
   "code_example": "def tree_of_thought(problem, depth=3):\n    branches = generate_branches(problem)\n    evaluated = []\n    for branch in branches:\n        score = evaluate(branch)\n        if score > threshold:\n            if depth > 0:\n                sub_branches = tree_of_thought(branch, depth-1)\n                evaluated.extend(sub_branches)\n            else:\n                evaluated.append((branch, score))\n    return select_best(evaluated)",
   "when_to_use": {
-    "en": ["Math problems", "Game strategies", "Complex decision making"],
-    "ko": ["수학 문제", "게임 전략", "복잡한 의사결정"]
+    "en": ["Apply when tasks benefit from exploring many potential strategies—puzzles, code generation, or planning. Use heuristics or a value function to prune unpromising branches.", "Algorithm variants: BFS for exhaustive exploration, DFS for deep paths with limited memory, Beam search for memory-constrained scenarios with good heuristics."],
+    "ko": ["퍼즐, 코드 생성, 계획 등 다양한 잠재적 전략 탐색이 유리한 작업에 적용. 유망하지 않은 분기를 가지치기하기 위해 휴리스틱이나 가치 함수 사용.", "알고리즘 변형: 철저한 탐색을 위한 BFS, 제한된 메모리에서 깊은 경로를 위한 DFS, 좋은 휴리스틱이 있는 메모리 제약 시나리오를 위한 빔 탐색."]
   },
   "pros": {
-    "en": ["Better solution exploration", "Systematic evaluation", "Backtracking possible"],
-    "ko": ["더 나은 솔루션 탐색", "체계적 평가", "백트래킹 가능"]
+    "en": ["Covers more possibilities; improves reliability on hard tasks (22-28% over CoT on multi-step reasoning)", "Enables explicit backtracking from failed paths"],
+    "ko": ["더 많은 가능성을 탐색하며 어려운 작업에서 신뢰성 향상 (다단계 추론에서 CoT 대비 22-28% 개선)", "실패한 경로에서 명시적 백트래킹 가능"]
   },
   "cons": {
-    "en": ["High computational cost", "Complex implementation", "Risk of branch explosion"],
-    "ko": ["계산 비용 높음", "구현 복잡", "분기 폭발 위험"]
+    "en": ["Higher compute cost (3-10x more tokens than Chain-of-Thought)", "Needs a good evaluation function to guide search", "Inherently slower latency; overkill for simple linear tasks"],
+    "ko": ["높은 연산 비용 (Chain-of-Thought 대비 3-10배 더 많은 토큰)", "탐색을 안내할 좋은 평가 함수 필요", "본질적으로 느린 지연 시간; 단순한 선형 작업에는 과도함"]
   },
   "tags": ["branching", "deliberate-reasoning", "search", "exploration"]
 }

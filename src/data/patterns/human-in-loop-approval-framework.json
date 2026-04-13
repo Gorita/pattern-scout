@@ -6,27 +6,67 @@
   "status": "validated-in-production",
   "original_url": "https://claude.com/blog/building-companies-with-claude-code",
   "problem": {
-    "en": "Fully autonomous agents may take risky actions without human oversight, leading to costly mistakes.",
-    "ko": "완전 자율 에이전트가 인간의 감독 없이 위험한 행동을 취하여 비용이 많이 드는 실수를 초래할 수 있습니다."
+    "en": "Autonomous AI agents need to execute high-risk or irreversible operations (database modifications, production deployments, system configurations, API calls) but allowing unsupervised execution creates unacceptable safety and compliance risks. Blocking all such operations defeats the purpose of agent automation.",
+    "ko": "자율 AI 에이전트가 고위험 또는 되돌릴 수 없는 작업(데이터베이스 수정, 프로덕션 배포, 시스템 구성, API 호출)을 실행해야 하지만, 감독 없는 실행은 수용할 수 없는 안전 및 컴플라이언스 위험을 초래합니다. 이러한 모든 작업을 차단하면 에이전트 자동화의 목적이 무효화됩니다."
   },
   "solution": {
-    "en": "Route high-risk operations through human approval gates via Slack, email, or other channels before execution.",
-    "ko": "고위험 작업을 실행 전에 Slack, 이메일 또는 기타 채널을 통해 인간 승인 게이트로 라우팅합니다."
+    "en": "Systematically insert human approval gates for designated high-risk functions while maintaining agent autonomy for safe operations. Create lightweight feedback loops that enable time-sensitive human decisions without blocking the entire agent workflow.\n\n**Core components:**\n\n- **Risk classification**: Identify functions requiring human approval, define approval criteria (cost thresholds, data sensitivity, reversibility)\n- **Multi-channel approval interface**: Slack integration for real-time notifications, email for asynchronous approvals, SMS for urgent/critical operations, web dashboard for batch reviews\n- **Approval workflow**: Agent requests permission before executing risky function, human receives context-rich approval request, quick approve/reject/modify decision, timeout handling with configurable escalation (default deny recommended)\n- **Audit trail**: Log all approval requests and responses, track who approved what and when",
+    "ko": "지정된 고위험 기능에 인간 승인 게이트를 체계적으로 삽입하면서 안전한 작업에 대해서는 에이전트 자율성을 유지합니다. 전체 에이전트 워크플로우를 차단하지 않고 시간에 민감한 인간 결정을 가능하게 하는 경량 피드백 루프를 생성합니다.\n\n**핵심 구성 요소:**\n\n- **위험 분류**: 인간 승인이 필요한 기능 식별, 승인 기준 정의 (비용 임계값, 데이터 민감도, 되돌릴 수 있는지 여부)\n- **다채널 승인 인터페이스**: 실시간 알림을 위한 Slack 통합, 비동기 승인을 위한 이메일, 긴급/중요 작업을 위한 SMS, 일괄 검토를 위한 웹 대시보드\n- **승인 워크플로우**: 에이전트가 위험한 기능 실행 전 권한 요청, 인간이 컨텍스트가 풍부한 승인 요청 수신, 빠른 승인/거부/수정 결정, 구성 가능한 에스컬레이션이 있는 타임아웃 처리 (기본 거부 권장)\n- **감사 추적**: 모든 승인 요청과 응답 로깅, 누가 무엇을 언제 승인했는지 추적"
   },
   "ascii_diagram": "┌─────────────┐\n│   Agent     │\n└──────┬──────┘\n       │ action\n┌──────▼──────┐\n│ Risk Check  │\n└──────┬──────┘\n   ┌───┴───┐\n   ▼       ▼\n[Low]    [High]\n   │       │\n   │  ┌────▼────┐\n   │  │  Human  │\n   │  │ Approve │\n   │  └────┬────┘\n   │       │\n   └───┬───┘\n┌──────▼──────┐\n│   Execute   │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent Action] --> B{Risk Level}\n    B -->|Low| C[Auto Execute]\n    B -->|High| D[Human Approval]\n    D -->|Approve| C\n    D -->|Reject| E[Cancel Action]",
   "code_example": "async def execute_with_approval(action):\n    risk = assess_risk(action)\n    \n    if risk == 'high':\n        approved = await slack.request_approval(\n            channel='#agent-approvals',\n            message=f'Approve: {action.description}?'\n        )\n        if not approved:\n            return {'status': 'rejected'}\n    \n    return await action.execute()",
   "when_to_use": {
-    "en": ["Production deployments", "Financial transactions", "Delete/modify operations"],
-    "ko": ["프로덕션 배포", "금융 거래", "삭제/수정 작업"]
+    "en": [
+      "Production database operations (DELETE, DROP, ALTER)",
+      "External API calls with side effects (payments, emails, webhooks)",
+      "System configuration changes (firewall rules, permissions)",
+      "Destructive file operations (bulk deletes, overwrites)",
+      "Compliance-sensitive operations (GDPR, HIPAA, SOC2)"
+    ],
+    "ko": [
+      "프로덕션 데이터베이스 작업 (DELETE, DROP, ALTER)",
+      "부수 효과가 있는 외부 API 호출 (결제, 이메일, 웹훅)",
+      "시스템 구성 변경 (방화벽 규칙, 권한)",
+      "파괴적 파일 작업 (대량 삭제, 덮어쓰기)",
+      "컴플라이언스 민감 작업 (GDPR, HIPAA, SOC2)"
+    ]
   },
   "pros": {
-    "en": ["Improved safety", "Audit trail", "Trust building"],
-    "ko": ["안전성 향상", "감사 추적", "신뢰 구축"]
+    "en": [
+      "Enables safe autonomous execution of risky operations",
+      "Maintains human oversight where it matters most",
+      "Lightweight integration (Slack buttons, not complex UIs)",
+      "Audit trail for compliance and debugging",
+      "Reduces agent anxiety about mistakes",
+      "Allows gradual trust expansion over time"
+    ],
+    "ko": [
+      "위험한 작업의 안전한 자율 실행 가능",
+      "가장 중요한 곳에서 인간 감독 유지",
+      "경량 통합 (복잡한 UI가 아닌 Slack 버튼)",
+      "컴플라이언스 및 디버깅을 위한 감사 추적",
+      "실수에 대한 에이전트 불안 감소",
+      "시간에 따른 점진적 신뢰 확장 가능"
+    ]
   },
   "cons": {
-    "en": ["Latency", "Human bottleneck", "24/7 coverage needed"],
-    "ko": ["지연 시간", "인간 병목", "24/7 커버리지 필요"]
+    "en": [
+      "Requires human availability and responsiveness",
+      "Can bottleneck agent workflows if approvals are slow",
+      "Infrastructure complexity (notification systems, state management)",
+      "Risk of approval fatigue leading to rubber-stamping",
+      "Requires clear classification of what needs approval",
+      "May interrupt human focus with frequent requests"
+    ],
+    "ko": [
+      "인간의 가용성과 응답성 필요",
+      "승인이 느리면 에이전트 워크플로우 병목 가능",
+      "인프라 복잡성 (알림 시스템, 상태 관리)",
+      "승인 피로로 인한 형식적 승인 위험",
+      "승인이 필요한 항목의 명확한 분류 필요",
+      "빈번한 요청으로 인간의 집중력 방해 가능"
+    ]
   },
-  "tags": ["human-oversight", "safety", "approvals", "risk-management"]
+  "tags": ["human-oversight", "safety", "approvals", "risk-management", "collaboration", "slack-integration"]
 }
