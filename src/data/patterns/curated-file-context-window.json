@@ -4,29 +4,29 @@
   "title_ko": "큐레이션된 파일 컨텍스트 윈도우",
   "category": "Context & Memory",
   "status": "best-practice",
-  "original_url": "https://www.nibzard.com/claude-code",
+  "original_url": "https://docs.anthropic.com/en/docs/claude-code/common-workflows",
   "problem": {
-    "en": "Dumping all files into the agent's prompt quickly exceeds token limits and introduces noise.",
-    "ko": "모든 파일을 에이전트 프롬프트에 덤프하면 토큰 한계를 빠르게 초과하고 노이즈가 발생합니다."
+    "en": "A coding agent often needs to reason about multiple source files, but dumping all files into its prompt quickly exceeds token limits or inference budget, introduces noise from unrelated files (e.g., tests for other modules, assets, docs) that distract the agent, and makes the agent's output slower and less focused on the immediate coding task.",
+    "ko": "코딩 에이전트는 여러 소스 파일에 대해 추론해야 하는 경우가 많지만, 모든 파일을 프롬프트에 덤프하면 토큰 한계나 추론 예산을 빠르게 초과하고, 관련 없는 파일(예: 다른 모듈의 테스트, 에셋, 문서)에서 노이즈가 발생하여 에이전트를 산만하게 만들며, 에이전트의 출력이 느려지고 당면한 코딩 작업에 대한 집중도가 떨어집니다."
   },
   "solution": {
-    "en": "Maintain a sterile main context with only task-relevant files, using sub-agents to search and summarize secondary files.",
-    "ko": "작업 관련 파일만 포함하는 깨끗한 메인 컨텍스트를 유지하고, 서브 에이전트를 사용하여 보조 파일을 검색하고 요약합니다."
+    "en": "Maintain a **sterile, curated \"main\" context window** containing only the code files directly relevant to the current task, and let **helper sub-agents** gather and rank additional files without polluting the main context:\n\n**1. Identify Primary Files**\n- At task kickoff, the agent selects the set of files where changes are intended.\n- Load only those files (plus any explicit dependencies) into the Main Context Window.\n\n**2. Spawn a File-Search Sub-Agent**\n- The sub-agent runs a quick search using agentic techniques (ripgrep, grep, AST heuristics) over the repository.\n- Modern implementations favor direct search (e.g., `rg`) over complex vector embeddings for simplicity and freshness.\n- It returns a ranked list of file paths.\n\n**3. Fetch & Summarize Secondary Files**\n- For each top-N file (e.g., N = 5), determine loading strategy by file size and relevance:\n  - Small files (<~200 tokens): load full content\n  - Medium files with high relevance: load full content or specific sections\n  - Large or peripheral files: load summaries, function signatures, or class structure only\n- Append those summaries if they pass a relevance threshold:\n  - **Symbol overlap**: file shares ≥50% of symbols with primary files\n  - **Dependency distance**: file is within 1-2 hops in dependency graph\n  - **Semantic similarity**: content exceeds similarity threshold (when embeddings available)\n\n**4. Proceed with Coding Task**\n- With a compact, high-signal context, the agent generates or refactors code, focusing solely on the curated set.",
+    "ko": "현재 작업에 직접 관련된 코드 파일만 포함하는 **정제된 큐레이션 \"메인\" 컨텍스트 윈도우**를 유지하고, **헬퍼 서브 에이전트**가 메인 컨텍스트를 오염시키지 않고 추가 파일을 수집하고 순위를 매기도록 합니다:\n\n**1. 주요 파일 식별**\n- 작업 시작 시 에이전트가 변경이 필요한 파일 세트를 선택합니다.\n- 해당 파일(및 명시적 종속성)만 메인 컨텍스트 윈도우에 로드합니다.\n\n**2. 파일 검색 서브 에이전트 생성**\n- 서브 에이전트가 에이전틱 기법(ripgrep, grep, AST 휴리스틱)으로 저장소를 빠르게 검색합니다.\n- 최신 구현은 단순성과 최신성을 위해 복잡한 벡터 임베딩보다 직접 검색(예: `rg`)을 선호합니다.\n- 순위가 매겨진 파일 경로 목록을 반환합니다.\n\n**3. 보조 파일 가져오기 및 요약**\n- 상위 N개 파일(예: N = 5)에 대해 파일 크기와 관련성에 따라 로딩 전략을 결정합니다:\n  - 작은 파일(<~200 토큰): 전체 내용 로드\n  - 관련성 높은 중간 크기 파일: 전체 내용 또는 특정 섹션 로드\n  - 크거나 주변적인 파일: 요약, 함수 시그니처 또는 클래스 구조만 로드\n- 관련성 임계값을 통과하면 요약을 추가합니다:\n  - **심볼 중첩**: 파일이 주요 파일과 ≥50%의 심볼을 공유\n  - **종속성 거리**: 종속성 그래프에서 1-2홉 이내\n  - **의미적 유사성**: 임베딩 사용 가능 시 유사성 임계값 초과\n\n**4. 코딩 작업 진행**\n- 컴팩트하고 신호가 높은 컨텍스트로 에이전트가 큐레이션된 세트에만 집중하여 코드를 생성하거나 리팩터링합니다."
   },
   "ascii_diagram": "┌─────────────────────┐\n│ PRIMARY CONTEXT     │\n│ UserController.java │\n│ (full content)      │\n├─────────────────────┤\n│ CONTEXT SNIPPETS    │\n│ - UserService.java  │\n│   validateUser()    │\n│ - SignupDTO.java    │\n│   fields + annots   │\n└─────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Task: Add validation to signup] --> B[Identify Primary: UserController]\n    B --> C[Search Sub-Agent]\n    C --> D[Find Related: UserService, SignupDTO]\n    D --> E[Extract Snippets Only]\n    E --> F[Compose Curated Context]",
   "code_example": "# Step 1: Identify primary files\nprimary = ['UserController.java']\n\n# Step 2: Search for related files\nrelated = search_agent.find('signup validation', limit=5)\n\n# Step 3: Extract only relevant snippets\nsnippets = []\nfor file in related:\n    if relevance_score(file, task) > 0.5:\n        snippets.append(extract_methods(file))\n\n# Step 4: Compose final context\ncontext = primary + snippets",
   "when_to_use": {
-    "en": ["Large monorepo projects", "Limited context windows", "Complex multi-file tasks"],
-    "ko": ["대규모 모노레포 프로젝트", "제한된 컨텍스트 윈도우", "복잡한 멀티 파일 작업"]
+    "en": ["Agent receives a natural-language or structured request (e.g., \"Add validation to `signup()` in `UserController.java`\").", "Automatically parse the request to identify \"primary files\".", "Invoke a Search Sub-Agent via shell commands (e.g., `rg \"signup\" -tjava`) or lightweight AST traversal.", "For each matched file, run snippet extraction (method signatures, class definitions referencing task symbols).", "Pass snippets back to main agent; filter for purely relevant code."],
+    "ko": ["에이전트가 자연어 또는 구조화된 요청 수신 (예: \"`UserController.java`의 `signup()`에 유효성 검사 추가\")", "요청을 자동 파싱하여 \"주요 파일\" 식별", "셸 명령(예: `rg \"signup\" -tjava`) 또는 경량 AST 순회를 통해 검색 서브 에이전트 호출", "매칭된 각 파일에 대해 스니펫 추출 실행 (메서드 시그니처, 작업 심볼을 참조하는 클래스 정의)", "스니펫을 메인 에이전트에 전달; 순수하게 관련된 코드만 필터링"]
   },
   "pros": {
-    "en": ["Minimal prompt size", "Faster response times", "Scales to large repos"],
-    "ko": ["최소 프롬프트 크기", "빠른 응답 시간", "대규모 레포로 확장"]
+    "en": ["Keeps the agent's prompt size minimum and directly on-target", "Improves response time and reduces hallucinations from irrelevant code", "Scales to large repositories because only a handful of files are ever loaded", "Agentic search (ripgrep/AST) works with uncommitted changes and requires no indexing infrastructure"],
+    "ko": ["에이전트의 프롬프트 크기를 최소화하고 목표에 직접 집중", "응답 시간 개선 및 관련 없는 코드로 인한 할루시네이션 감소", "소수의 파일만 로드하므로 대규모 저장소로 확장 가능", "에이전틱 검색(ripgrep/AST)이 커밋되지 않은 변경사항에서도 작동하며 인덱싱 인프라 불필요"]
   },
   "cons": {
-    "en": ["May miss edge cases", "Index maintenance required"],
-    "ko": ["엣지 케이스 놓칠 수 있음", "인덱스 유지보수 필요"]
+    "en": ["Requires a file-search mechanism (ripgrep for simplicity, or indexed AST for scale)", "May miss edge cases if the sub-agent's ranking heuristic is suboptimal—critical files can be omitted", "When using indexed approaches, the index must stay up-to-date as code changes (agentic search avoids this)"],
+    "ko": ["파일 검색 메커니즘 필요 (단순성을 위한 ripgrep 또는 확장을 위한 인덱싱된 AST)", "서브 에이전트의 순위 휴리스틱이 차선일 경우 엣지 케이스 놓칠 수 있음 - 중요 파일이 누락될 수 있음", "인덱싱 방식 사용 시 코드 변경에 따라 인덱스를 최신 상태로 유지해야 함 (에이전틱 검색은 이를 회피)"]
   },
   "tags": ["code-context", "file-scope", "relevance", "memory-management"]
 }

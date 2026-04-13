@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://arxiv.org/abs/2303.11366",
   "problem": {
-    "en": "LLM outputs may contain errors or suboptimal solutions without self-correction mechanisms.",
-    "ko": "LLM 출력이 자기 수정 메커니즘 없이 오류나 차선의 솔루션을 포함할 수 있습니다."
+    "en": "Single-pass generation frequently misses edge cases, constraints, or quality criteria that become obvious on review. Without a structured revision loop, agents return the first plausible answer even when a better answer is reachable with lightweight critique.",
+    "ko": "단일 패스 생성은 검토 시 명백해지는 엣지 케이스, 제약 조건 또는 품질 기준을 자주 놓칩니다. 구조화된 수정 루프 없이 에이전트는 가벼운 비평으로 더 나은 답변을 도출할 수 있는 경우에도 처음 그럴듯한 답변을 반환합니다."
   },
   "solution": {
-    "en": "Agent reviews and critiques its own outputs, iteratively improving until quality thresholds are met.",
-    "ko": "에이전트가 자신의 출력을 검토하고 비판하여 품질 임계값에 도달할 때까지 반복적으로 개선합니다."
+    "en": "After generating a draft, run an explicit self-evaluation pass against defined criteria and feed the critique into a revision attempt. Repeat until the output clears a threshold or retry budget is exhausted.\n\nUse stable scoring rubrics (correctness, completeness, safety, style) so the loop improves objective quality rather than free-form restyling. For reduced bias, use a separate model for critique (dual-model architecture) at the cost of additional compute.\n\n```pseudo\nfor attempt in range(max_iters):\n    draft = generate(prompt)\n    score, critique = evaluate(draft, metric)\n    if score >= threshold:\n        return draft\n    prompt = incorporate(critique, prompt)\n```",
+    "ko": "초안 생성 후 정의된 기준에 따라 명시적 자기 평가 패스를 실행하고 비평을 수정 시도에 반영합니다. 출력이 임계값을 통과하거나 재시도 예산이 소진될 때까지 반복합니다.\n\n안정적인 채점 기준(정확성, 완전성, 안전성, 스타일)을 사용하여 루프가 자유로운 스타일 변경이 아닌 객관적 품질을 개선하도록 합니다. 편향을 줄이려면 추가 컴퓨팅 비용을 들여 비평에 별도 모델을 사용합니다(듀얼 모델 아키텍처).\n\n```pseudo\nfor attempt in range(max_iters):\n    draft = generate(prompt)\n    score, critique = evaluate(draft, metric)\n    if score >= threshold:\n        return draft\n    prompt = incorporate(critique, prompt)\n```"
   },
   "ascii_diagram": "┌─────────────┐\n│   Agent     │\n└──────┬──────┘\n       │ generate\n       ▼\n┌─────────────┐\n│   Output    │\n└──────┬──────┘\n       │ critique\n       ▼\n┌─────────────┐\n│  Self-Eval  │\n└──────┬──────┘\n       │ improve?\n   ┌───┴───┐\n   ▼       ▼\n [Yes]   [No]\n   │       │\n   └───┐   ▼\n       │ ┌───────┐\n       │ │ Final │\n       │ └───────┘\n       └────▲",
   "mermaid_diagram": "flowchart TD\n    A[Generate Output] --> B[Self-Critique]\n    B --> C{Good Enough?}\n    C -->|No| D[Improve]\n    D --> A\n    C -->|Yes| E[Final Output]",
   "code_example": "output = agent.generate(task)\nwhile not evaluator.is_good_enough(output):\n    critique = agent.critique(output)\n    output = agent.improve(output, critique)",
   "when_to_use": {
-    "en": ["Code generation quality improvement", "Writing enhancement", "Complex reasoning validation"],
-    "ko": ["코드 생성 품질 향상", "글쓰기 개선", "복잡한 추론 검증"]
+    "en": ["Use when quality must meet explicit criteria in writing, reasoning, or code generation.", "Keep loop budgets small (2-3 iterations are typically optimal; beyond 3 shows diminishing returns).", "Log score deltas to verify that extra iterations are producing measurable gains."],
+    "ko": ["글쓰기, 추론 또는 코드 생성에서 품질이 명시적 기준을 충족해야 할 때 사용", "루프 예산을 작게 유지 (2-3회 반복이 일반적으로 최적; 3회 초과 시 수확체감)", "추가 반복이 측정 가능한 개선을 만드는지 확인하기 위해 점수 변화량 기록"]
   },
   "pros": {
-    "en": ["Improved output quality", "Automatic error detection", "No additional models needed"],
-    "ko": ["출력 품질 향상", "오류 자동 감지", "추가 모델 불필요"]
+    "en": ["Improves outputs with little supervision"],
+    "ko": ["적은 감독으로 출력 개선"]
   },
   "cons": {
-    "en": ["Increased latency", "Higher token costs", "Risk of infinite loops"],
-    "ko": ["지연 시간 증가", "토큰 비용 증가", "무한 루프 위험"]
+    "en": ["Extra compute; may stall if the metric is poorly defined"],
+    "ko": ["추가 컴퓨팅 비용; 메트릭이 부실하게 정의된 경우 정체 가능"]
   },
   "tags": ["self-feedback", "iterative-improvement", "evaluation"]
 }

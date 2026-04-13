@@ -6,19 +6,19 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2506.08837",
   "problem": {
-    "en": "Untrusted input can hijack an agent's reasoning once tool feedback re-enters the context window, leading to arbitrary, harmful actions.",
-    "ko": "도구 피드백이 컨텍스트 윈도우에 다시 들어가면 신뢰할 수 없는 입력이 에이전트의 추론을 가로채어 임의의 유해한 작업을 유발할 수 있습니다."
+    "en": "In tool-enabled agents, untrusted data from emails, web pages, and API responses is often fed back into the model between steps. That creates a control-flow vulnerability: injected text can influence which action the agent chooses next, enabling control-flow hijacking. Even if individual tools are safe, a compromised action-selection loop can trigger harmful sequences at the orchestration layer and enable cascading prompt injection attacks.",
+    "ko": "도구가 활성화된 에이전트에서 이메일, 웹 페이지, API 응답의 신뢰할 수 없는 데이터가 단계 사이에 모델로 다시 전달되는 경우가 많습니다. 이는 제어 흐름 취약점을 생성합니다: 주입된 텍스트가 에이전트의 다음 작업 선택에 영향을 미쳐 제어 흐름 하이재킹을 가능하게 합니다. 개별 도구가 안전하더라도 손상된 작업 선택 루프가 오케스트레이션 계층에서 유해한 시퀀스를 트리거하고 연쇄적 프롬프트 인젝션 공격을 가능하게 할 수 있습니다."
   },
   "solution": {
-    "en": "Treat the LLM as an instruction decoder only: map user requests to pre-approved actions without feeding tool outputs back to the LLM.",
-    "ko": "LLM을 명령어 디코더로만 취급합니다: 도구 출력을 LLM에 다시 제공하지 않고 사용자 요청을 사전 승인된 작업에 매핑합니다."
+    "en": "Treat the LLM as an instruction decoder, not a live controller. The model maps user intent to a pre-approved action ID plus schema-validated parameters, and execution is handled by deterministic code.\n\n- Map natural language to a constrained action allowlist.\n- Validate parameters against strict schemas before execution.\n- Prevent tool outputs from re-entering the selector prompt.\n- For multi-step workflows, compose actions in code with explicit state transitions.\n\nThis preserves natural-language usability while removing post-selection prompt-injection leverage. By preventing tool outputs from re-entering the LLM context, the pattern provides provable resistance to prompt injection through separation of duties and input/output control.\n\n```pseudo\naction = LLM.translate(prompt, allowlist)\nexecute(action)\n# tool output NOT returned to LLM\n```",
+    "ko": "LLM을 라이브 컨트롤러가 아닌 명령어 디코더로 취급합니다. 모델은 사용자 의도를 사전 승인된 작업 ID와 스키마 검증된 파라미터에 매핑하고, 실행은 결정론적 코드가 처리합니다.\n\n- 자연어를 제한된 작업 허용 목록에 매핑합니다.\n- 실행 전 엄격한 스키마에 대해 파라미터를 검증합니다.\n- 도구 출력이 선택자 프롬프트에 다시 들어가는 것을 방지합니다.\n- 다단계 워크플로우의 경우 명시적 상태 전환이 있는 코드로 작업을 구성합니다.\n\n이를 통해 자연어 사용성을 유지하면서 선택 후 프롬프트 인젝션 레버리지를 제거합니다. 도구 출력이 LLM 컨텍스트에 다시 들어가는 것을 방지함으로써 의무 분리와 입출력 제어를 통해 프롬프트 인젝션에 대한 증명 가능한 저항력을 제공합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│User Request │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ LLM Decode  │\n│ (allowlist) │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Execute Action│\n└──────┬──────┘\n       │\n       ✗ (no feedback)\n       │\n┌──────▼──────┐\n│   Result    │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Prompt] --> B[LLM Translates to Action]\n    B --> C{Action in Allowlist?}\n    C -->|Yes| D[Execute Action]\n    C -->|No| E[Reject]\n    D --> F[Return Result]\n    F -.X.-> B",
   "code_example": "# Action-Selector: No tool output fed back\naction = LLM.translate(prompt, allowlist)\nexecute(action)\n# Tool output NOT returned to LLM\n\n# Example allowlist\nallowlist = [\n    'send_notification',\n    'get_weather',\n    'lookup_order_status'\n]",
   "when_to_use": {
-    "en": ["Customer service bots", "Notification routers", "Kiosk interfaces"],
-    "ko": ["고객 서비스 봇", "알림 라우터", "키오스크 인터페이스"]
+    "en": ["Provide a hard allowlist of actions (API calls, SQL templates, page links) and version it like an API contract", "Use strict schema validation (e.g., Pydantic, JSON Schema) for all parameters", "Use it for customer-service bots, routing assistants, kiosk flows, and approval systems where allowed actions are finite and auditable"],
+    "ko": ["작업의 하드 허용 목록(API 호출, SQL 템플릿, 페이지 링크)을 제공하고 API 계약처럼 버전 관리", "모든 파라미터에 엄격한 스키마 검증(예: Pydantic, JSON Schema) 사용", "허용된 작업이 유한하고 감사 가능한 고객 서비스 봇, 라우팅 어시스턴트, 키오스크 플로우, 승인 시스템에 활용"]
   },
   "pros": {
     "en": ["Near-immunity to prompt injection", "Trivial to audit"],

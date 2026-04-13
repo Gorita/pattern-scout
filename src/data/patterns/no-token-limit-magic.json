@@ -6,27 +6,27 @@
   "status": "experimental-but-awesome",
   "original_url": "https://www.nibzard.com/ampcode",
   "problem": {
-    "en": "Aggressive prompt compression to save tokens stifles reasoning depth and self-correction. Premature optimization of token usage prevents discovery of what the model can actually achieve.",
-    "ko": "토큰 절약을 위한 공격적인 프롬프트 압축은 추론 깊이와 자기 수정을 억제합니다. 토큰 사용의 조기 최적화는 모델이 실제로 달성할 수 있는 것의 발견을 방해합니다."
+    "en": "Teams often optimize token spend too early, forcing prompts and context windows into tight constraints before they understand what high-quality behavior looks like. Early compression hides failure modes, reduces reasoning depth, and can lock in mediocre workflows that are cheap but unreliable.",
+    "ko": "팀이 고품질 동작이 어떤 것인지 이해하기 전에 토큰 지출을 너무 일찍 최적화하여 프롬프트와 컨텍스트 윈도우를 엄격한 제약 조건에 강제하는 경우가 많습니다. 조기 압축은 실패 모드를 숨기고, 추론 깊이를 줄이며, 저렴하지만 신뢰할 수 없는 평범한 워크플로우를 고착시킬 수 있습니다."
   },
   "solution": {
-    "en": "During prototyping, remove hard token limits. Allow lavish context and multiple reasoning passes. Yes, it's pricier - but dramatically better outputs surface valuable patterns before optimizing for production.",
-    "ko": "프로토타이핑 중에는 하드 토큰 제한을 제거합니다. 풍부한 컨텍스트와 여러 추론 패스를 허용합니다. 네, 더 비쌉니다 - 하지만 극적으로 더 나은 출력이 프로덕션 최적화 전에 가치 있는 패턴을 표면화합니다."
+    "en": "During discovery and prototyping, relax hard token limits and optimize for learning velocity. Allow richer context, deeper deliberation, and multiple critique passes to discover what a strong solution path actually requires. After the behavior is stable, measure where context can be compressed without degrading outcomes.\n\nThis pattern treats cost optimization as a second phase, not the first objective.",
+    "ko": "발견 및 프로토타이핑 단계에서 하드 토큰 제한을 완화하고 학습 속도를 최적화합니다. 더 풍부한 컨텍스트, 더 깊은 숙고, 여러 비평 패스를 허용하여 강력한 솔루션 경로가 실제로 무엇을 필요로 하는지 발견합니다. 동작이 안정된 후, 결과를 저하시키지 않고 컨텍스트를 압축할 수 있는 부분을 측정합니다.\n\n이 패턴은 비용 최적화를 첫 번째 목표가 아닌 두 번째 단계로 취급합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│      Development Phase          │\n└───────────────┬─────────────────┘\n                │\n        ┌───────▼───────┐\n        │Token Strategy?│\n        └───────┬───────┘\n          ┌─────┴─────┐\n          │           │\n    ┌─────▼─────┐ ┌───▼───────────┐\n    │ Prototype │ │  Production   │\n    │ Phase     │ │  Phase        │\n    └─────┬─────┘ └───────────────┘\n          │\n    ┌─────▼─────────────────┐\n    │ No Token Limits       │\n    │ • Lavish context      │\n    │ • Multiple passes     │\n    │ • Rich self-correction│\n    └─────┬─────────────────┘\n          │\n    ┌─────▼─────────────────┐\n    │ Better Output Quality │\n    │ Discover Patterns     │\n    └─────┬─────────────────┘\n          │\n    ┌─────▼─────────────────┐\n    │ THEN Optimize         │\n    └───────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Development Phase] --> B{Token Strategy}\n    B -->|Prototype| C[No Token Limits]\n    B -->|Production| D[Optimized Limits]\n    C --> E[Lavish Context]\n    C --> F[Multiple Reasoning Passes]\n    C --> G[Rich Self-Correction]\n    E --> H[Better Output Quality]\n    F --> H\n    G --> H\n    H --> I[Identify Valuable Patterns]\n    I --> J[Optimize for Production]\n    J --> D",
   "code_example": "# Prototype phase: No token limits\nclass PrototypeAgent:\n    def __init__(self):\n        # Don't set max_tokens during prototype\n        self.max_tokens = None\n        self.allow_multiple_passes = True\n    \n    async def solve(self, task):\n        # First pass: full context, no compression\n        result = await self.model.complete(\n            prompt=self.build_full_context(task),\n            max_tokens=None  # Let it think freely\n        )\n        \n        # Multiple reasoning passes if needed\n        if self.allow_multiple_passes:\n            result = await self.self_correct(result)\n        \n        return result\n\n# $1000 prototype spend justified by productivity\n# Optimize AFTER discovering what works",
   "when_to_use": {
-    "en": ["Early prototyping and exploration", "Discovering optimal patterns", "Complex reasoning tasks", "Before production optimization"],
-    "ko": ["초기 프로토타이핑 및 탐색", "최적 패턴 발견", "복잡한 추론 작업", "프로덕션 최적화 전"]
+    "en": ["Use this during pattern discovery, architecture design, and early benchmark creation", "Instrument token usage and quality scores from day one so later optimization has data", "Set a temporary spend ceiling per experiment while intentionally allowing larger contexts", "Transition to cost-tuned prompts only after quality thresholds are repeatable"],
+    "ko": ["패턴 발견, 아키텍처 설계, 초기 벤치마크 생성 시 활용", "나중 최적화를 위한 데이터 확보를 위해 첫날부터 토큰 사용량과 품질 점수를 계측", "의도적으로 더 큰 컨텍스트를 허용하면서 실험당 임시 지출 한도 설정", "품질 임계값이 반복 가능해진 후에만 비용 최적화된 프롬프트로 전환"]
   },
   "pros": {
-    "en": ["Discovers what model can actually achieve", "Better output quality surfaces patterns", "Prevents premature optimization", "Justified by productivity gains"],
-    "ko": ["모델이 실제로 달성할 수 있는 것 발견", "더 나은 출력 품질이 패턴 표면화", "조기 최적화 방지", "생산성 향상으로 정당화"]
+    "en": ["Faster insight discovery", "Better baseline quality", "Fewer premature architecture decisions"],
+    "ko": ["더 빠른 인사이트 발견", "더 나은 기준 품질", "조기 아키텍처 결정 감소"]
   },
   "cons": {
-    "en": ["Higher prototyping costs", "Not suitable for production", "Requires later optimization phase", "May develop habits that don't scale"],
-    "ko": ["높은 프로토타이핑 비용", "프로덕션에 적합하지 않음", "나중에 최적화 단계 필요", "확장되지 않는 습관 개발 가능"]
+    "en": ["Higher short-term inference cost", "Risk of delaying production-grade efficiency work"],
+    "ko": ["높은 단기 추론 비용", "프로덕션 수준 효율성 작업 지연 위험"]
   },
   "tags": ["performance", "cost", "experimentation", "prototyping", "token-optimization"]
 }
