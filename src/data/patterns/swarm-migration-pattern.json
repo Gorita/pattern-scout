@@ -6,27 +6,63 @@
   "status": "validated-in-production",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "Large-scale migrations require changes across hundreds of files, exceeding single agent capacity.",
-    "ko": "대규모 마이그레이션이 수백 개 파일에 걸친 변경을 필요로 하여 단일 에이전트 용량을 초과합니다."
+    "en": "Large-scale code migrations are time-consuming when done sequentially:\n\n- Framework upgrades (e.g., testing library A to testing library B)\n- Lint rule rollouts across hundreds of files\n- API migrations when dependencies change\n- Code modernization (e.g., class components to hooks)\n- Refactoring patterns across the codebase\n\nHumans doing these manually is tedious; single agents doing them sequentially is slow.",
+    "ko": "대규모 코드 마이그레이션은 순차적으로 수행할 경우 시간이 많이 소요됩니다:\n\n- 프레임워크 업그레이드 (예: 테스트 라이브러리 A에서 B로)\n- 수백 개 파일에 걸친 린트 규칙 롤아웃\n- 의존성 변경 시 API 마이그레이션\n- 코드 현대화 (예: 클래스 컴포넌트에서 훅으로)\n- 코드베이스 전반의 리팩토링 패턴\n\n인간이 수동으로 수행하면 지루하고, 단일 에이전트가 순차적으로 수행하면 느립니다."
   },
   "solution": {
-    "en": "Spawn multiple sub-agents in parallel (like a swarm), each handling a subset of files, then merge results.",
-    "ko": "여러 서브 에이전트를 (스웜처럼) 병렬로 생성하여 각각 파일 하위 집합을 처리한 다음 결과를 병합합니다."
+    "en": "Use a **swarm architecture** where the main agent orchestrates 10-20 parallel subagents working simultaneously on independent chunks of the migration.\n\n**Pattern:**\n\n1. **Main agent creates migration plan**: Enumerate all files/targets needing migration\n2. **Create todo list**: Break work into parallelizable chunks\n3. **Spawn subagent swarm**: Start 10+ agents concurrently, each taking N items\n4. **Map-reduce execution**: Each subagent migrates its chunk independently\n5. **Verification**: Main agent validates results, may spawn additional agents for fixes\n6. **Consolidation**: Combine results (single PR or coordinated merge)",
+    "ko": "메인 에이전트가 10-20개의 병렬 서브에이전트를 오케스트레이션하여 마이그레이션의 독립적인 청크에서 동시에 작업하는 **스웜 아키텍처**를 사용합니다.\n\n**패턴:**\n\n1. **메인 에이전트가 마이그레이션 계획 생성**: 마이그레이션이 필요한 모든 파일/대상 열거\n2. **할 일 목록 생성**: 작업을 병렬화 가능한 청크로 분할\n3. **서브에이전트 스웜 생성**: 10개 이상의 에이전트를 동시에 시작, 각각 N개 항목 담당\n4. **맵-리듀스 실행**: 각 서브에이전트가 자신의 청크를 독립적으로 마이그레이션\n5. **검증**: 메인 에이전트가 결과를 검증하고, 필요시 수정을 위한 추가 에이전트 생성\n6. **통합**: 결과를 결합 (단일 PR 또는 조정된 병합)"
   },
   "ascii_diagram": "┌───────────────┐\n│  Migration    │\n│  1000 files   │\n└───────┬───────┘\n   ┌────┼────┐\n   ▼    ▼    ▼\n┌────┐┌────┐┌────┐\n│S1  ││S2  ││... │\n│100 ││100 ││    │\n│file││file││    │\n└─┬──┘└─┬──┘└─┬──┘\n  └─────┼─────┘\n        ▼\n   ┌─────────┐\n   │ Combine │\n   └─────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Migration Task] --> B[Split Files]\n    B --> C[Sub-Agent 1: 100 files]\n    B --> D[Sub-Agent 2: 100 files]\n    B --> E[Sub-Agent N: 100 files]\n    C & D & E --> F[Merge Results]",
   "code_example": "files = get_all_migration_files()  # 1000 files\nchunks = split_into_chunks(files, chunk_size=100)\n\n# Spawn sub-agents in parallel\ntasks = [\n    spawn_agent(f'Migrate chunk {i}', chunk)\n    for i, chunk in enumerate(chunks)\n]\nresults = await asyncio.gather(*tasks)\n\n# Merge all changes\nmerge_results(results)",
   "when_to_use": {
-    "en": ["Framework upgrades", "API migrations", "Large-scale refactoring"],
-    "ko": ["프레임워크 업그레이드", "API 마이그레이션", "대규모 리팩토링"]
+    "en": [
+      "Lint rule enforcement: Apply new ESLint/Biome rules across files",
+      "Framework migration: Jest to Vitest, Mocha to Jest, etc.",
+      "API updates: Update to new library versions",
+      "Code modernization: var to const/let, callbacks to async/await",
+      "Import path changes: Relative to absolute paths"
+    ],
+    "ko": [
+      "린트 규칙 적용: 파일 전반에 새로운 ESLint/Biome 규칙 적용",
+      "프레임워크 마이그레이션: Jest에서 Vitest, Mocha에서 Jest 등",
+      "API 업데이트: 새로운 라이브러리 버전으로 업데이트",
+      "코드 현대화: var에서 const/let, 콜백에서 async/await",
+      "임포트 경로 변경: 상대 경로에서 절대 경로로"
+    ]
   },
   "pros": {
-    "en": ["Massive parallelization", "Fast completion", "Failure isolation"],
-    "ko": ["대규모 병렬화", "빠른 완료", "실패 격리"]
+    "en": [
+      "Massive parallelization: 6-10x speedup vs. sequential migration",
+      "Easy verification: Each subagent handles tractable chunk",
+      "Fault isolation: One subagent failing doesn't break others",
+      "Cost-effective for scale: 100x+ ROI despite 10x token cost increase",
+      "Reproducible: Same migration applied consistently across all files"
+    ],
+    "ko": [
+      "대규모 병렬화: 순차 마이그레이션 대비 6-10배 속도 향상",
+      "쉬운 검증: 각 서브에이전트가 관리 가능한 청크 처리",
+      "결함 격리: 하나의 서브에이전트 실패가 다른 것에 영향 없음",
+      "규모에서 비용 효율적: 10배 토큰 비용 증가에도 100배 이상 ROI",
+      "재현 가능: 모든 파일에 동일한 마이그레이션을 일관되게 적용"
+    ]
   },
   "cons": {
-    "en": ["Coordination complexity", "Merge conflicts", "Higher costs"],
-    "ko": ["조정 복잡", "병합 충돌", "비용 증가"]
+    "en": [
+      "High token cost: Running 10+ agents simultaneously",
+      "Coordination complexity: Main agent must track all subagents",
+      "Merge conflicts: Parallel changes might conflict",
+      "Requires independence: Only works if migration targets are separable",
+      "Verification burden: Need to validate 10+ agent outputs"
+    ],
+    "ko": [
+      "높은 토큰 비용: 10개 이상의 에이전트 동시 실행",
+      "조정 복잡성: 메인 에이전트가 모든 서브에이전트를 추적해야 함",
+      "병합 충돌: 병렬 변경이 충돌할 수 있음",
+      "독립성 필요: 마이그레이션 대상이 분리 가능해야만 작동",
+      "검증 부담: 10개 이상의 에이전트 출력을 검증해야 함"
+    ]
   },
-  "tags": ["swarm", "map-reduce", "migration", "parallelization"]
+  "tags": ["swarm", "map-reduce", "migration", "parallelization", "sub-agents", "scalability"]
 }

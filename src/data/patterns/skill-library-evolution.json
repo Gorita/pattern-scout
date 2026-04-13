@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://www.anthropic.com/engineering/code-execution-with-mcp",
   "problem": {
-    "en": "Agents frequently solve similar problems but must rediscover solutions each time, wasting tokens and time. Organizations want agents to build up capability over time.",
-    "ko": "에이전트가 자주 유사한 문제를 해결하지만 매번 솔루션을 다시 발견해야 하여 토큰과 시간을 낭비합니다. 조직은 에이전트가 시간이 지남에 따라 역량을 구축하기를 원합니다."
+    "en": "Agents frequently solve similar problems across different sessions or workflows. Without a mechanism to preserve and reuse working code, agents must rediscover solutions each time, wasting tokens and time. Organizations want agents to build up capability over time rather than starting from scratch every session.",
+    "ko": "에이전트가 서로 다른 세션이나 워크플로우에서 자주 유사한 문제를 해결합니다. 작동하는 코드를 보존하고 재사용하는 메커니즘이 없으면 에이전트는 매번 솔루션을 다시 발견해야 하며, 토큰과 시간을 낭비합니다. 조직은 에이전트가 매 세션마다 처음부터 시작하지 않고 시간이 지남에 따라 역량을 구축하기를 원합니다."
   },
   "solution": {
-    "en": "Persist working code implementations as reusable functions in a skills/ directory. Over time, these evolve into documented, tested skills that become higher-level agent capabilities.",
-    "ko": "작동하는 코드 구현을 skills/ 디렉토리에 재사용 가능한 함수로 저장합니다. 시간이 지나면 이는 문서화되고 테스트된 스킬로 발전하여 고수준 에이전트 역량이 됩니다."
+    "en": "Agents persist working code implementations as reusable functions in a `skills/` directory. Over time, these implementations evolve into well-documented, tested \"skills\" that become higher-level capabilities the agent can leverage.\n\n**Skill types:**\n- **Atomic skills**: Single-purpose functions (e.g., `analyze_sentiment`) that serve as building blocks\n- **Composite skills**: Multi-step workflows that combine atomic skills into higher-level capabilities\n\n**Progressive disclosure with on-demand loading (Imprint approach):**\nInstead of loading all skills into context, inject skill descriptions into system prompt and provide a `load_skills` tool for full content.\n\n**Lazy-loading MCP tools via skills (Amp approach):**\nMCP servers often expose many tools that consume significant context. Bind MCP servers to skills with selective tool loading.\n\n**Token savings example:**\n- chrome-devtools MCP: 26 tools = 17k tokens\n- Lazy-loaded subset: 4 tools = 1.5k tokens (91% reduction)",
+    "ko": "에이전트가 작동하는 코드 구현을 `skills/` 디렉토리에 재사용 가능한 함수로 저장합니다. 시간이 지나면 이 구현들은 잘 문서화되고 테스트된 \"스킬\"로 발전하여 에이전트가 활용할 수 있는 고수준 역량이 됩니다.\n\n**스킬 유형:**\n- **원자적 스킬**: 빌딩 블록 역할을 하는 단일 목적 함수 (예: `analyze_sentiment`)\n- **복합 스킬**: 원자적 스킬을 결합하여 고수준 역량을 만드는 다단계 워크플로우\n\n**점진적 공개와 온디맨드 로딩 (Imprint 접근법):**\n모든 스킬을 컨텍스트에 로드하는 대신, 시스템 프롬프트에 스킬 설명을 주입하고 전체 내용을 위한 `load_skills` 도구를 제공합니다.\n\n**스킬을 통한 MCP 도구 지연 로딩 (Amp 접근법):**\nMCP 서버는 상당한 컨텍스트를 소비하는 많은 도구를 노출합니다. 선택적 도구 로딩으로 MCP 서버를 스킬에 바인딩합니다.\n\n**토큰 절약 예시:**\n- chrome-devtools MCP: 26개 도구 = 17k 토큰\n- 지연 로딩 서브셋: 4개 도구 = 1.5k 토큰 (91% 감소)"
   },
   "ascii_diagram": "┌─────────────┐\n│ Ad-hoc Code │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Save Working│\n│  Solution   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Reusable   │\n│  Function   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Documented  │\n│   Skill     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Agent     │\n│ Capability  │\n└─────────────┘",
   "mermaid_diagram": "graph LR\n    A[Ad-hoc Code] --> B[Save Working Solution]\n    B --> C[Reusable Function]\n    C --> D[Documented Skill]\n    D --> E[Agent Capability]",
   "code_example": "# Session 1: Save working solution\ndef analyze_sentiment(text):\n    response = llm.complete(f\"Analyze sentiment: {text}\")\n    return parse_sentiment(response)\n\nwith open(\"skills/analyze_sentiment.py\", \"w\") as f:\n    f.write(inspect.getsource(analyze_sentiment))\n\n# Later session: Discover and use existing skill\nskills = os.listdir(\"skills/\")\n# ['analyze_sentiment.py', 'extract_entities.py', ...]\n\nfrom skills.analyze_sentiment import analyze_sentiment\nresult = analyze_sentiment(\"Customer feedback here...\")",
   "when_to_use": {
-    "en": ["Recurring problem patterns", "Building organizational knowledge base", "Long-running agent projects"],
-    "ko": ["반복되는 문제 패턴", "조직 지식 기반 구축", "장기 에이전트 프로젝트"]
+    "en": ["Ad-hoc to Saved: Agent writes code to solve immediate problem; if solution works, save to skills/ directory with descriptive names.", "Saved to Reusable: Refactor for generalization (parameterize hard-coded values), add basic error handling, create simple function signature.", "Reusable to Documented: Add docstrings with purpose, parameters, returns, examples; include prerequisites or dependencies; note when last tested.", "Documented to Capability: Agent can discover skills through directory listing; skills become part of agent's effective capability set; skills are composed into higher-level workflows."],
+    "ko": ["임시에서 저장으로: 에이전트가 즉각적인 문제를 해결하는 코드 작성 후 솔루션이 작동하면 설명적 이름으로 skills/ 디렉토리에 저장.", "저장에서 재사용으로: 일반화를 위한 리팩토링(하드코딩된 값 파라미터화), 기본 에러 처리 추가, 간단한 함수 시그니처 생성.", "재사용에서 문서화로: 목적, 파라미터, 반환값, 예제가 포함된 독스트링 추가; 사전 요구사항이나 의존성 포함; 마지막 테스트 시점 기록.", "문서화에서 역량으로: 에이전트가 디렉토리 목록을 통해 스킬 발견 가능; 스킬이 에이전트의 유효 역량 세트의 일부가 됨; 스킬이 고수준 워크플로우로 구성됨."]
   },
   "pros": {
-    "en": ["Builds capability over time", "Reduces redundant work", "Skills can be tested and versioned"],
-    "ko": ["시간이 지남에 따라 역량 구축", "중복 작업 감소", "스킬 테스트 및 버전 관리 가능"]
+    "en": ["Builds agent capability over time", "Reduces redundant problem-solving across sessions", "Creates organizational knowledge base in code form", "Skills can be tested, versioned, and improved", "Enables composition of higher-level capabilities", "Reduces token consumption (reuse vs. rewrite)"],
+    "ko": ["시간이 지남에 따라 에이전트 역량 구축", "세션 간 중복 문제 해결 감소", "코드 형태의 조직 지식 기반 생성", "스킬 테스트, 버전 관리 및 개선 가능", "고수준 역량의 구성 가능", "토큰 소비 감소 (재작성 대비 재사용)"]
   },
   "cons": {
-    "en": ["Requires discipline to save/organize", "Skills can become stale", "Quality varies"],
-    "ko": ["저장/정리 규율 필요", "스킬이 오래될 수 있음", "품질 편차"]
+    "en": ["Requires discipline to save and organize skills", "Skills can become stale or outdated", "Need maintenance and testing infrastructure", "Namespace conflicts if skills grow large", "Agents must be prompted to check skills before writing new code", "Quality varies (not all saved code is good code)"],
+    "ko": ["스킬 저장 및 정리에 규율 필요", "스킬이 오래되거나 구식이 될 수 있음", "유지보수 및 테스트 인프라 필요", "스킬이 커지면 네임스페이스 충돌 가능", "새 코드 작성 전 스킬 확인을 위해 에이전트에 프롬프트 필요", "품질 편차 (저장된 모든 코드가 좋은 코드는 아님)"]
   },
   "tags": ["code-reuse", "skills", "learning", "capabilities", "evolution", "mcp"]
 }

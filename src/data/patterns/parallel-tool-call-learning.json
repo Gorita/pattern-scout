@@ -6,27 +6,61 @@
   "status": "emerging",
   "original_url": "https://youtu.be/1s_7RMG4O4U",
   "problem": {
-    "en": "Agents execute tool calls sequentially even when they could run in parallel, causing unnecessary latency. Base models may not naturally parallelize without training signal.",
-    "ko": "에이전트가 병렬로 실행할 수 있는 경우에도 도구 호출을 순차적으로 실행하여 불필요한 지연을 유발합니다. 기본 모델은 훈련 신호 없이 자연스럽게 병렬화하지 않을 수 있습니다."
+    "en": "Agents often execute tool calls sequentially even when they could run in parallel. This causes unnecessary latency as sequential calls add up when tool execution time dominates inference time, inefficient exploration where the agent waits for one result before deciding the next action, poor tool utilization with multiple independent information needs handled one-by-one, and suboptimal learned behavior since base models may not naturally parallelize without training signal.",
+    "ko": "에이전트가 병렬로 실행할 수 있는 경우에도 도구 호출을 순차적으로 실행하는 경우가 많습니다. 이는 도구 실행 시간이 추론 시간을 지배할 때 순차 호출이 누적되어 불필요한 지연을 유발하고, 에이전트가 다음 행동을 결정하기 전에 하나의 결과를 기다려 비효율적인 탐색이 발생하며, 여러 독립적인 정보 요구가 하나씩 처리되어 도구 활용이 저하되고, 기본 모델이 훈련 신호 없이 자연스럽게 병렬화하지 않아 차선의 학습된 행동이 나타납니다."
   },
   "solution": {
-    "en": "Use Agent RFT to teach the model to parallelize independent tool calls. The model discovers through RL exploration that parallel patterns receive similar rewards in less time.",
-    "ko": "Agent RFT를 사용하여 모델이 독립적인 도구 호출을 병렬화하도록 가르칩니다. 모델은 RL 탐색을 통해 병렬 패턴이 더 짧은 시간에 유사한 보상을 받는다는 것을 발견합니다."
+    "en": "**Use Agent RFT to teach the model to parallelize independent tool calls, dramatically reducing latency when tool execution is faster than inference.**\n\nDuring RL exploration, the agent discovers that multiple tool calls can be made simultaneously, and when tool results arrive together the next reasoning step has more context. Parallel patterns receive similar rewards in less time.\n\n**Tool Classification for Safe Parallelization:**\n\nAgents learn to distinguish between:\n- **Read-only tools**: Safe to parallelize (search, read_file, list)\n- **State-modifying tools**: Require serialization (write_file, delete, state-changing APIs)\n\n**Natural Emergence through RL:**\n\nUnlike explicit programming, the parallelization emerges from exploration, reward shaping (faster completions may get slight bonuses), efficiency pressure (light penalty on token usage), and pattern reinforcement (successful parallel patterns get reinforced).",
+    "ko": "**Agent RFT를 사용하여 모델이 독립적인 도구 호출을 병렬화하도록 가르쳐, 도구 실행이 추론보다 빠를 때 지연을 극적으로 줄입니다.**\n\nRL 탐색 중 에이전트는 여러 도구 호출을 동시에 수행할 수 있으며, 도구 결과가 함께 도착하면 다음 추론 단계에서 더 많은 컨텍스트를 가진다는 것을 발견합니다. 병렬 패턴은 더 짧은 시간에 유사한 보상을 받습니다.\n\n**안전한 병렬화를 위한 도구 분류:**\n\n에이전트는 다음을 구별하도록 학습합니다:\n- **읽기 전용 도구**: 병렬화 안전 (검색, 파일 읽기, 목록)\n- **상태 수정 도구**: 직렬화 필요 (파일 쓰기, 삭제, 상태 변경 API)\n\n**RL을 통한 자연스러운 발현:**\n\n명시적 프로그래밍과 달리 병렬화는 탐색, 보상 형성(더 빠른 완료에 약간의 보너스), 효율성 압력(토큰 사용에 대한 가벼운 페널티), 패턴 강화(성공적인 병렬 패턴이 강화됨)에서 발현됩니다."
   },
   "ascii_diagram": "BEFORE (Sequential):\n1. search(A) → 2s\n2. search(B) → 2s\n3. read(X)   → 1.5s\n4. read(Y)   → 1.5s\nTotal: 7s\n\nAFTER (Learned Parallel):\nBatch 1 (parallel):\n  search(A) ┐\n  search(B) ├→ 2s\n  read(X)   ┘\nBatch 2:\n  read(Y)   → 1.5s\nTotal: 3.5s (50% faster)",
   "mermaid_diagram": "graph TD\n    A[Agent Receives Task] --> B{RL-Trained Model}\n    B --> C[Identifies Independent Queries]\n    C --> D[Batch 1: Parallel Tool Calls]\n    D --> E[All Tools Execute Concurrently]\n    E --> F[Results Arrive Together]\n    F --> G{Need More Info?}\n    G -->|Yes| H[Batch 2: Parallel Calls]\n    G -->|No| I[Generate Answer]\n    H --> I",
   "code_example": "# Parallelization emerges from RL training\n# No special flag needed - model discovers this pattern\n\njob = client.fine_tuning.jobs.create(\n    training_file='file-abc123',\n    model='gpt-4o',\n    method='rft',\n    rft={\n        'tools': tools,\n        'grader': grader,\n        'hyperparameters': {\n            'n_epochs': 3,\n            'batch_size': 16,\n            'compute_multiplier': 1\n        }\n    }\n)\n\n# Result: Model learns to batch independent tool calls\n# Baseline: 8 sequential calls\n# Fine-tuned: 2 parallel batches (50% latency reduction)",
   "when_to_use": {
-    "en": ["Tool execution faster than inference", "Independent information gathering", "Broad exploration phases"],
-    "ko": ["도구 실행이 추론보다 빠를 때", "독립적인 정보 수집", "광범위한 탐색 단계"]
+    "en": [
+      "Tool execution time is much less than inference time (e.g., API calls, database queries, file reads)",
+      "Independent information gathering with multiple search queries or reading multiple files",
+      "Broad exploration phases such as initial reconnaissance (find all Python files, check all tests simultaneously)",
+      "Infrastructure supports parallel tool execution with async and multiple workers"
+    ],
+    "ko": [
+      "도구 실행 시간이 추론 시간보다 훨씬 짧을 때 (예: API 호출, 데이터베이스 쿼리, 파일 읽기)",
+      "여러 검색 쿼리 또는 다중 파일 읽기를 통한 독립적 정보 수집",
+      "초기 정찰과 같은 광범위한 탐색 단계 (모든 Python 파일 찾기, 모든 테스트 동시 확인)",
+      "비동기 및 다중 워커로 병렬 도구 실행을 지원하는 인프라"
+    ]
   },
   "pros": {
-    "en": ["40-50% latency reduction", "Emerges naturally from training", "Adapts to specific tools"],
-    "ko": ["40-50% 지연 감소", "훈련에서 자연스럽게 발현", "특정 도구에 적응"]
+    "en": [
+      "Dramatic latency reduction: 40-50% reduction common when applicable",
+      "No manual coding: Parallelization emerges from training, not programming",
+      "Adaptive: Model learns optimal parallelization for your specific tools and tasks",
+      "Scales naturally: Works across different numbers of tools and complexity levels",
+      "Better UX: Faster agent responses improve user experience"
+    ],
+    "ko": [
+      "극적인 지연 감소: 적용 시 40-50% 감소가 일반적",
+      "수동 코딩 불필요: 병렬화가 프로그래밍이 아닌 훈련에서 발현",
+      "적응형: 모델이 특정 도구와 작업에 최적화된 병렬화를 학습",
+      "자연스러운 확장: 다양한 도구 수와 복잡성 수준에서 작동",
+      "더 나은 UX: 더 빠른 에이전트 응답으로 사용자 경험 향상"
+    ]
   },
   "cons": {
-    "en": ["Infrastructure must support concurrent requests", "Higher peak resource usage", "Debugging complexity"],
-    "ko": ["인프라가 동시 요청 지원해야 함", "높은 피크 자원 사용", "디버깅 복잡성"]
+    "en": [
+      "Infrastructure requirements: Tool servers must handle concurrent requests",
+      "Resource usage: More simultaneous tool calls means higher peak resource usage",
+      "Doesn't always emerge: Requires enough variance in training data",
+      "May need reward shaping: Explicit latency bonuses can help if parallelization doesn't emerge naturally",
+      "Debugging complexity: Parallel execution makes traces harder to follow"
+    ],
+    "ko": [
+      "인프라 요구사항: 도구 서버가 동시 요청을 처리해야 함",
+      "자원 사용: 더 많은 동시 도구 호출은 높은 피크 자원 사용을 의미",
+      "항상 발현되지 않음: 훈련 데이터에 충분한 변동성 필요",
+      "보상 형성 필요할 수 있음: 병렬화가 자연스럽게 발현되지 않으면 명시적 지연 보너스가 도움",
+      "디버깅 복잡성: 병렬 실행으로 트레이스 추적이 어려움"
+    ]
   },
   "tags": ["parallelization", "latency-optimization", "tool-use", "reinforcement-learning", "performance"]
 }

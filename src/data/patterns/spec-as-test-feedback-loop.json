@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "http://jorypestorious.com/blog/ai-engineer-spec/",
   "problem": {
-    "en": "Even in spec-first projects, implementations can drift as code evolves. Silent divergence erodes trust.",
-    "ko": "스펙 우선 프로젝트에서도 코드가 발전함에 따라 구현이 드리프트할 수 있습니다. 조용한 발산은 신뢰를 침식합니다."
+    "en": "Even in spec-first projects, implementations can drift as code evolves and the spec changes (or vice-versa). Silent divergence erodes trust.",
+    "ko": "스펙 우선 프로젝트에서도 코드가 발전하고 스펙이 변경됨에 따라(또는 그 반대로) 구현이 드리프트할 수 있습니다. 조용한 발산은 신뢰를 침식합니다."
   },
   "solution": {
-    "en": "Generate executable assertions directly from the spec and let the agent auto-regenerate test suites on spec/code commits.",
-    "ko": "스펙에서 직접 실행 가능한 어서션을 생성하고 스펙/코드 커밋 시 에이전트가 테스트 스위트를 자동 재생성하게 합니다."
+    "en": "Generate **executable assertions** directly from the spec (e.g., unit or integration tests) and let the agent:\n\n- Watch for any spec or code commit.\n- Auto-regenerate test suite from latest spec snapshot.\n- Run tests; if failures appear, open an *agent-authored* PR that either:\n  - updates code to match spec, or\n  - flags unclear spec segments for human review.\n\nThis creates a continuous feedback loop ensuring specification and implementation remain synchronized.\n\n**Four-phase architecture:**\n1. Specification Layer: Parse specs (YAML/JSON/BDD) into internal representation\n2. Test Generation Layer: Create executable tests (unit, integration, property)\n3. Execution Layer: Run tests in parallel via CI/CD\n4. Feedback Layer: Route failures to auto-fix PRs or human review",
+    "ko": "스펙에서 직접 **실행 가능한 어서션**(예: 단위 또는 통합 테스트)을 생성하고 에이전트가 다음을 수행하도록 합니다:\n\n- 모든 스펙 또는 코드 커밋을 감시합니다.\n- 최신 스펙 스냅샷에서 테스트 스위트를 자동 재생성합니다.\n- 테스트를 실행하고, 실패가 발생하면 *에이전트가 작성한* PR을 열어:\n  - 스펙에 맞게 코드를 업데이트하거나\n  - 불명확한 스펙 구간을 인간 리뷰를 위해 플래그합니다.\n\n이는 스펙과 구현이 동기화된 상태를 유지하도록 하는 지속적인 피드백 루프를 생성합니다.\n\n**4단계 아키텍처:**\n1. 스펙 계층: 스펙(YAML/JSON/BDD)을 내부 표현으로 파싱\n2. 테스트 생성 계층: 실행 가능한 테스트 생성(단위, 통합, 속성)\n3. 실행 계층: CI/CD를 통해 테스트를 병렬 실행\n4. 피드백 계층: 실패를 자동 수정 PR 또는 인간 리뷰로 라우팅"
   },
   "ascii_diagram": "┌─────────────┐\n│    Spec     │\n└──────┬──────┘\n       │ generate\n┌──────▼──────┐\n│   Tests     │\n└──────┬──────┘\n       │ run\n┌──────▼──────┐\n│  Pass/Fail  │\n└──────┬──────┘\n   ┌───┴───┐\n   ▼       ▼\n [OK]   [Drift]\n          │\n    ┌─────▼─────┐\n    │ Agent PR  │\n    └───────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Spec Changes] --> B[Generate Tests]\n    C[Code Changes] --> B\n    B --> D[Run Tests]\n    D -->|Pass| E[Synchronized]\n    D -->|Fail| F[Agent PR: Fix or Flag]",
   "code_example": "# On spec or code commit\ntests = generate_tests_from_spec(spec)\nresults = run_tests(tests)\nif results.failures:\n    pr = agent.create_fix_pr(results.failures)\n    # or flag unclear spec segments for review",
   "when_to_use": {
-    "en": ["Spec-driven development", "Contract-first APIs", "Compliance-critical systems"],
-    "ko": ["스펙 주도 개발", "계약 우선 API", "컴플라이언스 중요 시스템"]
+    "en": ["Use this when agent quality improves only after iterative critique or retries.", "Start with one objective metric and one feedback loop trigger.", "Record failure modes so each loop produces reusable learning artifacts."],
+    "ko": ["에이전트 품질이 반복적 비평이나 재시도 후에만 향상되는 경우 사용", "하나의 객관적 지표와 하나의 피드백 루프 트리거로 시작", "실패 모드를 기록하여 각 루프가 재사용 가능한 학습 산출물을 생성하도록 함"]
   },
   "pros": {
-    "en": ["Catches drift early", "Keeps spec and impl in lock-step"],
-    "ko": ["드리프트 조기 감지", "스펙과 구현을 동기화 유지"]
+    "en": ["Catches drift early; prevents silent spec-implementation divergence", "Immune to 'pass by deletion' when combined with immutable feature lists", "Provides measurable progress metrics (X/Y features passing)", "Survives session boundaries; test state persists across context loss"],
+    "ko": ["드리프트 조기 감지; 스펙-구현 간 무성 발산 방지", "불변 기능 목록과 결합 시 '삭제로 통과' 방지", "측정 가능한 진행 지표 제공 (X/Y 기능 통과)", "세션 경계를 넘어 유지; 컨텍스트 손실에도 테스트 상태 지속"]
   },
   "cons": {
-    "en": ["Heavy CI usage", "False positives if spec wording is too loose"],
-    "ko": ["CI 사용량 많음", "스펙 문구가 느슨하면 오탐"]
+    "en": ["Heavy CI usage; false positives if spec wording is ambiguous", "Upfront spec investment required; overhead exceeds benefit for small/one-off tasks", "Test explosion risk without intelligent selection; spec churn creates test churn"],
+    "ko": ["CI 사용량 많음; 스펙 문구가 모호하면 오탐 발생", "사전 스펙 투자 필요; 소규모/일회성 작업에서는 오버헤드가 이점 초과", "지능적 선택 없이는 테스트 폭발 위험; 스펙 변경이 테스트 변경을 초래"]
   },
   "tags": ["validation", "drift-detection", "continuous-testing"]
 }

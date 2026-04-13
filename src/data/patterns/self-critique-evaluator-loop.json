@@ -6,27 +6,55 @@
   "status": "established",
   "original_url": "https://arxiv.org/abs/2408.02666",
   "problem": {
-    "en": "Human preference labels are costly and quickly become outdated as base models improve.",
-    "ko": "인간 선호도 레이블은 비용이 많이 들고 기본 모델이 개선됨에 따라 빠르게 구식이 됩니다."
+    "en": "Human-labeled preference datasets are expensive to produce, slow to refresh, and quickly stale as base models and domains change. Teams need scalable evaluation signals that can keep pace with model evolution without waiting on large annotation cycles. Risk of evaluator collapse and bias amplification must be mitigated.",
+    "ko": "인간이 레이블링한 선호도 데이터셋은 생산 비용이 높고, 갱신이 느리며, 기본 모델과 도메인이 변화함에 따라 빠르게 구식이 됩니다. 팀은 대규모 어노테이션 사이클을 기다리지 않고 모델 진화에 맞춰갈 수 있는 확장 가능한 평가 신호가 필요합니다. 평가자 붕괴와 편향 증폭 위험도 완화해야 합니다."
   },
   "solution": {
-    "en": "Train a self-taught evaluator that bootstraps from synthetic data, generating its own critiques and improving iteratively.",
-    "ko": "합성 데이터에서 부트스트랩하여 자체 비판을 생성하고 반복적으로 개선하는 자기 학습 평가자를 훈련합니다."
+    "en": "Train a **self-taught evaluator** that bootstraps from synthetic data:\n\n1. Generate multiple candidate outputs for an instruction.\n2. Ask the model to judge and explain which is better (reasoning trace).\n3. Fine-tune that judge on its own traces; iterate.\n4. Use the judge as a reward model or quality gate for the main agent.\n5. Periodically refresh with new synthetic debates to stay ahead of model drift.\n\n**Dual-model variant** (RLAIF): Use a separate critic model to evaluate the generator, reducing bias at higher cost.\n\nTo prevent evaluator collapse, keep evaluation prompts and generation prompts partially decoupled, inject adversarial counterexamples, and benchmark against a small human-labeled anchor set.",
+    "ko": "합성 데이터에서 부트스트랩하는 **자기 학습 평가자**를 훈련합니다:\n\n1. 지시사항에 대해 여러 후보 출력을 생성합니다.\n2. 모델에게 어느 것이 더 나은지 판단하고 설명하도록 요청합니다(추론 트레이스).\n3. 해당 판단 트레이스로 평가자를 파인튜닝하고 반복합니다.\n4. 평가자를 보상 모델 또는 메인 에이전트의 품질 게이트로 사용합니다.\n5. 모델 드리프트에 앞서기 위해 주기적으로 새로운 합성 토론으로 갱신합니다.\n\n**듀얼 모델 변형** (RLAIF): 별도의 비평 모델을 사용하여 생성기를 평가하며, 비용은 높지만 편향을 줄입니다.\n\n평가자 붕괴를 방지하기 위해 평가 프롬프트와 생성 프롬프트를 부분적으로 분리하고, 적대적 반례를 주입하며, 소규모 인간 레이블 앵커 세트와 벤치마크합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│  Generate   │\n│  Candidates │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Judge &   │\n│   Explain   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Fine-tune  │\n│   Judge     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Use as Gate │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Generate Candidates] --> B[Model Judges]\n    B --> C[Explain Reasoning]\n    C --> D[Fine-tune Judge]\n    D --> E[Quality Gate]\n    E -->|Refresh| A",
   "code_example": "candidates = model.generate_multiple(instruction)\nfor a, b in pairs(candidates):\n    judgment = judge.compare(a, b)\n    traces.append(judgment)\njudge.finetune(traces)\n# Use judge as reward model",
   "when_to_use": {
-    "en": ["Reward model training", "Quality evaluation", "Synthetic data generation"],
-    "ko": ["보상 모델 훈련", "품질 평가", "합성 데이터 생성"]
+    "en": [
+      "Start with one narrow domain and define objective judge criteria before training.",
+      "Maintain a fixed holdout set with periodic human audits to detect evaluator drift.",
+      "Use the evaluator as a gate first, then expand to reward-shaping once reliability is proven.",
+      "Track disagreement rates between evaluator and human reviewers.",
+      "Consider dual-model setup (separate critic) for reduced bias in high-stakes domains."
+    ],
+    "ko": [
+      "하나의 좁은 도메인에서 시작하고 훈련 전에 객관적인 평가 기준을 정의",
+      "평가자 드리프트를 감지하기 위해 고정 홀드아웃 세트와 주기적 인간 감사 유지",
+      "평가자를 먼저 게이트로 사용한 후 신뢰성이 입증되면 보상 형성으로 확장",
+      "평가자와 인간 리뷰어 간 불일치율 추적",
+      "고위험 도메인에서 편향 감소를 위한 듀얼 모델 설정(별도 비평 모델) 고려"
+    ]
   },
   "pros": {
-    "en": ["Near-human eval accuracy without labels", "Scales with compute"],
-    "ko": ["레이블 없이 인간 수준 평가 정확도", "컴퓨팅으로 확장 가능"]
+    "en": [
+      "Scales evaluation coverage quickly and reduces dependence on expensive human labeling",
+      "Near-human eval accuracy without labels",
+      "~100x cost reduction vs human labels (RLAIF)"
+    ],
+    "ko": [
+      "평가 범위를 빠르게 확장하고 고비용 인간 레이블링 의존도 감소",
+      "레이블 없이 인간 수준 평가 정확도",
+      "인간 레이블 대비 ~100배 비용 절감 (RLAIF)"
+    ]
   },
   "cons": {
-    "en": ["Risk of evaluator-model collusion", "Needs adversarial tests"],
-    "ko": ["평가자-모델 공모 위험", "적대적 테스트 필요"]
+    "en": [
+      "Can overfit to synthetic preferences and needs careful anti-collusion safeguards",
+      "Risk of evaluator-model collusion",
+      "Needs adversarial tests and human anchors"
+    ],
+    "ko": [
+      "합성 선호도에 과적합될 수 있으며 신중한 공모 방지 안전장치 필요",
+      "평가자-모델 공모 위험",
+      "적대적 테스트와 인간 앵커 필요"
+    ]
   },
-  "tags": ["self-critique", "evaluator", "reward-model", "synthetic-data"]
+  "tags": ["self-critique", "evaluator", "reward-model", "synthetic-data", "reflexion", "rlaif"]
 }
