@@ -295,23 +295,31 @@
     "title": "Filesystem-Based Agent State",
     "title_ko": "파일시스템 기반 에이전트 상태",
     "category": "Context & Memory",
-    "description": "Agent state is lost on crashes or long-running task interruptions, requiring restart from scratch Persist agent state to the filesystem at checkpoints, enabling recovery and resumption after failures",
-    "problem": "Agent state is lost on crashes or long-running task interruptions, requiring restart from scratch.",
-    "solution": "Persist agent state to the filesystem at checkpoints, enabling recovery and resumption after failures.",
+    "description": "Many agent workflows are long-running or may be interrupted (by errors, timeouts, or user intervention) Agents persist intermediate results and working state to files in the execution environment",
+    "problem": "Many agent workflows are long-running or may be interrupted (by errors, timeouts, or user intervention). Keeping all intermediate state in the model's context window is fragile and doesn't persist across sessions. When failures occur or when agents hit context limits, work is lost and must restart from scratch.",
+    "solution": "Agents persist intermediate results and working state to files in the execution environment. This creates durable checkpoints that enable workflow resumption, recovery from failures, and support for tasks that exceed single-session context limits.\n\nInstead of treating state as transient prompt text, the workflow externalizes progress into explicit artifacts that any later run can inspect and continue from. This gives agents a resumable execution model and makes failure recovery deterministic.\n\nFile-backed state also improves observability: humans can inspect checkpoints, compare intermediate outputs across retries, and diagnose where runs diverged.\n\nSome agents exhibit \"proactive state externalization\" — writing `SUMMARY.md` or `CHANGELOG.md` without explicit prompting when approaching context limits, treating the filesystem as extended working memory.",
     "when_to_use": [
-      "Long-running tasks",
-      "Unstable environments",
-      "Critical operations"
+      "Multi-step workflows with expensive operations (API calls, data processing)",
+      "Long-running tasks that may exceed session limits",
+      "Workflows that need recovery from transient failures",
+      "Collaborative tasks where multiple agents or sessions build on previous work",
+      "Batch processing jobs with checkpointing"
     ],
     "pros": [
-      "Recovery capability",
-      "State persistence",
-      "Easier debugging"
+      "Enables workflow resumption after interruption",
+      "Protects against data loss from transient failures",
+      "Supports long-running tasks beyond single-session limits",
+      "Allows inspection of intermediate results",
+      "Facilitates debugging (can examine state at each checkpoint)",
+      "Multiple agents can collaborate by reading/writing shared state"
     ],
     "cons": [
-      "I/O overhead",
-      "State consistency challenges",
-      "Storage requirements"
+      "Agents must write checkpoint/recovery logic",
+      "File I/O adds overhead to workflow execution",
+      "Requires discipline around state naming and organization",
+      "Stale state files can cause confusion if not cleaned up",
+      "Concurrent access needs coordination (file locking, atomic writes)",
+      "Execution environment needs persistent storage"
     ],
     "tags": [
       "state-management",
@@ -762,27 +770,25 @@
     "title": "Dogfooding with Rapid Iteration for Agent Improvement",
     "title_ko": "에이전트 개선을 위한 빠른 반복 도그푸딩",
     "category": "Feedback Loops",
-    "description": "Developing effective AI agents requires understanding real-world usage and quickly identifying improvements Development team extensively uses their own agent product (dogfooding) for daily tasks",
-    "problem": "Developing effective AI agents requires understanding real-world usage and quickly identifying improvements. External feedback loops are slow, and simulated environments may not capture all nuances of actual use.",
-    "solution": "Development team extensively uses their own agent product (dogfooding) for daily tasks. Provides direct feedback, real-world testing, internal experimentation, rapid iteration, and honest assessment of feature utility.",
+    "description": "Developing effective AI agents requires understanding real-world usage and quickly identifying areas for improvement The development team extensively uses their own AI agent product (\"dogfooding\") for",
+    "problem": "Developing effective AI agents requires understanding real-world usage and quickly identifying areas for improvement. External feedback loops can be slow, and simulated environments may not capture all nuances.",
+    "solution": "The development team extensively uses their own AI agent product (\"dogfooding\") for their daily software development tasks. This provides:\n\n1. **Direct, Immediate Feedback:** Developers encounter the agent's strengths and weaknesses firsthand.\n2. **Real-World Problem Solving:** The agent is tested on actual, complex development problems faced by the team.\n3. **Internal Experimentation:** The team can quickly try out new agent features or modifications on themselves.\n4. **Rapid Iteration:** Shortcomings identified through dogfooding can be rapidly addressed and new features prototyped and validated internally before wider release.\n5. **Honest Assessment:** The team can be brutally honest about a feature's utility if they themselves don't find it useful, leading to quick pivots or discarding ineffective ideas.\n\nThis creates a tight, high-velocity feedback loop where the agent is continuously improved based on the practical needs and experiences of its own creators.",
     "when_to_use": [
-      "Agent product development",
-      "Creating tight feedback loops",
-      "Validating features before release",
-      "Building features developers actually want"
+      "Encourage all members of the agent development team to use the agent as their primary tool for relevant tasks.",
+      "Establish low-friction feedback channels (e.g., dedicated Slack/Discord) for reporting issues and suggestions.",
+      "Store prompts and agent instructions in editable documents that anyone can update.",
+      "Push experimental features to internal users first for rapid validation; be willing to discard what doesn't work.",
+      "Prioritize fixing pain points experienced by the internal team."
     ],
     "pros": [
-      "Direct, immediate feedback",
-      "Real-world problem testing",
-      "Brutally honest assessment",
-      "Rapid iteration speed",
-      "Features validated before release"
+      "Real-world problem solving",
+      "Rapid feature validation",
+      "Quick pivots from ineffective approaches",
+      "Reduced risk of shipping unwanted features"
     ],
     "cons": [
-      "Team may not represent all users",
-      "Can create echo chamber",
-      "Requires discipline to use own product",
-      "Pain points may differ from external users"
+      "Requires high internal adoption to be effective",
+      "Internal users may not represent all customer segments"
     ],
     "tags": [
       "dogfooding",
@@ -1221,23 +1227,25 @@
     "title": "Memory Reinforcement Learning (MemRL)",
     "title_ko": "메모리 강화 학습 (MemRL)",
     "category": "Learning & Adaptation",
-    "description": "LLMs struggle with runtime self-evolution Add learned utility scores to episodic memory",
-    "problem": "LLMs struggle with runtime self-evolution. Fine-tuning causes catastrophic forgetting, and RAG relies on semantic similarity that retrieves noise rather than actually useful memories.",
-    "solution": "Add learned utility scores to episodic memory. Rank memories by past success rather than just semantic similarity, filtering out look-alike bad solutions.",
+    "description": "LLMs struggle with runtime self-evolution due to the stability-plasticity dilemma:\n\n- **Fine-tuning**: Computationally expensive and prone to catastrophic forgetting\n- **RAG/memory systems**: Rely on ",
+    "problem": "LLMs struggle with runtime self-evolution due to the stability-plasticity dilemma:\n\n- **Fine-tuning**: Computationally expensive and prone to catastrophic forgetting\n- **RAG/memory systems**: Rely on semantic similarity that retrieves noise\n- **No utility learning**: Can't distinguish high-value strategies from semantically similar but ineffective ones\n\nStandard retrieval assumes \"similar implies useful,\" but that's often wrong. A semantically relevant past solution might actually be a bad approach for the current task.",
+    "solution": "**MemRL** transfers reinforcement learning from parameter space to context space: instead of updating model weights, it learns utility scores on episodic memories. The LLM stays frozen; only memory utilities evolve.\n\n**Core idea:** Instead of just retrieving by similarity, rank memories by how well they've worked in the past.\n\n**Memory triplet structure:**\n\n- **Intent**: What the user asked for (embedded)\n- **Experience**: What the agent tried (solution trace)\n- **Utility**: How well it worked (learned score, updated over time)\n\n**Two-phase retrieval:**\n\n1. **Phase A - Semantic filter**: Find semantically similar memories\n2. **Phase B - Utility ranking**: Re-rank by learned utility scores\n\nThis filters out \"distractor\" memories that look relevant but historically lead to poor outcomes.",
     "when_to_use": [
       "Multi-step tasks with clear success signals",
       "Reusable problem-solving patterns",
       "Can't afford fine-tuning"
     ],
     "pros": [
-      "No catastrophic forgetting",
+      "No catastrophic forgetting (frozen LLM)",
       "Self-improves from experience",
+      "Filters out \"look-alike\" bad solutions",
       "No retraining needed"
     ],
     "cons": [
-      "Needs reliable success/failure signals",
-      "Memory overhead grows",
-      "Cold start problem"
+      "Need reliable success/failure signals",
+      "Memory overhead grows over time",
+      "Cold start: needs episodes to learn",
+      "More complex than basic RAG"
     ],
     "tags": [
       "reinforcement-learning",
@@ -1962,29 +1970,35 @@
     "title": "Feature List as Immutable Contract",
     "title_ko": "불변 계약으로서의 기능 목록",
     "category": "Orchestration & Control",
-    "description": "Long-running agents exhibit failure modes: premature victory declaration, scope creep via test deletion, hallucinated completeness, and progress amnesia across sessions Define all features upfront in ",
-    "problem": "Long-running agents exhibit failure modes: premature victory declaration, scope creep via test deletion, hallucinated completeness, and progress amnesia across sessions.",
-    "solution": "Define all features upfront in a structured JSON format that agents can read but cannot modify. Agent may only set passes:true after verification, never delete or modify features.",
+    "description": "Long-running agents exhibit several failure modes when tasked with building complete applications: premature victory declaration (agent declares \"done\" after implementing a fraction of requirements), ",
+    "problem": "Long-running agents exhibit several failure modes when tasked with building complete applications: premature victory declaration (agent declares \"done\" after implementing a fraction of requirements), scope creep via test deletion (agent \"passes\" tests by deleting or weakening them rather than fixing code), hallucinated completeness (agent loses track of what was actually implemented versus planned), feature drift (without a fixed specification, agents may substitute easier features for harder ones), and progress amnesia (across sessions, agents forget what's done vs. pending).",
+    "solution": "Define all features upfront in a structured, immutable format that agents can read but cannot meaningfully game.\n\n**1. Comprehensive Feature Specification**: Create a JSON file with ALL required features before any implementation begins, each with an id, category, description, verification steps, and a `passes: false` flag.\n\n**2. Immutability Constraints**: Agent MAY set `passes: true` after verification. Agent MAY NOT delete features, modify acceptance criteria/steps, or mark features as \"not applicable\". Two variations: static list (hardcoded at compile time) or dynamic-but-immutable (loaded at startup then frozen).\n\n**3. Verification Requirements**: Features are only marked passing after implementation is complete, manual or automated testing confirms all steps pass, and agent has actually exercised the feature (not just written code).",
     "when_to_use": [
-      "Multi-session projects",
-      "Complex applications with known requirements",
-      "Agent accountability needed"
+      "Include 100-200+ features for complex applications with specific acceptance criteria (observable behaviors, not implementation details)",
+      "Group features by category (functional, UI, performance, security) with edge cases and error handling as separate features",
+      "Use prompt enforcement with critical rules preventing deletion or modification of features",
+      "Use browser automation (Puppeteer, Playwright) for E2E verification, capturing evidence when marking features passing"
     ],
     "pros": [
-      "Prevents premature victory declaration",
-      "Measurable progress (X of Y)",
-      "Eliminates pass-by-deletion"
+      "Prevents premature victory declaration with clear completion criteria",
+      "Creates immutable record of requirements that survives session boundaries",
+      "Makes agent progress measurable (X of Y features passing)",
+      "Eliminates \"pass by deletion\" attack vector",
+      "Provides natural work queue for incremental sessions"
     ],
     "cons": [
-      "Requires upfront specification investment",
-      "Not for exploratory work",
-      "Rigid format"
+      "Requires significant upfront investment in feature specification",
+      "Not suitable for exploratory or research-oriented work",
+      "May miss emergent requirements discovered during implementation",
+      "Rigid format doesn't accommodate changing requirements",
+      "Large feature lists can overwhelm agent context"
     ],
     "tags": [
       "scope-control",
       "acceptance-criteria",
       "anti-scope-creep",
-      "long-running-agents"
+      "long-running-agents",
+      "task-management"
     ],
     "related": []
   },
@@ -2183,23 +2197,26 @@
     "title": "Language Agent Tree Search (LATS)",
     "title_ko": "언어 에이전트 트리 검색 (LATS)",
     "category": "Orchestration & Control",
-    "description": "Current language agents often struggle with complex reasoning tasks that require exploration of multiple solution paths Combine Monte Carlo Tree Search (MCTS) with LLM reflection and evaluation, explo",
-    "problem": "Current language agents often struggle with complex reasoning tasks that require exploration of multiple solution paths.",
-    "solution": "Combine Monte Carlo Tree Search (MCTS) with LLM reflection and evaluation, exploring promising branches while avoiding dead ends.",
+    "description": "Current language agents often struggle with complex reasoning tasks that require exploration of multiple solution paths Language Agent Tree Search (LATS) combines Monte Carlo Tree Search (MCTS) with l",
+    "problem": "Current language agents often struggle with complex reasoning tasks that require exploration of multiple solution paths. Simple linear approaches like ReACT or basic reflection patterns can get stuck in local optima or fail to consider alternative strategies. This is particularly problematic for tasks requiring strategic planning, mathematical reasoning, or multi-step problem solving where early decisions significantly impact later outcomes.",
+    "solution": "Language Agent Tree Search (LATS) combines Monte Carlo Tree Search (MCTS) with language model reflection and evaluation capabilities. The approach treats the problem-solving process as a tree where:\n\n1. **Nodes** represent states (partial solutions or reasoning steps)\n2. **Edges** represent actions (next steps in reasoning)\n3. **Leaf nodes** are evaluated using the LLM's self-reflection capabilities\n4. **Backpropagation** updates value estimates throughout the tree\n\nThe agent explores promising branches more deeply while maintaining breadth to avoid getting stuck. This creates a best-of-both-worlds approach combining systematic search with LLM reasoning.\n\n**Selection uses the UCB (Upper Confidence Bound) formula:**\n\n```\nUCB(node) = Q(node) + c × √(ln(parent_visits) / node_visits)\n```\n\nWhere Q(node) is the estimated value, c is the exploration constant (typically 1.4), and the logarithmic term balances exploration of less-visited nodes. This principled approach yields better sample efficiency than breadth-first or random exploration.\n\n**Evaluation mechanisms** include: direct confidence scoring (0-1), critique-based evaluation, or multi-aspect scoring. The choice depends on task complexity and required precision.",
     "when_to_use": [
-      "Complex reasoning tasks",
-      "Multi-step problem solving",
-      "Strategic planning"
+      "Complex reasoning tasks requiring strategic planning and multi-step decision making",
+      "Problems with multiple valid solution paths where exploration matters",
+      "Mathematical reasoning, algorithm design, or debugging with multiple potential causes",
+      "Budgets allow for higher computational cost (5-20x more LLM calls than simpler approaches)"
     ],
     "pros": [
-      "Better performance on complex reasoning",
-      "Systematic exploration",
-      "Interpretable traces"
+      "Significantly better performance on complex reasoning tasks",
+      "Systematic exploration prevents getting stuck",
+      "Naturally handles problems with multiple valid approaches",
+      "Provides interpretable reasoning traces"
     ],
     "cons": [
-      "Higher computational cost",
-      "More LLM calls",
-      "Parameter tuning needed"
+      "Higher computational cost (5-20x more LLM calls than simpler approaches)",
+      "Inherently sequential—unsuitable for real-time applications",
+      "Implementation complexity requires correct MCTS and tree state management",
+      "May be overkill for simple tasks where ReAct or ToT suffice"
     ],
     "tags": [
       "search",
@@ -2279,29 +2296,36 @@
     "title": "Opponent Processor / Multi-Agent Debate Pattern",
     "title_ko": "반대자 프로세서 / 다중 에이전트 토론 패턴",
     "category": "Orchestration & Control",
-    "description": "Single-agent decision making suffers from confirmation bias, limited perspectives, insufficient scrutiny, and unexamined assumptions Spawn opposing agents with different goals or perspectives to debat",
-    "problem": "Single-agent decision making suffers from confirmation bias, limited perspectives, insufficient scrutiny, and unexamined assumptions.",
-    "solution": "Spawn opposing agents with different goals or perspectives to debate each other's positions. The conflict surfaces blind spots, biases, and unconsidered alternatives.",
+    "description": "Single-agent decision making can suffer from: confirmation bias (agent finds evidence supporting initial hypothesis), limited perspectives (one context window misses alternative approaches), insuffici",
+    "problem": "Single-agent decision making can suffer from: confirmation bias (agent finds evidence supporting initial hypothesis), limited perspectives (one context window misses alternative approaches), insufficient scrutiny (no adversarial pressure to defend decisions), and unexamined assumptions (agent doesn't challenge its own reasoning).",
+    "solution": "Spawn opposing agents with different goals or perspectives to debate each other's positions. The conflict between agents surfaces blind spots, biases, and unconsidered alternatives.\n\n**Key mechanism**: Create agents with opposing incentives or roles, let them critique each other's work, then synthesize results.\n\n**Example configurations**: Pro vs. Con (one agent argues for acceptance, another for rejection), Optimistic vs. Conservative (different risk tolerances), User advocate vs. Company auditor (competing interests), Frontend dev vs. Backend dev (different technical perspectives).",
     "when_to_use": [
-      "Bias-prone decisions",
-      "Trade-off heavy scenarios",
-      "Code review with security focus"
+      "Define opposing roles with clear incentives",
+      "Spawn both agents with same context but different system prompts",
+      "Have them work independently (uncorrelated context windows)",
+      "Collect outputs and synthesize automatically (third agent), use weighted aggregation, or present trade-offs for human-in-the-loop decision",
+      "Use max_rounds and deadlock detection to prevent infinite debate"
     ],
     "pros": [
-      "Reduces bias",
-      "Better decisions through scrutiny",
-      "Explicit trade-offs"
+      "Reduces bias - opposing views surface blind spots",
+      "Better decisions through adversarial pressure",
+      "Uncorrelated context - independent reasoning prevents groupthink",
+      "Explicit trade-offs - forces articulation of competing values",
+      "Checks and balances - no single agent has unchallenged authority"
     ],
     "cons": [
-      "2x+ token cost",
-      "Slower execution",
-      "May produce deadlocks"
+      "2x+ token cost - multiple agents processing same information",
+      "Slower execution - debate takes time compared to single decision",
+      "May produce conflict - agents might deadlock without resolution mechanism",
+      "Requires synthesis - need method to reconcile opposing views",
+      "Over-engineering for simple tasks - not every decision needs debate"
     ],
     "tags": [
       "multi-agent",
       "debate",
       "adversarial",
       "bias-reduction",
+      "uncorrelated-context",
       "validation"
     ],
     "related": []
@@ -3000,26 +3024,27 @@
     "title": "Anti-Reward-Hacking Grader Design",
     "title_ko": "보상 해킹 방지 평가기 설계",
     "category": "Reliability & Eval",
-    "description": "During reinforcement learning training, models actively search for ways to maximize reward Design reward functions resistant to gaming through iterative hardening: multi-criteria evaluation (correctne",
-    "problem": "During reinforcement learning training, models actively search for ways to maximize reward. If graders have edge cases or loopholes, models exploit them rather than truly solving tasks, leading to 100% reward scores but poor real-world performance.",
-    "solution": "Design reward functions resistant to gaming through iterative hardening: multi-criteria evaluation (correctness, reasoning quality, completeness, citations), continuous scores (0.0-1.0) instead of binary, violation pattern detection, and adversarial testing before training.",
+    "description": "During reinforcement learning training, models actively search for ways to maximize reward Design reward functions that are resistant to gaming through iterative hardening and multi-criteria evaluatio",
+    "problem": "During reinforcement learning training, models actively search for ways to maximize reward. If your grader has edge cases or loopholes, the model will find and exploit them: gaming the metric (achieving 100% reward by exploiting grader weaknesses rather than solving the task), unexpected behaviors (learning bizarre shortcuts that technically satisfy the reward function), brittle evaluation (simple graders penalizing valid answers due to formatting differences), degraded real performance (high training reward not translating to production success), length hacking (generating verbose but meaningless content), format hacking (adding empty tags without substantive content), and solution appending (concatenating previously-solved problems to exploit reward systems). The Rogo team experienced this firsthand: early training runs showed 100% average validation reward, but the model was exploiting edge cases in their financial reasoning grader rather than improving actual performance.",
+    "solution": "Design reward functions that are resistant to gaming through iterative hardening and multi-criteria evaluation.\n\n**Core Principles**: 1) Make it hard to game - close loopholes systematically as you discover them. 2) Provide gradient - use continuous scores (0.0-1.0) rather than binary (0/1) to guide learning. 3) Multi-criteria decomposition - evaluate multiple aspects so gaming one doesn't maximize total reward. 4) Explainability - graders should explain why they gave a score to help detect gaming. 5) Adversarial testing - manually try to \"hack\" your grader before training.\n\n**Implementation**: Multi-criteria grader with weighted scoring (correctness 0.50, reasoning 0.20, completeness 0.15, citations 0.10, formatting 0.05), known violation pattern detection, flexible correctness checking with normalization and numerical tolerance, and reasoning quality verification ensuring tools were used meaningfully.\n\n**Critical: Format Constraints**: Process-aware rewards without strict format constraints lead to catastrophic exploitation. Always enforce exactly one answer tag or boxed expression, no post-answer content, and strict output format requirements.",
     "when_to_use": [
-      "Agent reinforcement fine-tuning",
-      "Complex task evaluation",
-      "Financial or domain-specific reasoning",
-      "Any RL training with non-trivial rewards"
+      "Phase 1 - Initial Design: Decompose quality into 4-6 measurable criteria, assign weights reflecting business priorities, add flexibility for formatting variations, build explainability with subscores",
+      "Phase 2 - Adversarial Testing: Manually try to write answers that get high scores without being correct, test extreme inputs, add guardrails",
+      "Phase 3 - Training Monitoring: Watch for sudden reward jumps to 100%, sample and manually review high-reward traces, compare validation vs training reward distributions, calibrate graders using Cohen's Kappa (kappa >= 0.6)",
+      "Phase 4 - Iterative Hardening: Detect and characterize gaming patterns, add explicit checks, retrain with hardened grader, repeat as ongoing process"
     ],
     "pros": [
-      "Models learn to truly solve tasks",
-      "Better generalization",
-      "Debuggable with subscores",
-      "Training reward correlates with business metrics"
+      "Robust learning - models learn to truly solve tasks, not game metrics",
+      "Better generalization - multi-criteria grading encourages well-rounded solutions",
+      "Debuggability - subscores help identify what the model is struggling with",
+      "Production alignment - training reward correlates with business metrics"
     ],
     "cons": [
-      "Requires careful design and iteration",
-      "Slower convergence",
-      "Grader complexity",
-      "Computational cost for multi-criteria"
+      "Engineering effort - requires careful design and iteration",
+      "Slower convergence - harder grader means lower initial rewards",
+      "Grader complexity - more code to maintain and potentially debug",
+      "Subjectivity - some criteria need careful definition",
+      "Computational cost - multi-criteria grading takes longer per sample"
     ],
     "tags": [
       "reward-hacking",
@@ -4095,29 +4120,40 @@
     "title": "Code Mode MCP Tool Interface Pattern",
     "title_ko": "코드 모드 MCP 도구 인터페이스 패턴",
     "category": "Tool Use & Environment",
-    "description": "Traditional MCP forces inefficient token-heavy round-trips: every intermediate JSON response must flow through the model's context LLM generates TypeScript code that orchestrates MCP tools in V8 isola",
-    "problem": "Traditional MCP forces inefficient token-heavy round-trips: every intermediate JSON response must flow through the model's context. For 100 emails, this means 100k+ tokens before any work begins.",
-    "solution": "LLM generates TypeScript code that orchestrates MCP tools in V8 isolates. Data processing happens in sandbox, only final results return to context. Dramatic token savings (10x+).",
+    "description": "Traditional Model Context Protocol (MCP) approaches of directly exposing tools to Large Language Models create significant token waste and complexity issues Code Mode complements (not replaces) MCP se",
+    "problem": "Traditional Model Context Protocol (MCP) approaches of directly exposing tools to Large Language Models create significant token waste and complexity issues. Classic MCP forces an inefficient pattern where every intermediate result must ride back through the model's context, burning tokens and adding latency at each step. For complex workflows requiring 5-10 tool calls, this becomes extremely expensive. Fan-out scenarios break down dramatically: processing 100 emails means 100 separate tool calls with 100k+ tokens of context bloat before any actual work begins. LLMs also struggle to effectively use complex tool interfaces, with limited training data on \"tool calls\" compared to abundant code training. The fundamental insight: LLMs are better at writing code to orchestrate MCP tools than calling MCP tools directly.",
+    "solution": "Code Mode complements (not replaces) MCP servers by adding an ephemeral execution layer that eliminates token-heavy round-trips.\n\n**Division of Responsibilities**: MCP Servers handle the persistent layer (credential management, rate limiting, webhook subscriptions, connection pooling, API secrets). Code Mode handles the ephemeral layer (multi-step tool orchestration, complex data transformations, eliminating intermediate JSON bloat, \"write once, vaporize immediately\" execution).\n\n**Core Architecture**: 1) Schema Discovery: Agents SDK fetches MCP server schemas dynamically at runtime. 2) API Transformation: Convert MCP tool schemas into TypeScript API interfaces with doc comments. 3) LLM Tool Awareness: LLM receives complete TypeScript API documentation. 4) Ephemeral Code Generation: LLM generates code that orchestrates multiple tool calls in one script. 5) V8 Isolate Execution: Lightweight, secure sandbox that dies after execution. 6) Controlled Bindings: Secure bridges to MCP servers that own the real credentials.\n\n**Enhanced Capabilities**: Compile-time validation, static analysis (CaMeL's taint analysis), semantic caching via typed API signatures, and checkpoint/resume patterns for partial failure recovery.",
     "when_to_use": [
-      "Workflow-like problems with known flow",
-      "Fan-out scenarios (100+ items)",
-      "Infrastructure provisioning"
+      "Workflow-like problems with known flow (e.g., infrastructure provisioning, data pipeline orchestration)",
+      "Fan-out scenarios processing 100+ items where traditional MCP would exceed context limits",
+      "CaMeL-style self-debugging with built-in error handling, logging, and retry logic",
+      "When compile-time verification, semantic caching, and clear interfaces are beneficial"
     ],
     "pros": [
-      "10x+ token savings",
-      "Faster execution",
-      "Enhanced security - credentials stay in MCP"
+      "Dramatic token savings on multi-step workflows (10-100x reduction; Anthropic reports 75x on 10K-row spreadsheets: 150K to 2K tokens)",
+      "Dramatic fan-out efficiency - for loops over 100+ entries vs 100+ tool calls",
+      "Faster execution through elimination of round-trips",
+      "Enhanced security - credentials stay in MCP servers, never in LLM",
+      "CaMeL-style self-debugging with error handling and retry logic",
+      "Typed verification and semantic caching for workflow reuse",
+      "Maintained MCP benefits - existing servers work without modification",
+      "Natural idempotency patterns with checkpoint/resume capabilities"
     ],
     "cons": [
-      "Infrastructure complexity",
-      "Poor fit for dynamic research loops",
-      "Intelligence-in-middle challenge"
+      "Infrastructure complexity - requires V8 isolate runtime infrastructure",
+      "Code quality dependency - execution success depends on LLM's code generation",
+      "Poor fit for dynamic research loops - struggles when next steps are decided dynamically",
+      "Intelligence-in-the-middle challenge - cases requiring LLM calls mid-execution defeat the purpose",
+      "Debugging challenges - runtime errors in generated code need handling",
+      "API design overhead - need intuitive TypeScript interfaces for code generation",
+      "Partial failure complexity - requires careful design of state management and recovery patterns"
     ],
     "tags": [
       "tool-interface",
       "code-generation",
       "sandboxing",
       "mcp",
+      "mcp-improvement",
       "typescript",
       "v8-isolates",
       "token-optimization"
@@ -4677,26 +4713,25 @@
     "title": "Agent-Assisted Scaffolding",
     "title_ko": "에이전트 지원 스캐폴딩",
     "category": "UX & Collaboration",
-    "description": "Starting a new feature, module, or codebase involves writing significant boilerplate or foundational code Use AI agents to generate initial structure, boilerplate, and directory layouts for new compon",
-    "problem": "Starting a new feature, module, or codebase involves writing significant boilerplate or foundational code. This is time-consuming, repetitive, and pulls developers away from the core logic they need to implement.",
-    "solution": "Use AI agents to generate initial structure, boilerplate, and directory layouts for new components. Developer provides high-level description, agent scaffolds files/functions/classes. This scaffolded structure also becomes crucial context for subsequent AI agent interactions.",
+    "description": "Starting a new feature, module, or codebase often involves writing a significant amount of boilerplate or foundational code Utilize an AI agent to generate the initial structure, boilerplate code, or ",
+    "problem": "Starting a new feature, module, or codebase often involves writing a significant amount of boilerplate or foundational code. This can be time-consuming and repetitive for developers.",
+    "solution": "Utilize an AI agent to generate the initial structure, boilerplate code, or layout for new software components. The developer provides a high-level description of the desired feature or component, and the agent \"scaffolds\" out the basic files, functions, classes, and directory structures.\n\nThis allows developers to:\n\n- Quickly get a new part of the system started.\n- Focus on the core logic rather than repetitive setup tasks.\n- Ensure consistency in initial project structure.\n\n**Scaffolding Modes:**\n\n- **Text-to-code:** Natural language descriptions generate code structure\n- **Design-to-code:** Figma, PSD, or design sketches convert to layouts (tools achieve ~92% layout accuracy)\n- **Repository-aware:** Agents read existing codebases to scaffold compatible structures\n\n**Critical for Future AI Agent Work**: The scaffolded structure becomes crucial context for subsequent AI agent interactions. Well-structured scaffolding with clear file organization, naming conventions, and architectural patterns helps future agents understand the codebase layout and make more informed decisions when implementing features or making modifications.\n\nThe agent acts as a \"kickstarter\" for new development efforts while simultaneously enriching the repository's structural context for future AI-assisted development.",
     "when_to_use": [
-      "Starting new features or modules",
-      "Creating consistent project structure",
-      "Reducing boilerplate writing time",
-      "Establishing patterns for future AI work"
+      "New feature or module development",
+      "Greenfield projects and prototyping",
+      "Standardized frameworks (React, Express, etc.)",
+      "Repetitive boilerplate generation"
     ],
     "pros": [
-      "Quick start on new components",
-      "Focus on core logic not setup",
+      "Faster time to first code",
       "Consistent project structure",
-      "Better context for future AI agents"
+      "Reduced boilerplate"
     ],
     "cons": [
-      "May generate unnecessary files",
-      "Scaffolding style may not match preferences",
-      "Still requires human implementation",
-      "Can create technical debt if not reviewed"
+      "Code reliability issues (36% of developers report problems)",
+      "Requires human review",
+      "Struggles with legacy integration",
+      "Without scaffolding, configurations lead to \"massive overengineering\" (SANER 2026)"
     ],
     "tags": [
       "code-generation",
@@ -4785,26 +4820,30 @@
     "title": "Chain-of-Thought Monitoring & Interruption",
     "title_ko": "사고 사슬 모니터링 및 중단",
     "category": "UX & Collaboration",
-    "description": "AI agents can pursue misguided reasoning paths for extended periods before producing outputs Implement active surveillance of agent's intermediate reasoning with capability to interrupt and redirect",
-    "problem": "AI agents can pursue misguided reasoning paths for extended periods before producing outputs. By the time developers realize the approach is wrong, significant time and tokens have been wasted. Traditional 'fire and forget' execution provides no opportunity for early correction.",
-    "solution": "Implement active surveillance of agent's intermediate reasoning with capability to interrupt and redirect. Monitor chain-of-thought outputs, tool calls, and intermediate results in real-time, maintaining a 'finger on the trigger' to catch wrong directions early.",
+    "description": "AI agents can pursue misguided reasoning paths for extended periods before producing final outputs Implement active surveillance of the agent's intermediate reasoning steps with the capability to inte",
+    "problem": "AI agents can pursue misguided reasoning paths for extended periods before producing final outputs. By the time developers realize the approach is wrong, significant time and tokens have been wasted on a fundamentally flawed direction. Traditional \"fire and forget\" agent execution provides no opportunity for early course correction.",
+    "solution": "Implement active surveillance of the agent's intermediate reasoning steps with the capability to interrupt and redirect before completing full execution sequences. Monitor chain-of-thought outputs, tool calls, and intermediate results in real-time, maintaining a \"finger on the trigger\" to catch wrong directions early.\n\n**Key mechanisms**: Real-time reasoning visibility (expose agent's thinking process as it unfolds, display tool use decisions and intermediate results). Low-friction interruption (quick halt capability via keyboard shortcuts/UI controls, preserve partial work with KV cache checkpointing, allow mid-execution context injection). Interruption triggers (manual intervention, confidence thresholds for early exit, budget limits, safety violations). Early detection signals (wrong file selections, flawed assumptions in initial tool calls, misunderstanding of requirements in first reasoning steps).",
     "when_to_use": [
-      "Complex refactoring tasks",
-      "High-stakes operations (migrations, API changes)",
-      "Ambiguous requirements",
-      "Tasks requiring deep codebase understanding"
+      "Complex refactoring where wrong file choices are costly",
+      "Tasks requiring deep codebase understanding",
+      "High-stakes operations (database migrations, API changes)",
+      "When agent might misinterpret ambiguous requirements",
+      "Development workflows where iteration speed matters"
     ],
     "pros": [
-      "Prevents wasted time on wrong approaches",
+      "Prevents wasted time on fundamentally wrong approaches",
       "Maximizes value from expensive model calls",
       "Enables collaborative human-AI problem solving",
-      "Catches misunderstandings early"
+      "Reduces frustration from watching preventable mistakes",
+      "Catches misunderstandings within initial tool calls"
     ],
     "cons": [
-      "Requires active human attention",
-      "May interrupt productive exploration",
-      "Adds cognitive load to monitor",
-      "Risk of over-correcting valid approaches"
+      "Requires active human attention (not fully autonomous)",
+      "Can interrupt productive exploration if triggered prematurely",
+      "May create dependency on human oversight for routine tasks",
+      "Adds cognitive load to monitor agent reasoning",
+      "Risk of over-correcting and preventing valid creative approaches",
+      "Low faithfulness: Current models' CoT frequently doesn't reflect true reasoning (Claude 3.7: ~25%, DeepSeek R1: ~39%)"
     ],
     "tags": [
       "monitoring",
