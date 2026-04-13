@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://claude.com/blog/building-companies-with-claude-code",
   "problem": {
-    "en": "Mixing research, planning, and implementation in one context degrades output quality and causes context pollution.",
-    "ko": "리서치, 계획, 구현을 하나의 컨텍스트에서 혼합하면 출력 품질이 저하되고 컨텍스트 오염이 발생합니다."
+    "en": "When AI agents attempt to simultaneously research, plan, and implement solutions, context contamination occurs. Competing priorities within a single conversation degrade output quality as the agent struggles to balance exploration, strategic thinking, and execution. This results in incomplete research, unclear plans, and suboptimal implementations.",
+    "ko": "AI 에이전트가 리서치, 계획, 구현을 동시에 시도하면 컨텍스트 오염이 발생합니다. 단일 대화 내에서 경쟁하는 우선순위가 출력 품질을 저하시키며, 에이전트는 탐색, 전략적 사고, 실행의 균형을 맞추기 어려워합니다. 이로 인해 불완전한 리서치, 불명확한 계획, 최적이 아닌 구현이 발생합니다."
   },
   "solution": {
-    "en": "Break workflows into isolated phases with clean handoffs and fresh contexts, using different models optimized for each phase.",
-    "ko": "깨끗한 핸드오프와 새로운 컨텍스트로 워크플로우를 격리된 단계로 분리하고, 각 단계에 최적화된 다른 모델을 사용합니다."
+    "en": "Break development workflows into isolated phases with clean handoffs between them. Each phase runs in a separate conversation with a fresh context window, focusing exclusively on its objective:\n\n**Research Phase (Opus 4.1):**\n- Deep exploration of requirements, existing code, and constraints\n- Comprehensive background investigation\n- No implementation concerns\n\n**Planning Phase (Opus 4.1):**\n- Create structured implementation roadmap\n- Define clear steps and dependencies\n- No coding distractions\n\n**Implementation Phase (Sonnet 4.5):**\n- Execute each plan step systematically\n- Focus purely on code quality and functionality\n- Leverage the distilled outputs from previous phases\n\n**Key principle:** Pass only distilled conclusions between phases, not full conversation history. This prevents context pollution while maintaining necessary information flow.",
+    "ko": "개발 워크플로우를 격리된 단계로 분리하고 단계 간 깨끗한 핸드오프를 수행합니다. 각 단계는 별도의 대화에서 새로운 컨텍스트 윈도우로 실행되며, 해당 목표에만 집중합니다:\n\n**리서치 단계 (Opus 4.1):**\n- 요구 사항, 기존 코드, 제약 조건에 대한 심층 탐색\n- 포괄적인 배경 조사\n- 구현 관련 고려 없음\n\n**계획 단계 (Opus 4.1):**\n- 구조화된 구현 로드맵 생성\n- 명확한 단계와 의존성 정의\n- 코딩 관련 방해 없음\n\n**구현 단계 (Sonnet 4.5):**\n- 각 계획 단계를 체계적으로 실행\n- 코드 품질과 기능에만 집중\n- 이전 단계의 정제된 출력 활용\n\n**핵심 원칙:** 전체 대화 기록이 아닌 정제된 결론만 단계 간에 전달합니다. 이를 통해 필요한 정보 흐름을 유지하면서 컨텍스트 오염을 방지합니다."
   },
   "ascii_diagram": "┌──────────┐\n│ Research │ (Opus)\n│  Phase   │\n└────┬─────┘\n     │ distilled findings\n┌────▼─────┐\n│ Planning │ (Opus)\n│  Phase   │\n└────┬─────┘\n     │ roadmap\n┌────▼─────┐\n│ Execute  │ (Sonnet)\n│  Phase   │\n└──────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Research Phase] -->|Findings| B[Planning Phase]\n    B -->|Roadmap| C[Execution Phase]\n    style A fill:#e1f5ff\n    style B fill:#fff4e1\n    style C fill:#e8f5e9",
   "code_example": "# Phase 1: Research with Opus\nfindings = opus.research(codebase, requirements)\n\n# Phase 2: Planning with Opus (fresh context)\nplan = opus.plan(findings.summary)\n\n# Phase 3: Execute with Sonnet (fresh context)\nfor task in plan.tasks:\n    sonnet.execute(task)",
   "when_to_use": {
-    "en": ["Complex feature development", "New codebase exploration", "Large-scale refactoring"],
-    "ko": ["복잡한 기능 개발", "신규 코드베이스 탐색", "대규모 리팩토링"]
+    "en": ["Complex features requiring significant background research", "Refactoring projects where understanding existing code is critical", "New codebases where architectural decisions need careful consideration", "Any task where mixing research and implementation degrades quality"],
+    "ko": ["상당한 배경 리서치가 필요한 복잡한 기능", "기존 코드 이해가 중요한 리팩토링 프로젝트", "아키텍처 결정에 신중한 고려가 필요한 신규 코드베이스", "리서치와 구현을 혼합하면 품질이 저하되는 모든 작업"]
   },
   "pros": {
-    "en": ["Higher quality output", "Context pollution prevention", "Model strength utilization"],
-    "ko": ["높은 품질 출력", "컨텍스트 오염 방지", "모델별 강점 활용"]
+    "en": ["Higher quality outputs in each phase due to focused attention", "Prevents context contamination from competing objectives", "Deliberation before action improves tool use accuracy from 72% to 94% (Parisien et al. 2024)", "Leverages model-specific strengths (Opus for reasoning, Sonnet for execution)", "Clearer mental model for complex projects", "Easier to debug which phase introduced issues"],
+    "ko": ["집중된 주의로 각 단계에서 더 높은 품질의 출력", "경쟁하는 목표로부터의 컨텍스트 오염 방지", "행동 전 심사숙고로 도구 사용 정확도 72%에서 94%로 향상(Parisien et al. 2024)", "모델별 강점 활용(Opus는 추론, Sonnet은 실행)", "복잡한 프로젝트를 위한 더 명확한 멘탈 모델", "어떤 단계에서 문제가 발생했는지 디버깅 용이"]
   },
   "cons": {
-    "en": ["Requires explicit management", "Overkill for simple tasks"],
-    "ko": ["명시적 관리 필요", "간단한 작업에 과함"]
+    "en": ["Requires more explicit phase management and handoffs", "Planning overhead adds ~35% latency (Parisien et al. 2024)", "Requires discipline to maintain phase boundaries", "Information loss risk if handoffs are poorly structured", "Higher total token usage across multiple conversations"],
+    "ko": ["더 명시적인 단계 관리와 핸드오프 필요", "계획 오버헤드로 ~35% 지연 시간 추가(Parisien et al. 2024)", "단계 경계를 유지하기 위한 규율 필요", "핸드오프가 잘못 구조화되면 정보 손실 위험", "여러 대화에 걸쳐 더 높은 총 토큰 사용량"]
   },
   "tags": ["orchestration", "planning", "research", "context-management", "multi-model"]
 }

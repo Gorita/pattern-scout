@@ -6,27 +6,47 @@
   "status": "emerging",
   "original_url": "https://simonwillison.net/2025/Jun/16/lethal-trifecta/",
   "problem": {
-    "en": "MCP encourages mix-and-match tools, often combining private-data readers, web fetchers, and writers in a single callable unit. This amplifies the lethality of prompt-injection chains.",
-    "ko": "MCP는 혼합 도구를 권장하며, 종종 개인 데이터 리더, 웹 페처, 라이터를 단일 호출 가능 단위로 결합합니다. 이는 프롬프트 인젝션 체인의 치명성을 증폭시킵니다."
+    "en": "Model Context Protocol (MCP) and agent frameworks often combine three capability classes in a single tool: private-data readers (email, filesystem), web fetchers (HTTP clients), and writers (API mutators). This creates the \"lethal trifecta\"--malicious input can trigger chains that read sensitive data, exfiltrate it, and modify systems in one operation.",
+    "ko": "MCP(Model Context Protocol)와 에이전트 프레임워크는 종종 단일 도구에 세 가지 기능 클래스를 결합합니다: 개인 데이터 리더(이메일, 파일시스템), 웹 페처(HTTP 클라이언트), 라이터(API 뮤테이터). 이는 '치명적 삼중주(lethal trifecta)'를 생성하여, 악의적 입력이 민감한 데이터를 읽고, 유출하고, 시스템을 수정하는 체인을 단일 작업으로 트리거할 수 있습니다."
   },
   "solution": {
-    "en": "Split monolithic tools into reader, processor, and writer micro-tools. Require explicit per-call user consent when composing tools across capability classes. Run each class in isolated subprocess with scoped permissions.",
-    "ko": "모놀리식 도구를 리더, 프로세서, 라이터 마이크로 도구로 분할합니다. 기능 클래스 간 도구를 구성할 때 명시적인 호출별 사용자 동의를 요구합니다. 각 클래스를 범위가 지정된 권한으로 격리된 서브프로세스에서 실행합니다."
+    "en": "Adopt **capability compartmentalization** at the tool layer:\n\n- Split monolithic tools into *reader*, *processor*, and *writer* micro-tools.\n- Require explicit, per-call user consent when composing tools across capability classes.\n- Run each class in an isolated subprocess with scoped API keys and file permissions.\n\nTreat each capability class as a separate trust zone with its own runtime identity and policy checks. Cross-zone composition should require explicit policy evaluation and short-lived delegation tokens so the agent cannot silently chain read+fetch+write into a high-risk path.\n\n```yaml\n# tool-manifest.yml\nemail_reader:\n  capabilities: [private_data, untrusted_input]\n  permissions:\n    fs: read-only:/mail\n    net: none\n\nissue_creator:\n  capabilities: [external_comm]\n  permissions:\n    net: allowlist:github.com\n```",
+    "ko": "도구 레이어에서 **기능 구획화**를 적용합니다:\n\n- 모놀리식 도구를 *리더*, *프로세서*, *라이터* 마이크로 도구로 분할합니다.\n- 기능 클래스 간 도구를 구성할 때 명시적인 호출별 사용자 동의를 요구합니다.\n- 각 클래스를 범위가 지정된 API 키와 파일 권한으로 격리된 서브프로세스에서 실행합니다.\n\n각 기능 클래스를 자체 런타임 아이덴티티와 정책 검사를 가진 별도의 신뢰 영역으로 취급합니다. 영역 간 구성은 명시적 정책 평가와 단기 위임 토큰을 요구하여 에이전트가 읽기+페치+쓰기를 고위험 경로로 조용히 체이닝할 수 없도록 합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────────┐\n│      MONOLITHIC TOOL (Bad)          │\n│  [read_email + fetch_web + write]   │\n│         → Security Risk!            │\n└─────────────────────────────────────┘\n                  ↓\n┌─────────────────────────────────────┐\n│   COMPARTMENTALIZED (Good)          │\n├─────────────────────────────────────┤\n│ email_reader:                       │\n│   capabilities: [private_data]      │\n│   permissions: fs:read-only, net:no │\n├─────────────────────────────────────┤\n│ issue_creator:                      │\n│   capabilities: [external_comm]     │\n│   permissions: net:github.com only  │\n└─────────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Tool Request] --> B{Check Manifest}\n    B --> C[Reader Tool]\n    B --> D[Processor Tool]\n    B --> E[Writer Tool]\n    C --> F{Crosses Capability Class?}\n    D --> F\n    E --> F\n    F -->|Yes| G[Request User Consent]\n    F -->|No| H[Execute in Sandbox]\n    G --> H",
   "code_example": "# tool-manifest.yml\nemail_reader:\n  capabilities: [private_data, untrusted_input]\n  permissions:\n    fs: read-only:/mail\n    net: none\n\nissue_creator:\n  capabilities: [external_comm]\n  permissions:\n    net: allowlist:github.com\n\n# Agent runner checks manifest before action plans\n# Flags any attempt to chain tools that recreate\n# the lethal trifecta",
   "when_to_use": {
-    "en": ["MCP tool design", "Security-sensitive agent systems", "Multi-tenant environments"],
-    "ko": ["MCP 도구 설계", "보안에 민감한 에이전트 시스템", "다중 테넌트 환경"]
+    "en": [
+      "Generate the manifest automatically from CI.",
+      "Your agent runner consults the manifest before constructing action plans.",
+      "Flag any attempt to chain tools that would recreate the lethal trifecta.",
+      "Group tools by capability class (fs, web, runtime, memory) and assign profiles (minimal, coding, messaging) to prevent mixing.",
+      "Validate tool chains at call time: reject if all three capability classes are present."
+    ],
+    "ko": [
+      "CI에서 매니페스트를 자동 생성",
+      "에이전트 러너가 액션 플랜 구성 전 매니페스트를 참조",
+      "치명적 삼중주를 재현하는 도구 체이닝 시도를 플래그 처리",
+      "기능 클래스(fs, web, runtime, memory)별로 도구를 그룹화하고 프로파일(minimal, coding, messaging)을 할당하여 혼합 방지",
+      "호출 시점에 도구 체인 검증: 세 가지 기능 클래스가 모두 존재하면 거부"
+    ]
   },
   "pros": {
-    "en": ["Fine-grained security", "Plays well with modular architectures", "Clear audit trail"],
-    "ko": ["세분화된 보안", "모듈식 아키텍처와 잘 호환", "명확한 감사 추적"]
+    "en": [
+      "Fine-grained; plays well with modular architectures"
+    ],
+    "ko": [
+      "세분화되어 모듈식 아키텍처와 잘 호환됨"
+    ]
   },
   "cons": {
-    "en": ["More tooling overhead", "Risk of permission creep over time", "Complexity in tool composition"],
-    "ko": ["더 많은 도구 오버헤드", "시간이 지남에 따라 권한 확대 위험", "도구 구성의 복잡성"]
+    "en": [
+      "More tooling overhead; risk of permission creep over time"
+    ],
+    "ko": [
+      "더 많은 도구 오버헤드; 시간이 지남에 따라 권한 확대 위험"
+    ]
   },
-  "tags": ["capability-segregation", "least-privilege", "tool-permissions", "security"]
+  "tags": ["capability-segregation", "least-privilege", "tool-permissions"]
 }

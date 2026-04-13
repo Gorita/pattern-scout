@@ -3,30 +3,48 @@
   "title": "Layered Configuration Context",
   "title_ko": "계층화된 구성 컨텍스트",
   "category": "Context & Memory",
-  "status": "proposed",
-  "original_url": "https://lethain.com/agents-layered-configuration/",
+  "status": "established",
+  "original_url": "https://www.nibzard.com/claude-code",
   "problem": {
-    "en": "Agents need different configurations at global, project, and task levels, but flat config systems don't support this hierarchy.",
-    "ko": "에이전트가 글로벌, 프로젝트, 작업 수준에서 다른 구성이 필요하지만 플랫 구성 시스템은 이 계층을 지원하지 않습니다."
+    "en": "AI agents require relevant context to perform effectively. Providing this context manually in every prompt is cumbersome, and a one-size-fits-all global context is often too broad or too narrow. Different projects, users, and organizational policies may require different baseline information for the agent.",
+    "ko": "AI 에이전트가 효과적으로 작동하려면 관련 컨텍스트가 필요합니다. 매 프롬프트마다 이 컨텍스트를 수동으로 제공하는 것은 번거롭고, 일률적인 전역 컨텍스트는 종종 너무 광범위하거나 너무 좁습니다. 다른 프로젝트, 사용자, 조직 정책은 에이전트에 대해 서로 다른 기준 정보를 요구할 수 있습니다."
   },
   "solution": {
-    "en": "Implement multi-level configuration that merges global defaults, project settings, and task-specific overrides.",
-    "ko": "글로벌 기본값, 프로젝트 설정, 작업별 오버라이드를 병합하는 다중 수준 구성을 구현합니다."
+    "en": "Implement a system of layered configuration files (e.g., named `CLAUDE.md` or a similar convention) that the agent automatically discovers and loads based on their location in the file system hierarchy. This allows for:\n\n- **Enterprise/Organizational Context:** A root-level file (`/<enterprise_root>/CLAUDE.md`) for policies or information shared across all projects in an organization.\n- **User-Specific Global Context:** A file in the user's home directory (`~/.claude/CLAUDE.md`) for personal preferences, common tools, or notes shared across all their projects.\n- **Project-Specific Context:** A file within the project's root directory (`<project_root>/CLAUDE.md`), typically version-controlled, for project-specific instructions, architectural overviews, or key file descriptions.\n- **Project-Local Context:** A local, non-version-controlled file (`<project_root>/CLAUDE.local.md`) for individual overrides, temporary notes, or secrets relevant to the project for that user.\n\nThe agent intelligently merges or prioritizes these context layers, providing a rich, tailored baseline of information without manual intervention in each query.",
+    "ko": "에이전트가 파일 시스템 계층 구조에서의 위치를 기반으로 자동으로 검색하고 로드하는 계층화된 구성 파일 시스템(예: `CLAUDE.md` 또는 유사한 규칙)을 구현합니다. 이를 통해 다음이 가능합니다:\n\n- **기업/조직 컨텍스트:** 조직의 모든 프로젝트에 공유되는 정책이나 정보를 위한 루트 레벨 파일(`/<enterprise_root>/CLAUDE.md`).\n- **사용자별 전역 컨텍스트:** 모든 프로젝트에 걸쳐 공유되는 개인 환경설정, 일반 도구, 메모를 위한 사용자 홈 디렉토리 파일(`~/.claude/CLAUDE.md`).\n- **프로젝트별 컨텍스트:** 프로젝트별 지침, 아키텍처 개요, 주요 파일 설명을 위한 프로젝트 루트 디렉토리 내 파일(`<project_root>/CLAUDE.md`), 일반적으로 버전 관리됨.\n- **프로젝트 로컬 컨텍스트:** 해당 사용자의 프로젝트에 관련된 개별 오버라이드, 임시 메모, 시크릿을 위한 로컬 비버전 관리 파일(`<project_root>/CLAUDE.local.md`).\n\n에이전트가 이러한 컨텍스트 레이어를 지능적으로 병합하거나 우선순위를 지정하여, 각 쿼리에서 수동 개입 없이 풍부하고 맞춤화된 기준 정보를 제공합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Global    │ ~/.agent/config\n│  Defaults   │\n└──────┬──────┘\n       │ merge\n┌──────▼──────┐\n│  Project    │ .agent/config\n│  Settings   │\n└──────┬──────┘\n       │ merge\n┌──────▼──────┐\n│   Task      │ inline/flags\n│ Overrides   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Final     │\n│   Config    │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Global: ~/.agent/config] --> D[Merge]\n    B[Project: .agent/config] --> D\n    C[Task: inline flags] --> D\n    D --> E[Final Configuration]\n    E --> F[Agent Execution]",
   "code_example": "class LayeredConfig:\n    def __init__(self):\n        self.global_config = load('~/.agent/config')\n        self.project_config = load('.agent/config')\n    \n    def get_config(self, task_overrides=None):\n        config = {**self.global_config}\n        config.update(self.project_config)\n        if task_overrides:\n            config.update(task_overrides)\n        return config",
   "when_to_use": {
-    "en": ["Multi-project environments", "Team shared configurations", "Task-specific tuning"],
-    "ko": ["다중 프로젝트 환경", "팀 공유 구성", "작업별 튜닝"]
+    "en": [
+      "Use this when model quality depends on selecting or retaining the right context.",
+      "Start with strict context budgets and explicit memory retention rules.",
+      "Measure relevance and retrieval hit-rate before increasing memory breadth.",
+      "Version-control project context (`CLAUDE.md`); exclude local overrides (`CLAUDE.local.md`) from VCS."
+    ],
+    "ko": [
+      "모델 품질이 올바른 컨텍스트 선택이나 유지에 의존할 때 사용",
+      "엄격한 컨텍스트 예산과 명시적 메모리 유지 규칙으로 시작",
+      "메모리 범위를 늘리기 전에 관련성과 검색 적중률을 측정",
+      "프로젝트 컨텍스트(`CLAUDE.md`)는 버전 관리하고, 로컬 오버라이드(`CLAUDE.local.md`)는 VCS에서 제외"
+    ]
   },
   "pros": {
-    "en": ["Flexibility", "DRY configuration", "Easy overrides"],
-    "ko": ["유연성", "DRY 구성", "쉬운 오버라이드"]
+    "en": [
+      "Raises answer quality by keeping context relevant and reducing retrieval noise; enables enterprise-wide policy enforcement; supports automatic context loading without manual intervention"
+    ],
+    "ko": [
+      "컨텍스트를 관련성 있게 유지하고 검색 노이즈를 줄여 답변 품질을 높임; 기업 전체 정책 적용 가능; 수동 개입 없이 자동 컨텍스트 로딩 지원"
+    ]
   },
   "cons": {
-    "en": ["Debugging complexity", "Merge conflict resolution"],
-    "ko": ["디버깅 복잡성", "병합 충돌 해결"]
+    "en": [
+      "Requires ongoing tuning of memory policies and indexing quality; context window limits may truncate layers; potential for configuration conflicts"
+    ],
+    "ko": [
+      "메모리 정책과 인덱싱 품질의 지속적 튜닝 필요; 컨텍스트 윈도우 제한으로 레이어가 잘릴 수 있음; 구성 충돌 가능성"
+    ]
   },
-  "tags": ["configuration", "layered-config", "context-management", "hierarchy"]
+  "tags": ["context management", "configuration", "scoped context", "automatic loading", "CLAUDE.md"]
 }

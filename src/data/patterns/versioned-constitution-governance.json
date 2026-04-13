@@ -6,27 +6,43 @@
   "status": "emerging",
   "original_url": "https://substack.com/home/post/p-161422949?utm_campaign=post&utm_medium=web",
   "problem": {
-    "en": "When an agent rewrites its own constitution (alignment rules), it may accidentally violate safety constraints or regress on alignment objectives if changes aren't properly reviewed and tracked.",
-    "ko": "에이전트가 자체 헌법(정렬 규칙)을 재작성할 때, 변경 사항이 적절히 검토되고 추적되지 않으면 안전 제약을 실수로 위반하거나 정렬 목표에서 후퇴할 수 있습니다."
+    "en": "When agents can modify policy/constitution text, safety regressions can be introduced gradually and go unnoticed. Without versioning, signatures, and policy review gates, teams cannot prove who changed what, why it changed, or whether critical safeguards were weakened.",
+    "ko": "에이전트가 정책/헌법 텍스트를 수정할 수 있을 때, 안전 후퇴가 점진적으로 도입되어 눈에 띄지 않을 수 있습니다. 버전 관리, 서명, 정책 리뷰 게이트가 없으면 누가 무엇을 변경했는지, 왜 변경했는지, 중요한 안전장치가 약화되었는지 증명할 수 없습니다."
   },
   "solution": {
-    "en": "Store the constitution in a version-controlled, signed repository. YAML/TOML rules live in Git with signed commits (Sigstore). CI runs automated policy checks. Agent can propose changes but only approved reviewers can merge.",
-    "ko": "헌법을 버전 관리되고 서명된 저장소에 저장합니다. YAML/TOML 규칙은 서명된 커밋(Sigstore)과 함께 Git에 있습니다. CI는 자동화된 정책 검사를 실행합니다. 에이전트는 변경을 제안할 수 있지만 승인된 검토자만 병합할 수 있습니다."
+    "en": "Store the constitution in a **version-controlled, signed repository**:\n\n- YAML/TOML rules live in Git for automated rule enforcement; natural language principles guide LLM-based evaluation.\n- Each commit is signed (e.g., Sigstore); CI runs automated policy checks.\n- Only commits signed by approved reviewers or automated tests are merged.\n- The agent can *propose* changes, but a gatekeeper merges them.\n- Use semantic versioning: MAJOR for core safety principle changes, MINOR for additions, PATCH for clarifications.\n\nCombine policy-as-code with release discipline: every constitutional change is diffable, reviewable, and test-gated before activation. This gives governance history, rollback capability, and auditable control over alignment policy evolution.",
+    "ko": "헌법을 **버전 관리되고 서명된 저장소**에 저장합니다:\n\n- YAML/TOML 규칙은 자동화된 규칙 적용을 위해 Git에 저장하고, 자연어 원칙은 LLM 기반 평가를 안내합니다.\n- 각 커밋은 서명되며(예: Sigstore), CI가 자동화된 정책 검사를 실행합니다.\n- 승인된 검토자 또는 자동화된 테스트가 서명한 커밋만 병합됩니다.\n- 에이전트는 변경을 *제안*할 수 있지만, 게이트키퍼가 병합합니다.\n- 시맨틱 버전 관리 사용: 핵심 안전 원칙 변경은 MAJOR, 추가는 MINOR, 명확화는 PATCH.\n\n정책을 코드로 관리하는 것과 릴리스 규율을 결합합니다: 모든 헌법 변경은 활성화 전에 diff 가능하고, 검토 가능하며, 테스트 게이트를 통과해야 합니다. 이를 통해 거버넌스 이력, 롤백 기능, 정렬 정책 진화에 대한 감사 가능한 제어를 제공합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│        Agent Runtime            │\n│  (reads constitution HEAD)      │\n└───────────────┬─────────────────┘\n                │ read-only\n┌───────────────▼─────────────────┐\n│    Git Repository               │\n│    (constitution.yaml)          │\n├─────────────────────────────────┤\n│  commit 3: v1.2 (current HEAD)  │\n│  commit 2: v1.1                 │\n│  commit 1: v1.0 (initial)       │\n└───────────────┬─────────────────┘\n                │\n        ┌───────┴───────┐\n        │               │\n┌───────▼───────┐ ┌─────▼─────────┐\n│ Agent Proposes│ │ Human Reviews │\n│ Changes (PR)  │ │ & Approves    │\n└───────────────┘ └───────┬───────┘\n                          │\n                  ┌───────▼───────┐\n                  │ CI Policy     │\n                  │ Checks        │\n                  └───────┬───────┘\n                          │\n                  ┌───────▼───────┐\n                  │ Signed Merge  │\n                  └───────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent Runtime] -->|read-only| B[Git Repo: constitution.yaml]\n    B --> C[Version History]\n    A -->|proposes| D[Pull Request]\n    D --> E[CI Policy Checks]\n    E --> F{Passes?}\n    F -->|Yes| G[Human Review]\n    F -->|No| H[Reject - Safety Violation]\n    G --> I{Approved?}\n    I -->|Yes| J[Signed Commit Merge]\n    I -->|No| K[Reject]\n    J --> B",
   "code_example": "# constitution.yaml - Version controlled alignment rules\nversion: 1.2\nrules:\n  - id: no_harmful_content\n    description: Never generate harmful or illegal content\n    severity: critical\n    \n  - id: respect_privacy\n    description: Do not expose personal information\n    severity: critical\n    \n  - id: cite_sources\n    description: Provide citations for factual claims\n    severity: warning\n\n# Git workflow\ngit commit -S -m 'Update rule: cite_sources'  # Signed commit\n# CI runs: python check_policy.py constitution.yaml\n# - Flags deletions of critical rules\n# - Validates rule schema\n# - Only approved reviewers can merge",
   "when_to_use": {
-    "en": ["Self-modifying agent systems", "Safety-critical alignment rules", "Multi-stakeholder AI governance", "Auditable AI systems"],
-    "ko": ["자기 수정 에이전트 시스템", "안전이 중요한 정렬 규칙", "다중 이해관계자 AI 거버넌스", "감사 가능한 AI 시스템"]
+    "en": [
+      "Require `git commit -S` or similar.",
+      "Run diff-based linting to flag deletions of critical rules.",
+      "Expose constitution `HEAD` as read-only context in every agent episode."
+    ],
+    "ko": [
+      "`git commit -S` 또는 유사한 서명 커밋 필수 적용",
+      "diff 기반 린팅으로 중요 규칙 삭제를 플래그 처리",
+      "모든 에이전트 에피소드에서 헌법 `HEAD`를 읽기 전용 컨텍스트로 노출"
+    ]
   },
   "pros": {
-    "en": ["Complete audit trail of changes", "Prevents accidental safety regression", "Multiple stakeholders can review", "Cryptographic integrity via signing"],
-    "ko": ["변경 사항의 완전한 감사 추적", "실수로 인한 안전 후퇴 방지", "여러 이해관계자가 검토 가능", "서명을 통한 암호화 무결성"]
+    "en": [
+      "Strong auditability, safer policy evolution, and fast rollback of bad constitutional changes"
+    ],
+    "ko": [
+      "강력한 감사 가능성, 더 안전한 정책 진화, 잘못된 헌법 변경의 빠른 롤백"
+    ]
   },
   "cons": {
-    "en": ["Slower iteration on rules", "Requires governance process", "May bottleneck rapid experimentation", "Git complexity for non-technical reviewers"],
-    "ko": ["규칙에 대한 느린 반복", "거버넌스 프로세스 필요", "빠른 실험의 병목이 될 수 있음", "비기술 검토자를 위한 Git 복잡성"]
+    "en": [
+      "Slower policy iteration and extra operational burden for signing, review, and CI checks"
+    ],
+    "ko": [
+      "느린 정책 반복과 서명, 리뷰, CI 검사를 위한 추가 운영 부담"
+    ]
   },
-  "tags": ["constitution", "alignment", "governance", "signed-commits", "policy", "safety"]
+  "tags": ["constitution", "alignment", "governance", "signed-commits", "policy", "rlaif", "critique-revise"]
 }

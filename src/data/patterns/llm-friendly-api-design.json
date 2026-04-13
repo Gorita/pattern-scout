@@ -6,27 +6,43 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "APIs designed solely for human consumption might be ambiguous or overly complex for an LLM to use correctly without extensive fine-tuning or elaborate prompting.",
-    "ko": "인간 소비만을 위해 설계된 API는 광범위한 미세조정이나 정교한 프롬프팅 없이는 LLM이 올바르게 사용하기에 모호하거나 지나치게 복잡할 수 있습니다."
+    "en": "For AI agents to reliably and effectively use tools, especially APIs or internal libraries, the design of these interfaces matters. APIs designed solely for human consumption might be ambiguous or overly complex for an LLM to use correctly without extensive fine-tuning or elaborate prompting.",
+    "ko": "AI 에이전트가 도구, 특히 API나 내부 라이브러리를 신뢰성 있고 효과적으로 사용하려면 이러한 인터페이스의 설계가 중요합니다. 인간 소비만을 위해 설계된 API는 광범위한 미세조정이나 정교한 프롬프팅 없이는 LLM이 올바르게 사용하기에 모호하거나 지나치게 복잡할 수 있습니다."
   },
   "solution": {
-    "en": "Design APIs with LLM consumption in mind: explicit versioning visible to model, self-descriptive function names, simplified interaction patterns, clear error messaging, reduced indirection levels.",
-    "ko": "LLM 소비를 염두에 둔 API 설계: 모델에 보이는 명시적 버전 관리, 자기 설명적 함수 이름, 단순화된 상호작용 패턴, 명확한 오류 메시지, 감소된 간접 수준."
+    "en": "Design or adapt software APIs (including internal libraries and modules) with explicit consideration for LLM consumption. This involves:\n\n- **Explicit Versioning:** Making API version information clearly visible and understandable to the LLM, so it can request or adapt to specific versions.\n- **Self-Descriptive Functionality:** Ensuring function names, parameter names, type schemas (JSON Schema/OpenAPI), and documentation clearly describe what the API does and how to use it.\n- **Simplified Interaction Patterns:** Favoring simpler, more direct API calls over highly nested or complex interaction sequences where possible, to reduce the chances of the LLM making errors.\n- **Clear Error Messaging:** Designing error responses that are informative and actionable for an LLM, helping it to self-correct or understand why a call failed.\n- **Reduced Indirection:** Structuring code and libraries to minimize layers of indirection (target: 2 levels instead of n-levels), making it easier for the model to reason about the codebase.\n\nThe aim is to create interfaces that are robust and intuitive for LLMs to interact with, thereby improving the reliability and effectiveness of agent tool use.",
+    "ko": "LLM 소비를 명시적으로 고려하여 소프트웨어 API(내부 라이브러리와 모듈 포함)를 설계하거나 조정합니다. 여기에는 다음이 포함됩니다:\n\n- **명시적 버전 관리:** API 버전 정보를 LLM이 명확하게 보고 이해할 수 있도록 하여 특정 버전을 요청하거나 적응할 수 있게 합니다.\n- **자기 설명적 기능:** 함수 이름, 파라미터 이름, 타입 스키마(JSON Schema/OpenAPI), 문서가 API의 기능과 사용 방법을 명확하게 설명하도록 합니다.\n- **단순화된 상호작용 패턴:** 가능한 경우 고도로 중첩되거나 복잡한 상호작용 시퀀스보다 더 단순하고 직접적인 API 호출을 선호하여 LLM의 오류 가능성을 줄입니다.\n- **명확한 오류 메시지:** LLM이 자기 수정하거나 호출 실패 이유를 이해할 수 있도록 정보가 풍부하고 실행 가능한 오류 응답을 설계합니다.\n- **간접 참조 감소:** 코드와 라이브러리를 구조화하여 간접 참조 레이어를 최소화(목표: n단계 대신 2단계)하여 모델이 코드베이스에 대해 추론하기 쉽게 합니다.\n\n목표는 LLM이 상호작용하기에 견고하고 직관적인 인터페이스를 만들어 에이전트 도구 사용의 신뢰성과 효과성을 향상시키는 것입니다."
   },
   "ascii_diagram": "HUMAN-CENTRIC API:\n├── Complex nested calls\n├── Implicit versioning\n├── Ambiguous error codes\n└── Many indirection levels\n\nLLM-FRIENDLY API:\n├── Flat, direct calls\n├── Visible version: v2.1.0\n├── Actionable error messages\n└── 2 levels of indirection max",
   "mermaid_diagram": "flowchart TD\n    A[API Design] --> B{Consumer Focus}\n    B -->|Human-Centric| C[Implicit Versions]\n    C --> D[Nested Calls]\n    D --> E[LLM Struggles]\n    B -->|LLM-Friendly| F[Explicit Versions]\n    F --> G[Self-Descriptive Names]\n    G --> H[Clear Errors]\n    H --> I[Reduced Indirection]\n    I --> J[LLM Success]",
   "code_example": "# Human-centric (problematic for LLM)\nresult = client.v2.users.get_by_id(id).profile.settings\n# Ambiguous: what version? many indirections\n\n# LLM-friendly design\nresult = get_user_settings(\n    user_id=123,\n    api_version='v2.1.0'  # Explicit, visible\n)\n# Error: {'code': 'USER_NOT_FOUND', \n#         'action': 'Verify user_id exists before calling'}",
   "when_to_use": {
-    "en": ["Building tools for AI agents", "Internal libraries for automation", "Public APIs expecting AI consumers"],
-    "ko": ["AI 에이전트용 도구 구축", "자동화를 위한 내부 라이브러리", "AI 소비자를 기대하는 공개 API"]
+    "en": [
+      "Use this when agent success depends on reliable tool invocation and environment setup.",
+      "Start with a narrow tool surface and explicit parameter validation.",
+      "Add observability around tool latency, failures, and fallback paths."
+    ],
+    "ko": [
+      "에이전트 성공이 신뢰성 있는 도구 호출과 환경 설정에 의존할 때 사용",
+      "좁은 도구 표면과 명시적 파라미터 검증으로 시작",
+      "도구 지연, 실패, 대체 경로에 대한 관찰 가능성 추가"
+    ]
   },
   "pros": {
-    "en": ["Improved reliability", "Fewer LLM errors", "Better self-correction"],
-    "ko": ["향상된 신뢰성", "LLM 오류 감소", "더 나은 자기 수정"]
+    "en": [
+      "Improves execution success and lowers tool-call failure rates"
+    ],
+    "ko": [
+      "실행 성공률을 높이고 도구 호출 실패율을 낮춤"
+    ]
   },
   "cons": {
-    "en": ["May sacrifice human ergonomics", "Requires intentional design effort"],
-    "ko": ["인간 인체공학 희생 가능", "의도적인 설계 노력 필요"]
+    "en": [
+      "Introduces integration coupling and environment-specific upkeep"
+    ],
+    "ko": [
+      "통합 결합도와 환경별 유지보수 부담 발생"
+    ]
   },
-  "tags": ["api-design", "llm-interaction", "tool-use", "system-design", "agent-compatibility"]
+  "tags": ["api-design", "llm-interaction", "tool-use", "system-design", "code-structure", "agent-compatibility"]
 }

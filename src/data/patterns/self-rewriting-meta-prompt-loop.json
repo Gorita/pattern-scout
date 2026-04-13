@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://noahgoodman.substack.com/p/meta-prompt-a-simple-self-improving",
   "problem": {
-    "en": "Static system prompts become stale or overly brittle as an agent encounters new tasks and edge cases.",
-    "ko": "정적 시스템 프롬프트가 에이전트가 새로운 작업과 엣지 케이스를 만날 때 오래되거나 취약해집니다."
+    "en": "Static system prompts become stale or overly brittle as an agent encounters new tasks and edge-cases. Manually editing them is slow and error-prone.",
+    "ko": "정적 시스템 프롬프트는 에이전트가 새로운 작업과 엣지 케이스를 만날 때 오래되거나 취약해집니다. 수동 편집은 느리고 오류가 발생하기 쉽습니다."
   },
   "solution": {
-    "en": "Let the agent rewrite its own system prompt after each interaction, validating changes before applying them.",
-    "ko": "에이전트가 각 상호작용 후 자체 시스템 프롬프트를 재작성하고, 적용 전에 변경 사항을 검증하게 합니다."
+    "en": "Let the agent **rewrite its own system prompt** after each interaction:\n\n1. **Reflect** on the latest dialogue or episode.\n2. Draft improvements to the instructions (add heuristics, refine tool advice, retire bad rules).\n3. **Validate** the draft (internal sanity-check or external gate).\n4. Replace the old system prompt with the revised version; persist in version control.\n5. Use the new prompt on the next episode, closing the self-improvement loop.\n\n```python\n# pseudo-code\ndialogue = run_episode()\ndelta = LLM(\"Reflect on dialogue and propose prompt edits\", dialogue)\nif passes_guardrails(delta):\n    system_prompt += delta\n    save(system_prompt)\n```",
+    "ko": "에이전트가 각 상호작용 후 **자체 시스템 프롬프트를 재작성**하게 합니다:\n\n1. 최신 대화 또는 에피소드에 대해 **반성**합니다.\n2. 지시 사항에 대한 개선 초안을 작성합니다(휴리스틱 추가, 도구 조언 정제, 나쁜 규칙 폐기).\n3. 초안을 **검증**합니다(내부 정합성 검사 또는 외부 게이트).\n4. 이전 시스템 프롬프트를 수정된 버전으로 교체하고 버전 관리에 유지합니다.\n5. 다음 에피소드에서 새 프롬프트를 사용하여 자기 개선 루프를 완성합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│  Dialogue   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Reflect   │\n│ on Episode  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Draft Edits │\n│ to Prompt   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Validate   │\n│ (Guardrails)│\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Apply &   │\n│    Save     │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Run Episode] --> B[Reflect on Dialogue]\n    B --> C[Draft Prompt Improvements]\n    C --> D{Passes Guardrails?}\n    D -->|Yes| E[Update System Prompt]\n    D -->|No| F[Reject Changes]\n    E --> G[Save to Version Control]\n    G --> H[Next Episode]",
   "code_example": "dialogue = run_episode()\ndelta = LLM('Reflect on dialogue and propose prompt edits', dialogue)\nif passes_guardrails(delta):\n    system_prompt += delta\n    save_version(system_prompt)",
   "when_to_use": {
-    "en": ["Long-running agents", "Adaptive systems", "Continuous improvement"],
-    "ko": ["장기 실행 에이전트", "적응형 시스템", "지속적 개선"]
+    "en": ["Best for low-risk domains with high-volume, well-defined workflows (e.g., formatting, style)", "Requires strong guardrails: structural validation, intent preservation checks, change magnitude limits", "Include version control integration and rollback capability", "Consider dual-agent architecture (executor + critic) for safer delta generation", "Avoid in safety-critical or high-regulation domains without human approval gates"],
+    "ko": ["대량의 잘 정의된 워크플로우가 있는 저위험 도메인에 적합(예: 포매팅, 스타일)", "강력한 가드레일 필요: 구조적 검증, 의도 보존 검사, 변경 규모 제한", "버전 관리 통합 및 롤백 기능 포함", "더 안전한 델타 생성을 위한 이중 에이전트 아키텍처(실행자 + 비평자) 고려", "인간 승인 게이트 없이 안전 필수 또는 고규제 도메인에서는 사용 금지"]
   },
   "pros": {
-    "en": ["Rapid adaptation", "No human in loop for minor tweaks"],
-    "ko": ["빠른 적응", "사소한 조정에 인간 개입 불필요"]
+    "en": ["Rapid adaptation", "Data-driven improvements", "No training infrastructure required"],
+    "ko": ["빠른 적응", "데이터 기반 개선", "학습 인프라 불필요"]
   },
   "cons": {
-    "en": ["Risk of drift or jailbreak", "Needs strong guardrails"],
-    "ko": ["드리프트나 탈옥 위험", "강력한 가드레일 필요"]
+    "en": ["Risk of drift or jailbreak", "Prompt bloat", "Oscillation and instability"],
+    "ko": ["드리프트나 탈옥 위험", "프롬프트 비대화", "진동 및 불안정성"]
   },
   "tags": ["meta-prompting", "self-improvement", "system-prompt", "reflection"]
 }
