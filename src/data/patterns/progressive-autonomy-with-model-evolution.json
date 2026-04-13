@@ -6,27 +6,27 @@
   "status": "best-practice",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "Agent scaffolding built for older models becomes unnecessary overhead as models improve, causing prompt bloat.",
-    "ko": "이전 모델을 위해 구축된 에이전트 스캐폴딩이 모델이 개선됨에 따라 불필요한 오버헤드가 되어 프롬프트 비대화를 유발합니다."
+    "en": "Agent scaffolding built for older models becomes unnecessary overhead as models improve: prompt bloat where system prompts accumulate instructions that newer models don't need, over-engineered flows with complex orchestration for tasks models can now handle directly, wasted tokens paying for instructions the model already knows, slower execution from unnecessary steps adding latency, and maintenance burden with more code to maintain for diminishing benefit. Models improve faster than scaffolding is removed, creating technical debt.",
+    "ko": "이전 모델을 위해 구축된 에이전트 스캐폴딩이 모델이 개선됨에 따라 불필요한 오버헤드가 됩니다: 새 모델이 필요로 하지 않는 지시를 시스템 프롬프트가 축적하는 프롬프트 비대화, 모델이 이제 직접 처리할 수 있는 작업에 대한 복잡한 오케스트레이션의 과도한 설계, 모델이 이미 알고 있는 지시에 비용을 지불하는 토큰 낭비, 불필요한 단계가 지연을 추가하는 느린 실행, 감소하는 이점 대비 유지해야 할 코드가 더 많은 유지보수 부담. 모델이 스캐폴딩 제거보다 빠르게 개선되어 기술 부채를 생성합니다."
   },
   "solution": {
-    "en": "Actively remove scaffolding as models become more capable. Push complexity into the model itself rather than external scaffolding.",
-    "ko": "모델이 더 능력이 높아지면 스캐폴딩을 적극적으로 제거합니다. 외부 스캐폴딩보다 모델 자체에 복잡성을 밀어 넣습니다."
+    "en": "Actively remove scaffolding as models become more capable. Regularly audit system prompts, orchestration logic, and agent architecture to eliminate what newer models have internalized.\n\nCore principle: Push complexity into the model itself rather than external scaffolding.\n\nOperationalize this as a repeating simplification loop:\n- Identify instructions that existed to compensate for older model weaknesses.\n- Remove a slice of scaffolding and run controlled evals against production-like tasks.\n- Keep deletions that preserve quality; revert deletions that increase failure risk.\n\nThe goal is not minimal prompts at all costs, but right-sized scaffolding for the current model generation.\n\n```pseudo\n# Claude Opus 4.1 (older model)\nsystem_prompt = \"\"\"\nWhen writing code:\n1. First check if file exists\n2. Read current contents\n3. Plan your changes\n4. Make minimal edits\n5. Verify syntax\n... [2000 more tokens of instructions]\n\"\"\"\n\n# Claude Sonnet 4.5 (newer model)\nsystem_prompt = \"\"\"\nWrite clean, tested code.\n\"\"\"  # Model already knows the steps\n```",
+    "ko": "모델이 더 능력이 높아지면 스캐폴딩을 적극적으로 제거합니다. 시스템 프롬프트, 오케스트레이션 로직, 에이전트 아키텍처를 정기적으로 감사하여 새 모델이 내재화한 것을 제거합니다.\n\n핵심 원칙: 외부 스캐폴딩보다 모델 자체에 복잡성을 밀어 넣습니다.\n\n이를 반복적인 단순화 루프로 운영합니다:\n- 이전 모델의 약점을 보완하기 위해 존재했던 지시를 식별합니다.\n- 스캐폴딩의 일부를 제거하고 프로덕션과 유사한 작업에 대해 통제된 평가를 실행합니다.\n- 품질을 유지하는 삭제는 유지하고, 실패 위험을 증가시키는 삭제는 되돌립니다.\n\n목표는 무조건 최소한의 프롬프트가 아니라 현재 모델 세대에 적합한 크기의 스캐폴딩입니다.\n\n```pseudo\n# Claude Opus 4.1 (older model)\nsystem_prompt = \"\"\"\nWhen writing code:\n1. First check if file exists\n2. Read current contents\n3. Plan your changes\n4. Make minimal edits\n5. Verify syntax\n... [2000 more tokens of instructions]\n\"\"\"\n\n# Claude Sonnet 4.5 (newer model)\nsystem_prompt = \"\"\"\nWrite clean, tested code.\n\"\"\"  # Model already knows the steps\n```"
   },
   "ascii_diagram": "┌─────────────┐\n│  Model v1   │\n│ +Scaffolding│\n└──────┬──────┘\n       │ new model\n┌──────▼──────┐\n│  Model v2   │\n│ -Some Scaff │\n└──────┬──────┘\n       │ newer model\n┌──────▼──────┐\n│  Model v3   │\n│  Minimal    │\n└─────────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Model v1 + Heavy Scaffolding] --> B[Model v2 Released]\n    B --> C[Remove Unnecessary Instructions]\n    C --> D[Simpler, Faster Agent]\n    D --> E[Model v3 Released]\n    E --> F[Further Simplification]",
   "code_example": "# Claude Opus 4.1 (older model)\nsystem_prompt_old = \"\"\"\nWhen writing code:\n1. First check if file exists\n2. Read current contents\n... [2000 tokens of instructions]\n\"\"\"\n\n# Claude Sonnet 4.5 (newer model)\nsystem_prompt_new = \"\"\"Write clean, tested code.\"\"\"\n# Model already knows the steps!",
   "when_to_use": {
-    "en": ["After model upgrades", "Prompt optimization", "Cost reduction efforts"],
-    "ko": ["모델 업그레이드 후", "프롬프트 최적화", "비용 절감 노력"]
+    "en": ["Track model releases and note when new models become available", "Test simplified prompts by removing instructions and checking if quality degrades", "Measure token usage to quantify savings from prompt reduction", "A/B test scaffolding to compare outcomes with and without orchestration steps", "Delete what works: if model performs equally without scaffolding, remove it"],
+    "ko": ["모델 릴리스 추적 및 새 모델 사용 가능 시점 확인", "지시를 제거하고 품질 저하 여부를 확인하여 단순화된 프롬프트 테스트", "프롬프트 축소로 인한 절감을 정량화하기 위한 토큰 사용량 측정", "오케스트레이션 단계 유무에 따른 결과 비교를 위한 A/B 테스트", "모델이 스캐폴딩 없이 동등하게 수행하면 제거"]
   },
   "pros": {
-    "en": ["Reduced token costs", "Faster execution", "Simpler maintenance"],
-    "ko": ["토큰 비용 절감", "빠른 실행", "간단한 유지보수"]
+    "en": ["Reduced token costs: Shorter prompts = cheaper inference", "Faster execution: Less processing overhead", "Simpler maintenance: Less code/prompts to manage", "Future-proof: Embraces model capabilities rather than fighting them", "Better performance: Models often work better with less hand-holding"],
+    "ko": ["토큰 비용 절감: 짧은 프롬프트 = 저렴한 추론", "빠른 실행: 처리 오버헤드 감소", "간단한 유지보수: 관리할 코드/프롬프트 감소", "미래 대비: 모델 능력에 맞서기보다 수용", "성능 향상: 모델이 종종 덜 가이드할 때 더 잘 작동"]
   },
   "cons": {
-    "en": ["Requires testing", "Version management complexity", "Risk of regression"],
-    "ko": ["테스트 필요", "버전 관리 복잡", "회귀 위험"]
+    "en": ["Requires testing: Must validate that quality doesn't degrade", "Version management: May need different configs for different models", "Loss of explicit control: Less visibility into model's internal reasoning", "Risk of regression: Removing too much can hurt performance", "Documentation debt: May lose understanding of why scaffolding was added"],
+    "ko": ["테스트 필요: 품질 저하가 없는지 검증 필수", "버전 관리: 모델별로 다른 구성이 필요할 수 있음", "명시적 제어 상실: 모델 내부 추론에 대한 가시성 감소", "회귀 위험: 너무 많이 제거하면 성능 저하 가능", "문서 부채: 스캐폴딩 추가 이유에 대한 이해 상실 가능"]
   },
-  "tags": ["model-evolution", "scaffolding", "autonomy", "prompt-optimization"]
+  "tags": ["model-evolution", "scaffolding", "autonomy", "system-prompts", "capabilities", "model-intelligence"]
 }

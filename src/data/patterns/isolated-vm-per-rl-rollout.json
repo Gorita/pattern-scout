@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://youtu.be/1s_7RMG4O4U",
   "problem": {
-    "en": "During RL training with tool-using agents, parallel rollouts may run destructive commands, causing cross-contamination, state leakage, and corrupted reward signals.",
-    "ko": "도구 사용 에이전트를 통한 RL 훈련 중 병렬 롤아웃이 파괴적인 명령을 실행하여 교차 오염, 상태 누출, 손상된 보상 신호를 유발할 수 있습니다."
+    "en": "During reinforcement learning training with tool-using agents, multiple rollouts execute simultaneously and may call destructive or stateful tools. This challenge is well-established in distributed RL research—A3C and PPO both rely on parallel isolated environment instances for stable gradient estimation. Specific issues include: cross-contamination where one rollout's actions affect another rollout's environment, destructive commands where agents might run `rm -rf` corrupting shared state, state leakage where file system changes persist across rollouts creating inconsistent training data, reward corruption where if rollout B sees rollout A's side effects reward signals become meaningless, and debugging nightmares from non-deterministic failures due to race conditions.",
+    "ko": "도구 사용 에이전트를 통한 강화학습 훈련 중 여러 롤아웃이 동시에 실행되며 파괴적이거나 상태를 변경하는 도구를 호출할 수 있습니다. 이 과제는 분산 RL 연구에서 잘 알려져 있으며, A3C와 PPO 모두 안정적인 그래디언트 추정을 위해 병렬 격리된 환경 인스턴스에 의존합니다. 구체적인 문제로는: 한 롤아웃의 동작이 다른 롤아웃의 환경에 영향을 미치는 교차 오염, 에이전트가 `rm -rf`를 실행하여 공유 상태를 손상시키는 파괴적 명령, 파일 시스템 변경이 롤아웃 간에 지속되어 일관성 없는 훈련 데이터를 생성하는 상태 누출, 롤아웃 B가 롤아웃 A의 부작용을 보면 보상 신호가 무의미해지는 보상 손상, 경쟁 조건으로 인한 비결정적 실패의 디버깅 어려움이 있습니다."
   },
   "solution": {
-    "en": "Spin up an isolated VM or container for each RL rollout, ensuring complete environment isolation. Each VM starts fresh and is destroyed after rollout completion.",
-    "ko": "각 RL 롤아웃에 대해 격리된 VM 또는 컨테이너를 생성하여 완전한 환경 격리를 보장합니다. 각 VM은 새로 시작하고 롤아웃 완료 후 파괴됩니다."
+    "en": "Spin up an isolated virtual machine (or container) for each RL rollout, ensuring complete environment isolation.\n\nArchitecture:\n1. Rollout ID Tracking: OpenAI's Agent RFT platform assigns unique IDs to each rollout\n2. VM/Container Mapping: Your infrastructure maps rollout ID to a dedicated VM\n3. Clean State: Each VM starts fresh with identical filesystem, packages, and configuration\n4. Cleanup: VMs are destroyed after rollout completes (success or failure)\n\nKey Components:\n- VM Provisioning: Fast VM creation (typically cloud instances or containers)\n- Bursty Scaling: Handle 100s-500s of simultaneous VM requests at training step boundaries\n- State Isolation: No shared filesystems or databases between VMs\n- Timeout Handling: VMs auto-destroy after timeout to prevent resource leaks",
+    "ko": "각 RL 롤아웃에 대해 격리된 가상 머신(또는 컨테이너)을 생성하여 완전한 환경 격리를 보장합니다.\n\n아키텍처:\n1. 롤아웃 ID 추적: OpenAI의 Agent RFT 플랫폼이 각 롤아웃에 고유 ID를 할당\n2. VM/컨테이너 매핑: 인프라가 롤아웃 ID를 전용 VM에 매핑\n3. 클린 상태: 각 VM이 동일한 파일시스템, 패키지, 구성으로 새로 시작\n4. 정리: 롤아웃 완료 후(성공 또는 실패) VM 파괴\n\n주요 구성 요소:\n- VM 프로비저닝: 빠른 VM 생성(일반적으로 클라우드 인스턴스 또는 컨테이너)\n- 버스트 스케일링: 훈련 단계 경계에서 100-500개의 동시 VM 요청 처리\n- 상태 격리: VM 간 공유 파일시스템이나 데이터베이스 없음\n- 타임아웃 처리: 리소스 누수 방지를 위해 타임아웃 후 VM 자동 파괴"
   },
   "ascii_diagram": "┌─────────────────┐\n│ RL Training     │\n│ (500 rollouts)  │\n└────────┬────────┘\n         │\n    ┌────┴────┐\n    ▼         ▼\n┌──────┐  ┌──────┐\n│VM #1 │  │VM #2 │ ...\n│(iso) │  │(iso) │\n└──┬───┘  └──┬───┘\n   │         │\n┌──▼───┐  ┌──▼───┐\n│shell │  │shell │\n│grep..│  │rm... │\n└──────┘  └──────┘\n   │         │\n   ▼         ▼\n [Safe]   [Safe]\n (no cross-contamination)",
   "mermaid_diagram": "sequenceDiagram\n    participant OAI as OpenAI Training\n    participant LB as Load Balancer\n    participant VM1 as VM (Rollout 1)\n    participant VM2 as VM (Rollout 2)\n\n    Note over OAI: Training Step\n    OAI->>LB: Rollout 1: shell(\"grep TODO\")\n    OAI->>LB: Rollout 2: shell(\"rm temp.txt\")\n    LB->>VM1: Route to isolated VM 1\n    LB->>VM2: Route to isolated VM 2\n    VM1->>LB: grep results\n    VM2->>LB: success\n    Note over VM1,VM2: VMs destroyed",
   "code_example": "from modal import Image, App, method\n\nbase_image = Image.debian_slim().pip_install(\"openai\")\n\n@app.cls(image=base_image, cpu=2, timeout=600)\nclass IsolatedToolExecutor:\n    def __init__(self):\n        self.rollout_id = None\n        \n    @method()\n    def execute_shell(self, rollout_id: str, command: str):\n        # Safe: this VM is dedicated to this rollout\n        result = subprocess.run(\n            command, shell=True, capture_output=True, text=True\n        )\n        return {\n            \"stdout\": result.stdout,\n            \"returncode\": result.returncode\n        }",
   "when_to_use": {
-    "en": ["Agent RFT with tool access", "Training with destructive commands", "Production parity requirements"],
-    "ko": ["도구 접근이 있는 Agent RFT", "파괴적인 명령을 사용한 훈련", "프로덕션 동등성 요구사항"]
+    "en": ["Choose isolation technology: Modal/E2B for MicroVMs with ~1s startup (recommended), Docker containers per rollout, Kubernetes Jobs for production-grade, or Cloud VMs for maximum isolation", "Implement rollout ID tracking where all tool endpoints accept and validate rollout_id", "Handle bursty traffic with 100-500 simultaneous rollout requests at training step boundaries", "Monitor infrastructure with critical metrics: VM provisioning time <5s, error rate <1%, rollout timeout rate <0.1%"],
+    "ko": ["격리 기술 선택: ~1초 시작의 MicroVM용 Modal/E2B(권장), 롤아웃당 Docker 컨테이너, 프로덕션급 Kubernetes Jobs, 최대 격리를 위한 클라우드 VM", "모든 도구 엔드포인트가 rollout_id를 수락하고 검증하는 롤아웃 ID 추적 구현", "훈련 단계 경계에서 100-500개의 동시 롤아웃 요청을 처리하는 버스트 트래픽 처리", "중요 지표 모니터링: VM 프로비저닝 시간 <5초, 오류율 <1%, 롤아웃 타임아웃 비율 <0.1%"]
   },
   "pros": {
-    "en": ["Complete isolation", "Safe destructive commands", "Deterministic rewards"],
-    "ko": ["완전한 격리", "안전한 파괴적 명령", "결정론적 보상"]
+    "en": ["Complete isolation: No cross-contamination between rollouts", "Safety: Destructive commands can't affect other rollouts or host system", "Determinism: Consistent environment for reliable reward signals", "Production parity: Can use exact same environment as production"],
+    "ko": ["완전한 격리: 롤아웃 간 교차 오염 없음", "안전성: 파괴적 명령이 다른 롤아웃이나 호스트 시스템에 영향 불가", "결정론: 신뢰할 수 있는 보상 신호를 위한 일관된 환경", "프로덕션 동등성: 프로덕션과 완전히 동일한 환경 사용 가능"]
   },
   "cons": {
-    "en": ["High cost (100s of VMs)", "Provisioning latency", "Infrastructure complexity"],
-    "ko": ["높은 비용 (수백 개 VM)", "프로비저닝 지연", "인프라 복잡성"]
+    "en": ["Cost: Hundreds of VMs running simultaneously can be expensive", "Provisioning time: VM startup adds latency (containers are faster)", "Complexity: Requires robust infrastructure and monitoring", "Scaling limits: Cloud provider quotas may limit concurrent VMs", "Failure modes: Infrastructure issues can cause training collapse"],
+    "ko": ["비용: 수백 개의 VM 동시 실행이 비용이 높을 수 있음", "프로비저닝 시간: VM 시작이 지연을 추가(컨테이너가 더 빠름)", "복잡성: 견고한 인프라와 모니터링 필요", "스케일링 제한: 클라우드 공급자 할당량이 동시 VM을 제한할 수 있음", "실패 모드: 인프라 문제가 훈련 붕괴를 유발할 수 있음"]
   },
-  "tags": ["isolation", "security", "reinforcement-learning", "infrastructure", "agent-rft"]
+  "tags": ["isolation", "security", "reinforcement-learning", "infrastructure", "state-management", "agent-rft"]
 }

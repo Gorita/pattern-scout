@@ -6,27 +6,27 @@
   "status": "validated-in-production",
   "original_url": "https://www.nibzard.com/ampcode",
   "problem": {
-    "en": "User-driven interaction limits agent autonomy and throughput, requiring constant human prompting.",
-    "ko": "사용자 주도 상호작용이 에이전트 자율성과 처리량을 제한하여 지속적인 인간 프롬프팅이 필요합니다."
+    "en": "Prompt-as-puppeteer workflows force humans to micromanage each step, turning agents into expensive autocomplete tools. This limits throughput, creates brittle instructions that break on small context changes, and prevents agents from using their own planning capability.",
+    "ko": "프롬프트 기반 조종 워크플로우는 인간이 각 단계를 미세 관리하도록 강요하여 에이전트를 비싼 자동완성 도구로 전락시킵니다. 이는 처리량을 제한하고, 작은 컨텍스트 변경에도 깨지는 취약한 지시를 만들며, 에이전트가 자체 계획 능력을 활용하는 것을 방해합니다."
   },
   "solution": {
-    "en": "Let the agent drive the interaction loop, requesting human input only when genuinely needed for decisions or clarifications.",
-    "ko": "에이전트가 상호작용 루프를 주도하고, 결정이나 명확화가 진정으로 필요할 때만 인간 입력을 요청하게 합니다."
+    "en": "Give the agent tools and a clear high-level objective, then let it own execution strategy inside explicit guardrails. Humans define intent, constraints, and review criteria; the agent decides sequencing, decomposition, and local recovery steps.\n\nThis implements a three-layer architecture: Policy Layer (human-defined objectives and constraints), Control Layer (automated guardrail enforcement), and Execution Layer (agent-owned task decomposition and tool selection).\n\nThis flips control from \"human scripts every move\" to \"human sets policy, agent performs.\" The result is higher leverage while preserving oversight at critical checkpoints.",
+    "ko": "에이전트에게 도구와 명확한 상위 수준 목표를 제공한 뒤, 명시적 가드레일 내에서 실행 전략을 에이전트가 소유하게 합니다. 인간은 의도, 제약 조건, 검토 기준을 정의하고, 에이전트는 순서, 분해, 로컬 복구 단계를 결정합니다.\n\n이는 3계층 아키텍처를 구현합니다: 정책 계층(인간이 정의한 목표와 제약 조건), 제어 계층(자동화된 가드레일 적용), 실행 계층(에이전트가 소유한 작업 분해 및 도구 선택).\n\n이는 제어를 \"인간이 모든 움직임을 스크립팅\"에서 \"인간이 정책을 설정하고, 에이전트가 수행\"으로 전환합니다. 결과적으로 중요 체크포인트에서 감독을 유지하면서 더 높은 레버리지를 달성합니다."
   },
   "ascii_diagram": "┌─────────────────────┐\n│ Traditional:        │\n│ Human → Agent →     │\n│ Human → Agent → ... │\n└─────────────────────┘\n         vs\n┌─────────────────────┐\n│ IoC:                │\n│ Agent → Agent →     │\n│ Agent → (ask human) │\n│ → Agent → ...       │\n└─────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent Starts] --> B{Need Human Input?}\n    B -->|No| C[Continue Autonomously]\n    B -->|Yes| D[Ask Human]\n    D --> E[Human Response]\n    E --> C\n    C --> F{Task Complete?}\n    F -->|No| A\n    F -->|Yes| G[Done]",
   "code_example": "while not task.complete:\n    next_action = agent.decide_next_action()\n    \n    if next_action.needs_human_input:\n        response = await ask_human(next_action.question)\n        agent.incorporate(response)\n    else:\n        agent.execute(next_action)",
   "when_to_use": {
-    "en": ["Autonomous operations", "Batch processing", "Background agents"],
-    "ko": ["자율 작업", "배치 처리", "백그라운드 에이전트"]
+    "en": ["Start with bounded tasks where success criteria are objective (tests pass, migration complete, docs generated).", "Give explicit constraints: allowed tools, time budget, and escalation conditions.", "Require checkpoints at risky boundaries (schema changes, deploy steps, external write actions).", "Measure autonomy win-rate (target >80%) and human intervention rate per task class."],
+    "ko": ["성공 기준이 객관적인 제한된 작업부터 시작 (테스트 통과, 마이그레이션 완료, 문서 생성)", "명시적 제약 조건 제공: 허용된 도구, 시간 예산, 에스컬레이션 조건", "위험한 경계에서 체크포인트 필수 (스키마 변경, 배포 단계, 외부 쓰기 작업)", "자율성 성공률(목표 >80%) 및 작업 클래스별 인간 개입률 측정"]
   },
   "pros": {
-    "en": ["Higher throughput", "Efficient human time", "Autonomous execution"],
-    "ko": ["높은 처리량", "효율적 인간 시간", "자율 실행"]
+    "en": ["Higher developer leverage, faster execution loops, and better use of model planning ability."],
+    "ko": ["더 높은 개발자 레버리지, 더 빠른 실행 루프, 모델 계획 능력의 더 나은 활용"]
   },
   "cons": {
-    "en": ["Reduced control", "Risk of unexpected behavior"],
-    "ko": ["제어 감소", "예상치 못한 행동 위험"]
+    "en": ["Requires strong guardrails and telemetry to prevent silent drift or overreach."],
+    "ko": ["사일런트 드리프트나 과도한 행동 방지를 위한 강력한 가드레일과 텔레메트리 필요"]
   },
-  "tags": ["orchestration", "autonomy", "control", "agent-driven"]
+  "tags": ["orchestration", "autonomy", "control"]
 }

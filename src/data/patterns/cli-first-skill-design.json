@@ -3,30 +3,30 @@
   "title": "CLI-First Skill Design",
   "title_ko": "CLI 우선 스킬 설계",
   "category": "Tool Use & Environment",
-  "status": "proposed",
-  "original_url": "https://lethain.com/agents-cli-first-skills/",
+  "status": "emerging",
+  "original_url": "https://github.com/anthropics/claude-code",
   "problem": {
-    "en": "Skills designed only for agent use are hard to test, debug, and iterate on quickly.",
-    "ko": "에이전트 사용만을 위해 설계된 스킬은 테스트, 디버그, 빠른 반복이 어렵습니다."
+    "en": "When building agent skills (reusable capabilities), there's tension between:\n\n- **API-first design**: Skills as functions/classes—great for programmatic use, but hard to debug and test manually\n- **GUI-first design**: Skills as visual tools—easy for humans, but agents can't invoke them\n\nTeams end up building two interfaces or choosing one audience over the other.",
+    "ko": "에이전트 스킬(재사용 가능한 기능)을 구축할 때 긴장 관계가 존재합니다:\n\n- **API 우선 설계**: 함수/클래스로서의 스킬 - 프로그래밍적 사용에는 좋지만 수동 디버그와 테스트가 어려움\n- **GUI 우선 설계**: 시각적 도구로서의 스킬 - 인간에게는 쉽지만 에이전트가 호출할 수 없음\n\n팀은 결국 두 개의 인터페이스를 구축하거나 한쪽 대상만 선택하게 됩니다."
   },
   "solution": {
-    "en": "Design every skill as a CLI command first, making it testable and usable by both humans and agents.",
-    "ko": "모든 스킬을 먼저 CLI 명령으로 설계하여 인간과 에이전트 모두가 테스트하고 사용할 수 있게 합니다."
+    "en": "Design all skills as **CLI tools first**. A well-designed CLI is naturally dual-use: humans can invoke it from the terminal, and agents can invoke it via shell commands.\n\n**Core principles:**\n\n1. **One script, one skill**: Each capability is a standalone executable\n2. **Subcommands for operations**: `skill.sh list`, `skill.sh get <id>`, `skill.sh create`\n3. **Structured output**: JSON for programmatic use, human-readable for TTY (auto-detect via `isatty()`)\n4. **Exit codes**: 0 for success, 1 for errors, 2 for incorrect usage, 127 if not found\n5. **Environment config**: Credentials via env vars, not hardcoded\n6. **Default non-interactive**: Avoid prompts; provide `--yes` or `--force` flags instead\n\n```bash\n# Example: Trello skill as CLI\ntrello.sh boards                    # List all boards\ntrello.sh cards <BOARD_ID>          # List cards on board\ntrello.sh create <LIST_ID> \"Title\"  # Create card\ntrello.sh move <CARD_ID> <LIST_ID>  # Move card\n```",
+    "ko": "모든 스킬을 **CLI 도구 우선**으로 설계합니다. 잘 설계된 CLI는 자연스럽게 이중 용도입니다: 인간은 터미널에서 호출하고, 에이전트는 셸 명령을 통해 호출할 수 있습니다.\n\n**핵심 원칙:**\n\n1. **하나의 스크립트, 하나의 스킬**: 각 기능은 독립 실행 파일\n2. **작업별 서브커맨드**: `skill.sh list`, `skill.sh get <id>`, `skill.sh create`\n3. **구조화된 출력**: 프로그래밍용 JSON, TTY용 사람이 읽을 수 있는 형식 (`isatty()`로 자동 감지)\n4. **종료 코드**: 성공 0, 오류 1, 잘못된 사용 2, 미발견 127\n5. **환경 설정**: 인증 정보는 환경 변수로, 하드코딩 금지\n6. **기본 비대화식**: 프롬프트 대신 `--yes` 또는 `--force` 플래그 제공\n\n```bash\n# 예시: Trello 스킬을 CLI로\ntrello.sh boards                    # 모든 보드 목록\ntrello.sh cards <BOARD_ID>          # 보드의 카드 목록\ntrello.sh create <LIST_ID> \"Title\"  # 카드 생성\ntrello.sh move <CARD_ID> <LIST_ID>  # 카드 이동\n```"
   },
   "ascii_diagram": "┌─────────────┐\n│  Skill      │\n│ /analyze    │\n└──────┬──────┘\n       │\n   ┌───┴───┐\n   ▼       ▼\n[CLI]   [Agent]\n   │       │\n   ▼       ▼\nHuman   Agent\ntest    invoke\n   │       │\n   └───┬───┘\n       ▼\n Same behavior",
   "mermaid_diagram": "flowchart TD\n    A[Define Skill: /analyze] --> B[CLI Implementation]\n    B --> C[Human Testing]\n    B --> D[Agent Invocation]\n    C --> E[Same Behavior]\n    D --> E",
   "code_example": "# CLI-first skill design\n# 1. Works from command line\n$ ./analyze.sh --target=main.py --depth=2\n\n# 2. Agent invokes the same\nagent.invoke('analyze', target='main.py', depth=2)\n\n# 3. Testing is easy\ndef test_analyze():\n    result = subprocess.run(['./analyze.sh', '--target=test.py'])\n    assert result.returncode == 0",
   "when_to_use": {
-    "en": ["Rapid skill development", "Team collaboration", "Debugging workflows"],
-    "ko": ["빠른 스킬 개발", "팀 협업", "디버깅 워크플로우"]
+    "en": ["Standalone executable with shebang (`#!/bin/bash`)", "Help text via `--help` or no-args", "Subcommands for CRUD operations", "JSON output (or TTY auto-detection)", "Credentials from `~/.envrc` or environment", "Meaningful exit codes (0=success, 1=error, 2=usage, 127=not found)", "Stderr for errors, stdout for data", "Non-interactive mode with `--yes`/`--force` flags"],
+    "ko": ["shebang(`#!/bin/bash`)이 있는 독립 실행 파일", "`--help` 또는 인자 없이 실행 시 도움말 텍스트", "CRUD 작업을 위한 서브커맨드", "JSON 출력 (또는 TTY 자동 감지)", "`~/.envrc` 또는 환경에서 인증 정보", "의미 있는 종료 코드 (0=성공, 1=오류, 2=사용법, 127=미발견)", "오류는 stderr, 데이터는 stdout", "`--yes`/`--force` 플래그로 비대화식 모드"]
   },
   "pros": {
-    "en": ["Easy testing", "Human-debuggable", "Reusable across contexts"],
-    "ko": ["쉬운 테스트", "인간 디버깅 가능", "컨텍스트 간 재사용"]
+    "en": ["Dual-use by default: Same interface for humans and agents", "Debuggable: Run manually to test, inspect output", "Composable: Pipe, chain, and combine with Unix tools", "Portable: Works in any shell, no runtime dependencies", "Transparent: Agent's tool calls are visible shell commands", "Testable: Easy to write integration tests"],
+    "ko": ["기본 이중 용도: 인간과 에이전트를 위한 동일 인터페이스", "디버깅 가능: 수동 실행으로 테스트, 출력 검사", "조합 가능: Unix 도구와 파이프, 체인, 조합", "이식 가능: 모든 셸에서 작동, 런타임 의존성 없음", "투명성: 에이전트의 도구 호출이 보이는 셸 명령", "테스트 가능: 통합 테스트 작성 용이"]
   },
   "cons": {
-    "en": ["CLI overhead for simple operations", "Subprocess management"],
-    "ko": ["간단한 작업에 CLI 오버헤드", "서브프로세스 관리"]
+    "en": ["Shell limitations: Complex data structures awkward in bash", "Error handling: Less structured than exceptions", "Performance: Process spawn overhead vs function calls", "State management: No persistent state between invocations", "Windows compatibility: Requires WSL or Git Bash"],
+    "ko": ["셸 제한: bash에서 복잡한 데이터 구조 다루기 어려움", "오류 처리: 예외보다 구조화 수준 낮음", "성능: 함수 호출 대비 프로세스 생성 오버헤드", "상태 관리: 호출 간 영구 상태 없음", "Windows 호환성: WSL 또는 Git Bash 필요"]
   },
-  "tags": ["cli", "skills", "testing", "debugging", "design-pattern"]
+  "tags": ["cli", "skills", "shell", "dual-use", "composability", "unix-philosophy"]
 }

@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://www.youtube.com/watch?v=u85G2aV_5rQ",
   "problem": {
-    "en": "Traditional research methods lack ability to adapt search strategies based on emerging results, limiting efficiency and potential discoveries.",
-    "ko": "전통적인 리서치 방법은 새로운 결과를 기반으로 검색 전략을 조정하는 능력이 부족하여 효율성과 잠재적 발견을 제한합니다."
+    "en": "Traditional research methods often lack the ability to adapt search strategies based on emerging results, limiting efficiency and potential discoveries. Complex research tasks require multi-round investigation, cross-source synthesis, and dynamic strategy adjustment that static retrieval systems cannot provide.",
+    "ko": "전통적인 리서치 방법은 새로운 결과를 기반으로 검색 전략을 조정하는 능력이 부족하여 효율성과 잠재적 발견을 제한합니다. 복잡한 리서치 작업은 정적 검색 시스템이 제공할 수 없는 다중 라운드 조사, 교차 소스 합성, 동적 전략 조정을 필요로 합니다."
   },
   "solution": {
-    "en": "Allow AI agents to independently conduct the entire research process: create queries, execute searches, examine data, adjust strategy, and compile summaries.",
-    "ko": "AI 에이전트가 전체 리서치 프로세스를 독립적으로 수행하도록 합니다: 쿼리 생성, 검색 실행, 데이터 검토, 전략 조정, 요약 작성."
+    "en": "Allow AI agents to independently conduct the entire research process. Given a research question, the agent creates its own search queries through dynamic planning, executes the searches across multiple sources, examines the data and evaluates quality/relevance, reflects on whether sufficient information has been gathered, adjusts its search strategy based on findings and gaps, repeats until satisfaction criteria are met, and synthesizes findings into a comprehensive, well-sourced report.\n\nThe key mechanism is a self-reflective iteration loop: after each search cycle, the agent evaluates results against its research goals and autonomously determines the next exploration direction. Production implementations typically combine four subsystems: planning (task decomposition), memory (context + vector store), action (tool orchestration), and reflection (quality evaluation).\n\nA common variant uses parallel multi-agent teams, where different agents simultaneously pursue different research angles and later synthesize findings.",
+    "ko": "AI 에이전트가 전체 리서치 프로세스를 독립적으로 수행하도록 합니다. 리서치 질문이 주어지면 에이전트는 동적 계획을 통해 자체 검색 쿼리를 생성하고, 여러 소스에서 검색을 실행하고, 데이터를 검토하고 품질/관련성을 평가하고, 충분한 정보가 수집되었는지 반성하고, 발견과 격차를 기반으로 검색 전략을 조정하고, 만족 기준이 충족될 때까지 반복하며, 발견 사항을 포괄적이고 출처가 명시된 보고서로 합성합니다.\n\n핵심 메커니즘은 자기 반성적 반복 루프입니다: 각 검색 사이클 후 에이전트는 리서치 목표에 대해 결과를 평가하고 다음 탐색 방향을 자율적으로 결정합니다. 프로덕션 구현은 일반적으로 네 가지 하위 시스템을 결합합니다: 계획(작업 분해), 메모리(컨텍스트 + 벡터 저장소), 행동(도구 오케스트레이션), 반성(품질 평가).\n\n일반적인 변형은 병렬 멀티 에이전트 팀을 사용하며, 서로 다른 에이전트가 동시에 다른 리서치 각도를 추구하고 나중에 발견 사항을 합성합니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│Research Question│\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│Formulate Query  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Execute Search  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Analyze Results │\n└────────┬────────┘\n    ┌────┴────┐\n    ▼         ▼\n[Enough?] [Refine]\n    │         │\n    │    ┌────┘\n    ▼    │\n┌────────▼────────┐\n│Synthesize Report│\n└─────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Research Question] --> B[Formulate Search Query]\n    B --> C[Execute Search]\n    C --> D[Analyze Retrieved Information]\n    D --> E{Sufficient Information?}\n    E -->|No| F[Refine Search Strategy]\n    F --> B\n    E -->|Yes| G[Synthesize & Summarize Findings]\n    G --> H[Present Results to User]",
   "code_example": "class ResearchAgent:\n    def research(self, question: str) -> str:\n        results = []\n        query = self.formulate_query(question)\n        \n        while not self.is_sufficient(results):\n            search_results = self.search(query)\n            analysis = self.analyze(search_results)\n            results.extend(analysis)\n            query = self.refine_query(query, analysis)\n        \n        return self.synthesize(results)",
   "when_to_use": {
-    "en": ["Deep research tasks", "Multi-source information gathering", "Exploratory analysis"],
-    "ko": ["심층 리서치 작업", "다중 소스 정보 수집", "탐색적 분석"]
+    "en": ["Open-ended research requiring strategy adaptation and multi-source synthesis", "Tasks needing explicit control flow between planning, execution, and fallback", "Define clear termination conditions (satisfaction-based or resource-limited)", "Design for multi-source integration (web, databases, documents)", "Combine with reflection loop for self-correction; with agentic RAG for document retrieval"],
+    "ko": ["전략 적응과 다중 소스 합성이 필요한 개방형 리서치", "계획, 실행, 폴백 간 명시적 제어 흐름이 필요한 작업", "명확한 종료 조건 정의(만족도 기반 또는 리소스 제한)", "다중 소스 통합 설계(웹, 데이터베이스, 문서)", "자기 수정을 위한 반성 루프와 결합; 문서 검색을 위한 에이전틱 RAG와 결합"]
   },
   "pros": {
-    "en": ["Adapts search strategy dynamically", "Autonomous iteration", "Comprehensive coverage"],
-    "ko": ["검색 전략 동적 적응", "자율적 반복", "포괄적 커버리지"]
+    "en": ["Enables autonomous multi-round investigation", "Adapts strategy based on findings", "Produces comprehensive, well-sourced outputs", "Superior for complex analytical tasks"],
+    "ko": ["자율적 다중 라운드 조사 가능", "발견에 기반한 전략 적응", "포괄적이고 출처가 명시된 출력 생성", "복잡한 분석 작업에 우수"]
   },
   "cons": {
-    "en": ["May over-explore", "Token costs can accumulate", "Quality varies with tools"],
-    "ko": ["과도한 탐색 가능", "토큰 비용 누적", "도구에 따라 품질 변동"]
+    "en": ["Higher token cost (5-10x vs. single-round retrieval)", "Increased latency from multiple LLM calls", "Planning stability challenges", "Orchestration complexity adds states to debug"],
+    "ko": ["높은 토큰 비용(단일 라운드 검색 대비 5-10배)", "다중 LLM 호출로 인한 지연 증가", "계획 안정성 과제", "오케스트레이션 복잡성이 디버깅할 상태를 추가"]
   },
   "tags": ["research", "information-retrieval", "tool-use", "iterative-process", "autonomous-search"]
 }
