@@ -104,22 +104,21 @@
     "title": "Context-Minimization Pattern",
     "title_ko": "컨텍스트 최소화 패턴",
     "category": "Context & Memory",
-    "description": "User-supplied or tainted text lingers in context, enabling later prompt injection attacks Purge or redact untrusted segments once they've served their purpose, keeping context clean",
-    "problem": "User-supplied or tainted text lingers in context, enabling later prompt injection attacks.",
-    "solution": "Purge or redact untrusted segments once they've served their purpose, keeping context clean.",
+    "description": "In long agent sessions, raw user text and tool outputs often remain in-context long after they are needed Purge or redact untrusted segments once they've served their purpose:\n\n- After transforming in",
+    "problem": "In long agent sessions, raw user text and tool outputs often remain in-context long after they are needed. If those tokens include adversarial instructions, they can silently bias later reasoning steps, even when the current step is unrelated. This creates delayed prompt-injection risk and unnecessary context bloat.",
+    "solution": "Purge or redact untrusted segments once they've served their purpose:\n\n- After transforming input into a safe intermediate (query, structured object), strip the original prompt from context.\n- Subsequent reasoning sees only trusted data, eliminating latent injections.\n- A strong variant also removes intermediate LLM outputs that may have been tainted.\n\nTreat context as a staged pipeline: ingest untrusted text, transform it, then aggressively discard the original tainted material. Keep only signed-off structured artifacts that downstream steps are allowed to consume.",
     "when_to_use": [
-      "Customer service chatbots",
-      "Medical Q&A systems",
-      "Multi-turn flows with sensitive data"
+      "Customer-service chat, medical Q&A, database query generation, any multi-turn flow where initial text shouldn't steer later steps"
     ],
     "pros": [
-      "Simple implementation",
-      "No additional models needed",
-      "Alleviates context anxiety"
+      "Simple; no extra models needed",
+      "Helps prevent context window anxiety by reducing overall context usage",
+      "Provides compliance benefits (HIPAA/GDPR data minimization)"
     ],
     "cons": [
-      "May lose conversational nuance",
-      "Potential UX degradation"
+      "Later turns lose conversational nuance; may hurt UX",
+      "Overly aggressive minimization can remove useful context",
+      "Risks broken referential coherence when earlier turns are referenced (\"the function I mentioned before\")"
     ],
     "tags": [
       "context-hygiene",
@@ -405,22 +404,25 @@
     "title": "Proactive Agent State Externalization",
     "title_ko": "능동적 에이전트 상태 외부화",
     "category": "Context & Memory",
-    "description": "Models like Sonnet 4 Implement structured approaches to guide and validate the model's natural tendency toward state externalization",
-    "problem": "Models like Sonnet 4.5 proactively write notes to files, but self-generated notes are often incomplete or miss crucial context.",
-    "solution": "Implement structured approaches to guide and validate the model's natural tendency toward state externalization.",
+    "description": "Modern models like Claude Sonnet 4 Implement structured approaches to leverage and enhance the model's natural tendency toward state externalization:\n\n1",
+    "problem": "Modern models like Claude Sonnet 4.5 proactively attempt to externalize their state by writing summaries and notes (e.g., CHANGELOG.md, SUMMARY.md) to the file system without explicit prompting. However, self-generated notes are often incomplete or miss crucial context, models may spend more tokens on documentation than actual problem-solving, performance can degrade when agents rely exclusively on their own summaries, knowledge gaps emerge from inadequate self-documentation, and the behavior intensifies near context window limits as a coping mechanism.",
+    "solution": "Implement structured approaches to leverage and enhance the model's natural tendency toward state externalization:\n\n1. Guided Self-Documentation Framework: Provide templates and schemas for agent-generated notes, define minimum information requirements for state preservation, and establish validation checkpoints for self-generated summaries.\n\n2. Hybrid Memory Architecture: Combine agent self-documentation with external memory management, use agent notes as supplementary (not primary) state storage, implement fallback mechanisms when self-generated context is insufficient, and account for increased summary token generation with shorter context windows.\n\n3. Progressive State Building: Encourage incremental note-taking throughout long sessions, structure documentation to capture decision rationale (not just actions), and include explicit uncertainty markers and knowledge gaps.",
     "when_to_use": [
-      "Long-running development sessions",
-      "Research and analysis",
-      "Subagent coordination"
+      "Long-running development sessions: Multi-hour coding projects requiring state continuity",
+      "Research and analysis: Complex investigations spanning multiple sessions",
+      "Subagent coordination: When main agents need to communicate state to spawned subagents; this behavior may represent a natural pattern for agent-to-agent communication"
     ],
     "pros": [
       "Leverages natural model behavior",
-      "Better session continuity",
+      "Enables better session continuity",
+      "Facilitates subagent communication",
       "Creates audit trails"
     ],
     "cons": [
-      "May consume tokens on documentation",
-      "Requires validation overhead"
+      "May consume tokens on documentation over progress",
+      "Requires validation overhead",
+      "Risk of incomplete self-assessment",
+      "Potential for \"documentation theater\""
     ],
     "tags": [
       "state-externalization",
@@ -1163,23 +1165,27 @@
     "title": "Compounding Engineering Pattern",
     "title_ko": "복합 엔지니어링 패턴",
     "category": "Learning & Adaptation",
-    "description": "Traditional software engineering has diminishing returns: each feature increases complexity Make each feature compound by codifying all learnings into reusable agent instructions: system prompts, slas",
-    "problem": "Traditional software engineering has diminishing returns: each feature increases complexity. With AI agents, this is amplified as agents repeat the same mistakes because learnings aren't captured.",
-    "solution": "Make each feature compound by codifying all learnings into reusable agent instructions: system prompts, slash commands, subagents, and hooks.",
+    "description": "Traditional software engineering has diminishing returns: each feature added increases complexity, making subsequent features harder to build Flip the equation: make each feature compound by codifying",
+    "problem": "Traditional software engineering has diminishing returns: each feature added increases complexity, making subsequent features harder to build. Technical debt accumulates, onboarding takes longer, and new team members struggle to be productive.\n\nWith AI coding agents, this problem is amplified—agents make the same mistakes repeatedly because learnings aren't systematically captured and codified.",
+    "solution": "Flip the equation: make each feature compound by codifying all learnings into reusable agent instructions. When you complete a feature, document:\n\n1. **What worked in the plan** and what needed adjustment\n2. **Issues discovered during testing** that weren't caught earlier\n3. **Common mistakes** the agent made\n4. **Patterns and best practices** that should be reused\n\nThen embed these insights into:\n\n- **Claude MD / system prompts**: Global coding standards\n- **Slash commands**: Repeatable workflows (e.g., `/test-with-validation`)\n- **Subagents**: Specialized validators (e.g., security review agent)\n- **Hooks**: Automated checks that prevent regressions\n\n**Result**: Each feature makes the next easier because the codebase becomes increasingly \"self-teaching.\"",
     "when_to_use": [
-      "Multi-feature development",
-      "Team onboarding",
-      "Long-running AI agent projects"
+      "During feature development: track what the agent got wrong, note plan revisions, document edge cases, identify repeated questions",
+      "After completion: update CLAUDE.md, create slash commands, build subagents for validation, add hooks, write tests that encode requirements",
+      "Works synergistically with Memory Synthesis from Execution Logs, Coding Agent CI Feedback Loop, and Skill Library Evolution"
     ],
     "pros": [
-      "Accelerating productivity",
-      "Knowledge preservation",
-      "Better onboarding"
+      "Accelerating productivity: Each feature genuinely makes the next faster",
+      "Knowledge preservation: Learnings don't depend on individual memory",
+      "Better onboarding: New team members (human or AI) leverage accumulated knowledge",
+      "Reduced repetition: Agent stops making the same mistakes",
+      "Living documentation: Instructions stay current because they're used daily"
     ],
     "cons": [
-      "Upfront time investment",
-      "Maintenance overhead",
-      "Risk of over-specification"
+      "Upfront time investment: Requires discipline to document after each feature",
+      "Maintenance overhead: Prompts and commands need updates as patterns change",
+      "Over-specification risk: Too many rules can make agents inflexible",
+      "Requires tooling: Needs extensible agent system (slash commands, hooks, etc.)",
+      "Prompt bloat: System prompts can grow large over time"
     ],
     "tags": [
       "learning",
@@ -1818,23 +1824,30 @@
     "title": "Distributed Execution with Cloud Workers",
     "title_ko": "클라우드 워커를 활용한 분산 실행",
     "category": "Orchestration & Control",
-    "description": "Single-session agent execution cannot scale for team-wide AI code generation workloads Run multiple Claude sessions in parallel using git worktrees and cloud workers, coordinating via a central orches",
-    "problem": "Single-session agent execution cannot scale for team-wide AI code generation workloads.",
-    "solution": "Run multiple Claude sessions in parallel using git worktrees and cloud workers, coordinating via a central orchestrator.",
+    "description": "Single-session AI agent execution cannot scale to meet enterprise team demands Implement a distributed execution framework that runs multiple Claude Code sessions in parallel using git worktrees and c",
+    "problem": "Single-session AI agent execution cannot scale to meet enterprise team demands. Complex projects require multiple simultaneous code changes across different parts of the codebase, but coordinating multiple agents introduces challenges around communication, conflict resolution, merge coordination, and infrastructure management.",
+    "solution": "Implement a distributed execution framework that runs multiple Claude Code sessions in parallel using git worktrees and cloud-based worker infrastructure. This enables team-scale AI code generation with proper synchronization and conflict management.\n\nCore architecture:\n\n- Git worktrees for isolation: Each agent session runs in a dedicated worktree with shared Git object database (lightweight storage), independent indexes and working directories per agent, enabling parallel development without checkout conflicts.\n- Cloud worker deployment: Agent sessions execute on remote infrastructure, scaling horizontally based on workload with centralized task distribution and coordination.\n- Synchronization layer: Merge conflict detection and resolution, inter-agent communication protocols, shared state management for coordination, dependency-aware task scheduling (DAG-based), and work-stealing for load balancing.\n- Human oversight integration: Approval gates for risky operations, centralized monitoring dashboard, and team notification channels (Slack, email).",
     "when_to_use": [
-      "Team-scale migrations",
-      "Parallel feature development",
-      "Large-scale refactoring"
+      "Team-wide code migrations or refactoring",
+      "Parallel feature development across multiple services",
+      "Large-scale testing infrastructure changes",
+      "Framework upgrades affecting many files",
+      "Organizations with high AI agent adoption"
     ],
     "pros": [
-      "Massive parallelization",
-      "Team scalability",
-      "Centralized management"
+      "Massive parallelization (10x-100x speedup for suitable tasks)",
+      "Scales to enterprise team needs",
+      "Centralizes agent management and monitoring",
+      "Enables team-wide AI adoption",
+      "Reduces bottlenecks in large migrations"
     ],
     "cons": [
-      "Infrastructure complexity",
-      "Merge conflicts",
-      "Higher costs"
+      "Significant infrastructure complexity",
+      "Merge conflict management overhead",
+      "Coordination logic development required",
+      "Higher cost from parallel model usage",
+      "Requires sophisticated orchestration system",
+      "Network latency for cloud workers"
     ],
     "tags": [
       "distributed-systems",
@@ -2422,22 +2435,20 @@
     "title": "Plan-Then-Execute Pattern",
     "title_ko": "계획 후 실행 패턴",
     "category": "Orchestration & Control",
-    "description": "Agents that plan and execute simultaneously are vulnerable to prompt injection mid-execution Separate planning phase from execution, locking the plan before any untrusted data processing begins",
-    "problem": "Agents that plan and execute simultaneously are vulnerable to prompt injection mid-execution.",
-    "solution": "Separate planning phase from execution, locking the plan before any untrusted data processing begins.",
+    "description": "When planning and execution are interleaved in one loop, untrusted tool outputs can influence which action is selected next Split reasoning into two phases:\n\n1",
+    "problem": "When planning and execution are interleaved in one loop, untrusted tool outputs can influence which action is selected next. That makes the control flow itself attackable: a malicious intermediate result can redirect the agent into unsafe tools or unauthorized operations.",
+    "solution": "Split reasoning into two phases:\n\n1. Plan phase - LLM generates a fixed sequence of tool calls before it sees any untrusted data.\n2. Execution phase - Controller runs that exact sequence. Tool outputs may shape parameters, but cannot change which tools run.\n\nThis separates strategic decisions from data-dependent execution. The planner commits to a bounded action graph up front, and the executor enforces that graph deterministically, which preserves flexibility on arguments while protecting control-flow integrity.\n\nPlanning before execution improves task completion rates by 40-70% and reduces hallucinations by ~60% (Parisien et al., 2024).\n\nClaude Code implements this through \"plan mode\" which shifts the agent into planning-only mode, where the agent generates a detailed plan, the human reviews and approves, then the agent follows the approved plan. This can 2-3x success rates for complex tasks. The threshold of what requires planning changes with each model generation as newer models push the boundary of what can be one-shot.",
     "when_to_use": [
-      "Security-sensitive agents",
-      "Multi-step tasks",
-      "External input processing"
+      "Email-and-calendar bots, SQL assistants, code-review helpers - any task where the action set is known but parameters vary",
+      "Claude Code plan mode: Shift to planning-only mode for complex tasks, then execute the approved plan",
+      "LangChain Plan-and-Execute: Separate planner and executor agents for step-by-step plan generation and sequential execution"
     ],
     "pros": [
-      "Prompt injection defense",
-      "Predictable execution",
-      "Auditable"
+      "Strong control-flow integrity",
+      "Moderate flexibility"
     ],
     "cons": [
-      "Reduced flexibility",
-      "Harder dynamic adaptation"
+      "Content of outputs can still be poisoned (e.g., bad email body)"
     ],
     "tags": [
       "planning",
@@ -3176,26 +3187,21 @@
     "title": "Extended Coherence Work Sessions",
     "title_ko": "장시간 일관성 유지 작업 세션",
     "category": "Reliability & Eval",
-    "description": "Early AI agents suffered from short coherence windows, only maintaining focus and context for a few minutes before performance degraded Utilize AI models and agent architectures designed to maintain c",
-    "problem": "Early AI agents suffered from short coherence windows, only maintaining focus and context for a few minutes before performance degraded. This limited utility for complex, multi-stage tasks requiring sustained effort over hours.",
-    "solution": "Utilize AI models and agent architectures designed to maintain coherence over extended periods (hours). Leverage newer models with larger context windows, implement state management, and enable agents to work on substantial projects without quality degradation.",
+    "description": "Early AI agents and models often suffered from a short \"coherence window,\" meaning they could only maintain focus and context for a few minutes before their performance degraded significantly (e Utili",
+    "problem": "Early AI agents and models often suffered from a short \"coherence window,\" meaning they could only maintain focus and context for a few minutes before their performance degraded significantly (e.g., losing track of instructions, generating irrelevant output). This limited their utility for complex, multi-stage tasks that require sustained effort over hours.",
+    "solution": "Utilize AI models and agent architectures that maintain coherence over extended periods (hours rather than minutes). This involves:\n\n- Model Selection: Newer foundation models demonstrate approximately 2x coherence improvement every 7 months.\n- Context Management: Larger context windows alone don't guarantee coherence - combine with auto-compaction, prompt caching, and curated context to mitigate the \"lost in the middle\" effect where models struggle with information in middle positions (Liu et al., 2023).\n- Complementary Patterns: Works synergistically with context auto-compaction, episodic memory, filesystem-based state, and planner-worker separation.\n\nThe goal is enabling agents to work on multi-hour tasks without degradation in output quality or relevance.",
     "when_to_use": [
-      "Complex multi-stage projects",
-      "Tasks requiring sustained reasoning",
-      "Long-form content creation",
-      "Extended debugging sessions"
+      "Complex, multi-stage tasks requiring sustained attention (multi-hour coding sessions, long-running research, autonomous workflows)",
+      "Implement supporting patterns first: context auto-compaction, prompt caching, and filesystem-based state",
+      "Monitor for coherence degradation indicators - contradictory statements, goal drift, or repetitive loops after 10-15 conversation turns"
     ],
     "pros": [
-      "Enables substantial project work",
-      "Maintains quality over time",
-      "Qualitative shift in agent capabilities",
-      "Can match human work session lengths"
+      "Enables agents to complete complex, multi-hour tasks previously infeasible",
+      "Foundational capability for autonomous workflows and planner-worker architectures"
     ],
     "cons": [
-      "Higher computational costs for long sessions",
-      "Requires careful state management",
-      "Still improving (not perfect)",
-      "May need architectural support"
+      "Requires supporting infrastructure (context management, state persistence, memory systems)",
+      "Extended sessions without prompt caching become prohibitively expensive"
     ],
     "tags": [
       "coherence",
@@ -3773,23 +3779,29 @@
     "title": "PII Tokenization",
     "title_ko": "PII 토큰화",
     "category": "Security & Safety",
-    "description": "AI agents processing workflows involving PII create privacy risks when raw personal data enters model context Implement an MCP interception layer that tokenizes PII before it reaches the model and unt",
-    "problem": "AI agents processing workflows involving PII create privacy risks when raw personal data enters model context.",
-    "solution": "Implement an MCP interception layer that tokenizes PII before it reaches the model and untokenizes when making tool calls.",
+    "description": "AI agents often need to process workflows involving personally identifiable information (PII) such as emails, phone numbers, addresses, or financial data Implement an interception layer in the Model C",
+    "problem": "AI agents often need to process workflows involving personally identifiable information (PII) such as emails, phone numbers, addresses, or financial data. However, sending raw PII through the model's context creates privacy risks and compliance concerns. Organizations need agents to orchestrate data workflows without exposing sensitive information to the LLM.",
+    "solution": "Implement an interception layer in the Model Context Protocol (MCP) client that automatically tokenizes PII before it reaches the model, and untokenizes it when making subsequent tool calls.\n\n**Flow:**\n\n1. **Interception**: When tools return data, MCP client intercepts responses\n2. **Detection**: Identify PII using pattern matching or classification models\n3. **Tokenization**: Replace real values with placeholders\n   - `john.doe@company.com` → `[EMAIL_1]`\n   - `(555) 123-4567` → `[PHONE_1]`\n   - `123-45-6789` → `[SSN_1]`\n4. **Model reasoning**: Agent works with tokenized placeholders\n5. **Untokenization**: When agent makes tool calls with placeholders, MCP client substitutes real values back",
     "when_to_use": [
-      "Customer data processing",
-      "Healthcare workflows",
-      "GDPR/HIPAA compliance"
+      "Workflows processing customer data, HR records, medical information",
+      "Multi-step automation involving PII",
+      "Compliance-sensitive environments (GDPR, HIPAA, CCPA)",
+      "Agents that coordinate data flows without needing to \"see\" raw PII"
     ],
     "pros": [
-      "Prevents raw PII in context",
-      "Enables audit trails without PII",
-      "Transparent to agent"
+      "Prevents raw PII from entering model context",
+      "Agents can orchestrate sensitive workflows without seeing data",
+      "Enables audit trails that don't contain PII",
+      "Reduces compliance risk and regulatory burden",
+      "Transparent to agent reasoning (works with placeholders)"
     ],
     "cons": [
-      "PII detection must be accurate",
-      "Secure token mapping storage needed",
-      "May complicate debugging"
+      "Adds complexity to MCP client implementation",
+      "PII detection must be accurate (false positives/negatives)",
+      "Doesn't protect against PII inference (model might deduce sensitive info)",
+      "Requires secure token mapping storage",
+      "May complicate debugging (need to map tokens back for troubleshooting)",
+      "Pattern matching can miss novel PII formats"
     ],
     "tags": [
       "privacy",
@@ -4664,23 +4676,21 @@
     "title": "Virtual Machine Operator Agent",
     "title_ko": "가상 머신 운영자 에이전트",
     "category": "Tool Use & Environment",
-    "description": "AI agents need to perform complex tasks beyond simple code generation Equip agent with access to a dedicated virtual machine",
-    "problem": "AI agents need to perform complex tasks beyond simple code generation. They require ability to interact with full computer environment: execute code, manage resources, install software, operate applications.",
-    "solution": "Equip agent with access to a dedicated virtual machine. Agent is trained to operate within the VM: execute arbitrary code, install packages, read/write files, use CLI tools and applications.",
+    "description": "AI agents need to perform complex tasks beyond simple code generation or text manipulation Equip the AI agent with access to a dedicated virtual machine (VM) environment",
+    "problem": "AI agents need to perform complex tasks beyond simple code generation or text manipulation. They require the ability to interact with a full computer environment to execute code, manage system resources, install software, and operate various applications.",
+    "solution": "Equip the AI agent with access to a dedicated virtual machine (VM) environment. The agent is trained or designed to understand how to operate within this VM, treating it as its direct workspace. This allows the agent to:\n\n- Execute arbitrary code and scripts.\n- Install and manage software packages.\n- Read from and write to the file system.\n- Utilize other command-line tools and applications available within the VM.\n\nThis pattern transforms the agent from a specialized tool into a more general-purpose digital operator.\n\nCommon implementation approaches include:\n\n- **Full virtual machines** (EC2, GCP) - Maximum isolation, higher overhead\n- **MicroVMs** (Firecracker, Modal, E2B) - Balanced isolation with fast startup\n- **Container isolation** (Docker, Kubernetes) - Faster startup, shared kernel risk\n- **Tool-mediated execution** - Minimal overhead, capability-scoped",
     "when_to_use": [
-      "Complex multi-tool tasks",
-      "System administration automation",
-      "Development environment operations"
+      "When agent success depends on reliable tool invocation and environment setup",
+      "Start with a narrow tool surface and explicit parameter validation",
+      "Add observability around tool latency, failures, and fallback paths",
+      "Implement automatic cleanup via idle timeouts and hard execution limits",
+      "Ensure state isolation: fresh filesystem per session, no shared network namespaces"
     ],
     "pros": [
-      "Full computer capabilities",
-      "Can use any application",
-      "General-purpose operator"
+      "Improves execution success and lowers tool-call failure rates"
     ],
     "cons": [
-      "Security risks with full access",
-      "VM overhead",
-      "Requires careful sandboxing"
+      "Introduces integration coupling, environment-specific upkeep, and cold-start latency (1-120s depending on isolation level)"
     ],
     "tags": [
       "computer-operation",
@@ -5162,28 +5172,31 @@
     "title": "Seamless Background-to-Foreground Handoff",
     "title_ko": "원활한 백그라운드-포그라운드 핸드오프",
     "category": "UX & Collaboration",
-    "description": "Background agents achieve 90% correctness but the remaining 10% requires human finesse; clunky handoffs negate automation benefits Design seamless transitions from background agent work to foreground ",
-    "problem": "Background agents achieve 90% correctness but the remaining 10% requires human finesse; clunky handoffs negate automation benefits.",
-    "solution": "Design seamless transitions from background agent work to foreground human control, preserving context and enabling easy refinement.",
+    "description": "While background agents can handle long-running, complex tasks autonomously, they might not achieve 100% correctness or perfectly match the user's nuanced intent Design the agent system to allow for a",
+    "problem": "While background agents can handle long-running, complex tasks autonomously, they might not achieve 100% correctness or perfectly match the user's nuanced intent. If an agent completes 90% of a task in the background but the remaining 10% requires human finesse, a clunky handoff process can negate the benefits of automation.",
+    "solution": "Design the agent system to allow for a seamless transition from background (autonomous) agent work to foreground (human-in-the-loop or direct human control) work. This means:\n\n1. The background agent performs its task (e.g., generating a PR).\n2. The user reviews the agent's work.\n3. If the work is not entirely satisfactory (e.g., 90% correct), the user can easily \"take control\" or bring the task into their active foreground environment.\n4. The user can then utilize the same (or related) interactive AI tools and direct editing capabilities used in the foreground to refine, correct, or complete the remaining parts of the task.\n5. The context from the background agent's work should ideally be available to inform the foreground interaction.\n\n**Core mechanisms for seamless handoff:**\n\n- **Context preservation**: Background agents generate distilled summaries and artifacts (PRs, branches, decision logs) rather than transferring full conversation history, achieving 10:1 to 100:1 context compression.\n- **Real-time progress visibility**: WebSocket streaming of agent progress enables users to identify optimal handoff moments and maintain trust during autonomous execution.\n- **Artifact-based coordination**: Git-based workflows with branch-per-task and draft PRs provide durable handoff points that survive process boundaries.\n- **Tool parity**: Background agents use the same tools as developers (IDE terminals, codebase annotations), ensuring workspace-native execution and eliminating context translation.",
     "when_to_use": [
-      "Complex code generation",
-      "PR workflows",
-      "Near-complete automation"
+      "When humans and agents share ownership of work across handoffs",
+      "Start with clear interaction contracts for approvals, overrides, and escalation",
+      "Capture user feedback in structured form so prompts and workflows can improve"
     ],
     "pros": [
-      "Best of both worlds",
-      "No lost context",
-      "Efficient human time"
+      "Creates clearer human-agent handoffs and better operational trust",
+      "Enables 90% automation while preserving 10% human expertise",
+      "Better than pure autonomy when tasks require nuanced judgment"
     ],
     "cons": [
-      "Context transfer complexity",
-      "UI design challenges"
+      "Needs explicit process design and coordination",
+      "Context preservation at handoff boundaries adds implementation complexity",
+      "Requires real-time progress visibility infrastructure"
     ],
     "tags": [
       "background-agent",
       "human-in-the-loop",
       "task-handoff",
-      "workflow"
+      "interactive-refinement",
+      "agent-collaboration",
+      "developer-workflow"
     ],
     "related": []
   },
@@ -5192,27 +5205,34 @@
     "title": "Spectrum of Control / Blended Initiative",
     "title_ko": "제어 스펙트럼 / 혼합 주도권",
     "category": "UX & Collaboration",
-    "description": "One-size-fits-all agent autonomy doesn't cater to diverse user needs or varying task complexity Design interaction to support a spectrum of control levels, from simple completions to fully autonomous ",
-    "problem": "One-size-fits-all agent autonomy doesn't cater to diverse user needs or varying task complexity.",
-    "solution": "Design interaction to support a spectrum of control levels, from simple completions to fully autonomous operations.",
+    "description": "AI agents for tasks like coding can offer various levels of assistance, from simple completions to complex, multi-step operations Design the human-agent interaction to support a spectrum of control, a",
+    "problem": "AI agents for tasks like coding can offer various levels of assistance, from simple completions to complex, multi-step operations. A one-size-fits-all approach to agent autonomy doesn't cater to the diverse needs of users or the varying complexity of tasks. Users need to fluidly shift between direct control and delegating tasks to the agent.",
+    "solution": "Design the human-agent interaction to support a spectrum of control, allowing users to choose the level of agent autonomy appropriate for the current task or their familiarity with the codebase. This involves providing multiple modes or features for interaction:\n\n- **Low Autonomy (High Human Control):** Simple, inline assistance like tab-completion for code, where the human is primarily driving and the AI augments their input.\n- **Medium Autonomy:** Agent assistance for more contained tasks, like editing a selected region of code or an entire file based on a specific instruction (e.g., \"Command K\" functionality). The human defines the scope and the high-level goal.\n- **High Autonomy:** Agent takes on larger, multi-file tasks or complex refactorings, potentially involving multiple steps, with less direct human guidance on each step (e.g., an \"Agent\" feature).\n- **Very High Autonomy (Asynchronous):** Background agents that can take on entire complex tasks like implementing a feature or fixing a set of bugs and creating a pull request, operating largely independently.\n\nUsers can seamlessly switch between these modes depending on their needs, allowing for a \"blended initiative\" where both human and AI contribute effectively.",
     "when_to_use": [
-      "IDE integrations",
-      "Coding assistants",
-      "Varied task complexity"
+      "When humans and agents share ownership of work across handoffs",
+      "Start with clear interaction contracts for approvals, overrides, and escalation",
+      "Capture user feedback in structured form so prompts and workflows can improve",
+      "Implement mode-switching controls (keyboard shortcuts, UI toggles) for explicit autonomy level selection",
+      "Pair with human-in-the-loop approval at higher autonomy levels for high-risk operations"
     ],
     "pros": [
-      "User flexibility",
-      "Appropriate control for each task",
-      "Gradual trust building"
+      "Creates clearer human-agent handoffs",
+      "Builds trust through progressive autonomy",
+      "Enables error containment at lower levels",
+      "Allows context-appropriate control selection"
     ],
     "cons": [
-      "Mode switching complexity",
-      "UI/UX design challenges"
+      "Multiple modes can confuse users if not clearly presented",
+      "Requires building/maintaining several interaction paths",
+      "Users may struggle to choose appropriate autonomy level"
     ],
     "tags": [
       "human-agent-collaboration",
       "autonomy-spectrum",
-      "interactive-control"
+      "interactive-control",
+      "task-delegation",
+      "code-editing",
+      "ide-integration"
     ],
     "related": []
   },
