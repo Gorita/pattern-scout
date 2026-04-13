@@ -6,27 +6,57 @@
   "status": "emerging",
   "original_url": "https://lethain.com/agents-large-files/",
   "problem": {
-    "en": "Large files (PDFs, DOCXs, images) overwhelm context when loaded naively, wasting tokens on irrelevant content.",
-    "ko": "대용량 파일(PDF, DOCX, 이미지)을 순진하게 로드하면 컨텍스트가 압도되어 관련 없는 콘텐츠에 토큰이 낭비됩니다."
+    "en": "Large files (PDFs, DOCXs, images) overwhelm the context window when loaded naively. A 5-10MB PDF may contain only 10-20KB of relevant text/tables, but the entire file is often shoved into context, wasting tokens and degrading performance.",
+    "ko": "대용량 파일(PDF, DOCX, 이미지)을 무분별하게 로드하면 컨텍스트 윈도우가 압도됩니다. 5-10MB PDF에 관련 텍스트/테이블이 10-20KB에 불과할 수 있지만, 전체 파일이 컨텍스트에 그대로 투입되어 토큰이 낭비되고 성능이 저하됩니다."
   },
   "solution": {
-    "en": "Load file metadata first, then provide tools to load content on-demand (load, peek, extract).",
-    "ko": "파일 메타데이터를 먼저 로드한 다음 필요에 따라 콘텐츠를 로드하는 도구(load, peek, extract)를 제공합니다."
+    "en": "Apply **progressive disclosure**: load file metadata first, then provide tools to load content on-demand.\n\n**Core approach:**\n\n1. **Always include file metadata** in the prompt (not full content):\n\n   ```\n   Files:\n     - id: f_a1\n       name: my_image.png\n       size: 500,000\n       preloaded: false\n     - id: f_b3\n       name: report.pdf\n       size: 8500000\n       preloaded: false\n   ```\n\n2. **Optionally preload first N KB** of appropriate mimetypes (configurable per-workflow, can be 0)\n\n3. **Provide three file operations:**\n\n   - `load_file(id)` - Load entire file into context\n   - `peek_file(id, start, stop)` - Load a section of file\n   - `extract_file(id)` - Transform PDF/DOCX/PPT into simplified text\n\n4. **Include a `large_files` skill** explaining when/how to use these tools",
+    "ko": "**점진적 공개**를 적용합니다: 파일 메타데이터를 먼저 로드한 다음, 필요에 따라 콘텐츠를 로드하는 도구를 제공합니다.\n\n핵심 접근 방식:\n\n1. 프롬프트에 전체 콘텐츠가 아닌 파일 메타데이터를 항상 포함합니다.\n2. 적절한 MIME 타입의 처음 N KB를 선택적으로 미리 로드합니다 (워크플로우별 구성 가능, 0일 수 있음).\n3. 세 가지 파일 작업을 제공합니다: `load_file(id)` - 전체 파일 로드, `peek_file(id, start, stop)` - 파일 섹션 로드, `extract_file(id)` - PDF/DOCX/PPT를 간소화된 텍스트로 변환.\n4. 이러한 도구를 언제/어떻게 사용하는지 설명하는 `large_files` 스킬을 포함합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│ File Meta   │\n│ id: f_a1    │\n│ size: 5MB   │\n│ preloaded:  │\n│   false     │\n└──────┬──────┘\n       │ agent decides\n   ┌───┴───┐\n   ▼       ▼\nload()  extract()\n   │       │\n   ▼       ▼\n[Full]  [Text Only]",
   "mermaid_diagram": "flowchart TD\n    A[File Metadata in Prompt] --> B{Agent Decision}\n    B -->|Need Full| C[load_file]\n    B -->|Need Text| D[extract_file]\n    B -->|Need Section| E[peek_file]\n    C --> F[Full Content in Context]\n    D --> G[Simplified Text]\n    E --> H[Partial Content]",
-  "code_example": "# Include metadata, not content\nfiles_meta = [\n    {'id': 'f_a1', 'name': 'report.pdf', 'size': 8500000, 'preloaded': False}\n]\n\n# Tools for agent to load on-demand\ndef load_file(id): return full_content(id)\ndef peek_file(id, start, stop): return content[start:stop]\ndef extract_file(id): return pdf_to_text(id)  # 100x smaller",
+  "code_example": "def load_file(file_id: str, format: str = \"text\") -> str:\n    \"\"\"Load entire file content into context window.\"\"\"\n\ndef peek_file(file_id: str, offset: int, length: int, unit: str = \"bytes\") -> str:\n    \"\"\"Load a specific range from file. Unit options: bytes, lines, pages, tokens.\"\"\"\n\ndef extract_file(file_id: str, extraction: str = \"text\") -> str:\n    \"\"\"Convert PDF/DOCX/PPT to simplified representation.\n    Extraction options: text, structure, tables, summary.\"\"\"",
   "when_to_use": {
-    "en": ["Document comparison workflows", "File attachment processing", "Large report analysis"],
-    "ko": ["문서 비교 워크플로우", "파일 첨부 처리", "대용량 보고서 분석"]
+    "en": [
+      "Document comparison workflows (multiple PDFs)",
+      "Ticket systems with file attachments (images, PDFs)",
+      "Data export analysis (large reports in various formats)",
+      "Any workflow where agents need file content but files are large"
+    ],
+    "ko": [
+      "문서 비교 워크플로우 (다수의 PDF)",
+      "파일 첨부가 있는 티켓 시스템 (이미지, PDF)",
+      "데이터 내보내기 분석 (다양한 형식의 대용량 보고서)",
+      "에이전트가 파일 콘텐츠를 필요로 하지만 파일이 큰 모든 워크플로우"
+    ]
   },
   "pros": {
-    "en": ["Works with files larger than context", "Agent controls loading", "Extracted content is much smaller"],
-    "ko": ["컨텍스트보다 큰 파일 작업 가능", "에이전트가 로딩 제어", "추출된 콘텐츠가 훨씬 작음"]
+    "en": [
+      "Enables working with files much larger than context window",
+      "Agent has control over what/when to load",
+      "Reusable across workflows via large_files skill",
+      "Extracted content is often 100x smaller than original file"
+    ],
+    "ko": [
+      "컨텍스트 윈도우보다 훨씬 큰 파일 작업 가능",
+      "에이전트가 무엇을/언제 로드할지 제어",
+      "large_files 스킬을 통해 워크플로우 간 재사용 가능",
+      "추출된 콘텐츠가 원본 파일보다 100배 작은 경우가 많음"
+    ]
   },
   "cons": {
-    "en": ["Tool call overhead", "Extraction can be slow", "Agent may make poor loading decisions"],
-    "ko": ["도구 호출 오버헤드", "추출이 느릴 수 있음", "에이전트가 잘못된 로딩 결정을 할 수 있음"]
+    "en": [
+      "Adds tool call overhead (multiple round-trips)",
+      "Requires preloading heuristics (how much is enough?)",
+      "Extraction from complex formats (DOCX) can be slow without native dependencies",
+      "Agent may make poor loading decisions without proper guidance"
+    ],
+    "ko": [
+      "도구 호출 오버헤드 추가 (다중 왕복)",
+      "미리 로딩 휴리스틱 필요 (얼마나 충분한가?)",
+      "네이티브 의존성 없이 복잡한 형식(DOCX)에서 추출이 느릴 수 있음",
+      "적절한 가이드 없이 에이전트가 잘못된 로딩 결정을 할 수 있음"
+    ]
   },
   "tags": ["progressive-disclosure", "large-files", "lazy-loading", "metadata"]
 }

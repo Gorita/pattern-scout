@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://deepmind.google/research/",
   "problem": {
-    "en": "Traditional language models have fixed performance once trained. For challenging problems, we cannot simply 'think harder' by allocating more computational resources at inference time.",
-    "ko": "전통적인 언어 모델은 훈련 후 성능이 고정됩니다. 어려운 문제에서 추론 시간에 더 많은 계산 자원을 할당하여 '더 열심히 생각'할 수 없습니다."
+    "en": "Traditional language models are limited by their training-time capabilities. Once trained, their performance is essentially fixed, regardless of how much compute is available at inference time. This means that for particularly challenging problems, we cannot simply \"think harder\" by allocating more computational resources to find better solutions. This limitation becomes especially apparent in complex reasoning tasks where more deliberation could lead to better outcomes.",
+    "ko": "전통적인 언어 모델은 훈련 시점의 능력에 제한됩니다. 한 번 훈련되면 추론 시점에 얼마나 많은 계산이 가능하든 성능이 본질적으로 고정됩니다. 이는 특히 어려운 문제에서 더 나은 솔루션을 찾기 위해 더 많은 계산 자원을 할당하여 단순히 \"더 열심히 생각\"할 수 없다는 것을 의미합니다. 이 제한은 더 많은 숙고가 더 나은 결과로 이어질 수 있는 복잡한 추론 작업에서 특히 두드러집니다."
   },
   "solution": {
-    "en": "Allocate additional compute during inference: generate multiple candidates, perform extended reasoning chains, iterate and refine outputs, search solution spaces more thoroughly.",
-    "ko": "추론 중 추가 계산을 할당합니다: 여러 후보 생성, 확장된 추론 체인 수행, 출력 반복 및 개선, 솔루션 공간을 더 철저히 탐색."
+    "en": "Inference-Time Scaling allocates additional computational resources during inference to improve output quality. Instead of generating a single response, the system can:\n\n1. **Generate multiple candidates** and select the best one (Best-of-N)\n2. **Perform extended reasoning** chains before responding (Chain-of-Thought)\n3. **Iterate and refine** outputs through multiple passes (Self-Refinement)\n4. **Search through solution spaces** more thoroughly (Tree-of-Thought, MCTS)\n5. **Verify and validate** answers before returning them (Self-Consistency)\n\nThis approach trades compute time for solution quality, allowing smaller models with inference-time scaling to outperform larger models using standard inference.",
+    "ko": "추론 시간 스케일링은 추론 중 추가 계산 자원을 할당하여 출력 품질을 향상시킵니다. 단일 응답을 생성하는 대신 시스템이 다음을 수행할 수 있습니다:\n\n1. **여러 후보 생성** 후 최선을 선택 (Best-of-N)\n2. **확장된 추론** 체인을 수행한 후 응답 (Chain-of-Thought)\n3. 여러 패스를 통해 출력을 **반복 및 개선** (Self-Refinement)\n4. **솔루션 공간을 더 철저히 탐색** (Tree-of-Thought, MCTS)\n5. 반환 전 답변을 **검증 및 확인** (Self-Consistency)\n\n이 접근 방식은 계산 시간을 솔루션 품질로 교환하여, 추론 시간 스케일링이 적용된 소형 모델이 표준 추론을 사용하는 대형 모델보다 우수한 성능을 발휘할 수 있게 합니다."
   },
   "ascii_diagram": "┌────────────────┐\n│ Input Problem  │\n└───────┬────────┘\n        │\n┌───────▼────────┐\n│Assess Difficulty│\n└───────┬────────┘\n   ┌────┼────┬────┐\n   ▼    ▼    ▼    ▼\n[Low][Med][High][VHigh]\n   │    │    │    │\n┌──▼┐ ┌─▼─┐ ┌▼──┐┌▼───┐\n│Std│ │N  │ │CoT││Search│\n│Inf│ │Try│ │+  ││Space│\n└──┬┘ └─┬─┘ │Ref│└──┬──┘\n   │    │   └┬──┘   │\n   └────┴────┴──────┘\n             │\n     ┌───────▼───────┐\n     │  Select Best  │\n     └───────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Input Problem] --> B{Assess Difficulty}\n    B -->|Low| C[Standard Inference]\n    B -->|Medium| D[Multiple Attempts]\n    B -->|High| E[Deep Reasoning + Refine]\n    B -->|Very High| F[Solution Space Search]\n    D --> G[Score Each]\n    E --> G\n    F --> G\n    C --> H[Select Best]\n    G --> H\n    H --> I[Final Answer]",
   "code_example": "class InferenceTimeScalingAgent:\n    def solve_with_scaling(self, problem, max_budget=100):\n        difficulty = self.estimate_difficulty(problem)\n        solutions = []\n        \n        # Low budget: multiple attempts\n        if difficulty >= 10:\n            solutions.extend(self.multiple_attempts(problem, n=5))\n        \n        # Medium: deep reasoning with verification\n        if difficulty >= 30:\n            solutions.append(self.deep_reasoning(problem))\n        \n        # High: solution space search\n        if difficulty >= 50:\n            solutions.append(self.solution_search(problem))\n        \n        return self.select_best_solution(solutions)",
   "when_to_use": {
-    "en": ["Complex reasoning tasks", "Math/coding problems", "When quality matters more than latency"],
-    "ko": ["복잡한 추론 작업", "수학/코딩 문제", "지연보다 품질이 중요할 때"]
+    "en": ["Tasks needing explicit control flow between planning, execution, and fallback", "Start with one high-volume workflow before applying across all agent lanes", "Define ownership for each phase so failures can be routed and recovered quickly"],
+    "ko": ["계획, 실행, 폴백 간 명시적 제어 흐름이 필요한 작업", "모든 에이전트 레인에 적용하기 전에 하나의 고빈도 워크플로우에서 시작", "실패를 빠르게 라우팅하고 복구할 수 있도록 각 단계의 소유권 정의"]
   },
   "pros": {
-    "en": ["Dramatically improves complex task performance", "Cost-effective vs larger models", "Dynamic resource allocation"],
-    "ko": ["복잡한 작업 성능 크게 향상", "대형 모델 대비 비용 효율적", "동적 자원 할당"]
+    "en": ["Can dramatically improve performance on complex tasks", "More cost-effective than training larger models", "Allows dynamic resource allocation based on task difficulty", "Enables \"System 2\" thinking in AI systems"],
+    "ko": ["복잡한 작업에서 성능을 크게 향상 가능", "대형 모델 훈련보다 비용 효율적", "작업 난이도에 따른 동적 자원 할당 가능", "AI 시스템에서 \"시스템 2\" 사고 구현"]
   },
   "cons": {
-    "en": ["Increased latency", "Higher inference costs", "Diminishing returns beyond threshold"],
-    "ko": ["지연 증가", "높은 추론 비용", "임계값 이후 수확 체감"]
+    "en": ["Increased latency for responses", "Higher inference costs for complex problems", "Diminishing returns beyond certain compute thresholds", "Not beneficial for simple tasks", "Requires careful tuning of scaling strategies"],
+    "ko": ["응답 지연 증가", "복잡한 문제에 대한 높은 추론 비용", "특정 계산 임계값 이후 수확 체감", "단순한 작업에는 이점 없음", "스케일링 전략의 세밀한 튜닝 필요"]
   },
   "tags": ["scaling", "inference", "compute", "reasoning", "performance", "test-time-compute"]
 }
