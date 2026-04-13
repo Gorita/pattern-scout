@@ -6,27 +6,27 @@
   "status": "proposed",
   "original_url": "https://lethain.com/agents-logging/",
   "problem": {
-    "en": "Agents introduce non-determinism - same input can produce different outputs. Debugging issues requires tracing complex multi-step workflows, but standard logging (CloudWatch, Lambda logs) is painful to navigate. Without easy debugging, agents won't get adopted.",
-    "ko": "에이전트는 비결정성을 도입합니다 - 동일한 입력이 다른 출력을 생성할 수 있습니다. 이슈 디버깅은 복잡한 다단계 워크플로우 추적이 필요하지만, 표준 로깅(CloudWatch, Lambda 로그)은 탐색이 어렵습니다. 쉬운 디버깅 없이는 에이전트가 채택되지 않습니다."
+    "en": "Agents introduce non-determinism—the same input can produce different outputs. When agents do something sub-optimal, users flag it as a \"bug\" even if it's just prompt ambiguity. Debugging these issues requires tracing through complex multi-step workflows, but standard logging (CloudWatch, Lambda logs) is painful to navigate. Engineers need easy access to workflow execution details to debug quickly, or agents won't get adopted.",
+    "ko": "에이전트는 비결정성을 도입합니다 - 동일한 입력이 다른 출력을 생성할 수 있습니다. 에이전트가 최적이 아닌 동작을 하면 사용자는 프롬프트 모호성일 뿐이더라도 \"버그\"로 보고합니다. 이러한 이슈를 디버깅하려면 복잡한 다단계 워크플로우를 추적해야 하지만, 표준 로깅(CloudWatch, Lambda 로그)은 탐색이 어렵습니다. 엔지니어가 워크플로우 실행 세부 정보에 쉽게 접근하여 빠르게 디버깅할 수 없으면 에이전트가 채택되지 않습니다."
   },
   "solution": {
-    "en": "Integrate LLM observability platforms (Datadog LLM Observability, LangSmith, etc.) that provide span-level tracing of agent workflows. Get visual UI showing each LLM call, tool use, and intermediate result instead of spelunking through raw logs.",
-    "ko": "에이전트 워크플로우의 스팬 수준 추적을 제공하는 LLM 관측성 플랫폼(Datadog LLM Observability, LangSmith 등)을 통합합니다. 원시 로그를 탐색하는 대신 각 LLM 호출, 도구 사용, 중간 결과를 보여주는 시각적 UI를 얻습니다."
+    "en": "Integrate **LLM observability platforms** (Datadog LLM Observability, LangSmith, etc.) that provide **span-level tracing** of agent workflows. Instead of spelunking through raw logs, get a visual UI showing each step of the agent's execution.\n\n**Key capabilities:**\n\n- **Span visualization**: See each LLM call, tool use, and intermediate result\n- **Workflow linking**: Trace from user input through all sub-steps to final output\n- **Dashboarding**: Aggregate metrics on cost, latency, success rates\n- **Accessible debugging**: Non-engineers can debug without log access\n- **Event sourcing**: Structured logs enable replay, state reconstruction, and verification\n\n**Evolution from standard logging:**\n\n1. **Print to stdout** → Captured in Lambda logs (hard to access)\n2. **Slack channel** → Post run summary + AWS log link (better, still spelunking)\n3. **LLM observability** → Visual span tracing, easy navigation",
+    "ko": "에이전트 워크플로우의 **스팬 수준 추적**을 제공하는 **LLM 관측성 플랫폼**(Datadog LLM Observability, LangSmith 등)을 통합합니다. 원시 로그를 탐색하는 대신 에이전트 실행의 각 단계를 보여주는 시각적 UI를 얻습니다.\n\n**핵심 기능:**\n\n- **스팬 시각화**: 각 LLM 호출, 도구 사용, 중간 결과 확인\n- **워크플로우 연결**: 사용자 입력부터 모든 하위 단계를 거쳐 최종 출력까지 추적\n- **대시보드**: 비용, 지연 시간, 성공률에 대한 집계 메트릭\n- **접근 가능한 디버깅**: 비엔지니어도 로그 권한 없이 디버깅 가능\n- **이벤트 소싱**: 구조화된 로그로 리플레이, 상태 재구성, 검증 가능\n\n**표준 로깅에서의 발전:**\n\n1. **stdout 출력** → Lambda 로그에 캡처 (접근 어려움)\n2. **Slack 채널** → 실행 요약 + AWS 로그 링크 게시 (개선됨, 여전히 탐색 필요)\n3. **LLM 관측성** → 시각적 스팬 추적, 쉬운 탐색"
   },
   "ascii_diagram": "┌─────────────────────────┐\n│      Agent Run          │\n└───────────┬─────────────┘\n            │\n┌───────────▼─────────────┐\n│   Observability SDK     │\n└───────────┬─────────────┘\n            │\n    ┌───────┼───────┐\n    │       │       │\n┌───▼───┐ ┌─▼─┐ ┌───▼───┐\n│Span:  │ │   │ │Span:  │\n│LLM #1 │ │...│ │Tool   │\n└───┬───┘ └─┬─┘ └───┬───┘\n    │       │       │\n    └───────┼───────┘\n            │\n┌───────────▼─────────────┐\n│    Trace UI / Debug     │\n│  • Visual span view     │\n│  • Workflow linking     │\n│  • Aggregated metrics   │\n└─────────────────────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Agent Run] --> B[Observability SDK]\n    B --> C[Span: LLM Call 1]\n    B --> D[Span: Tool Use]\n    B --> E[Span: LLM Call 2]\n    C --> F[Trace UI]\n    D --> F\n    E --> F\n    F --> G[Debug View]\n    F --> H[Dashboards]\n    F --> I[Metrics]",
   "code_example": "from ddtrace import tracer\n\n# Automatically traces LLM calls\n@tracer.wrap('agent_workflow')\ndef run_agent(query):\n    result = agent.run(query)\n    # Each LLM call, tool use becomes a span\n    return result\n\n# Best practices:\n# - Tag everything: workflow name, user ID, environment\n# - Link to dashboards from chat\n# - Share access beyond engineering\n# - Monitor aggregate metrics: success rates, latency, costs",
   "when_to_use": {
-    "en": ["Multi-step agent workflows", "Non-deterministic behaviors", "Team debugging needs", "Production monitoring"],
-    "ko": ["다단계 에이전트 워크플로우", "비결정적 동작", "팀 디버깅 요구", "프로덕션 모니터링"]
+    "en": ["Choose observability platform: Datadog LLM Observability, LangSmith, Arize, etc.", "Install SDK and add to agent code (often 1-2 lines)", "Configure tracing: tag workflows, users, environments", "Give broader team access (not just engineers)"],
+    "ko": ["관측성 플랫폼 선택: Datadog LLM Observability, LangSmith, Arize 등", "SDK 설치 및 에이전트 코드에 추가 (보통 1-2줄)", "추적 구성: 워크플로우, 사용자, 환경 태깅", "광범위한 팀 접근 권한 부여 (엔지니어만이 아닌)"]
   },
   "pros": {
-    "en": ["Fast debugging with visual navigation", "Accessible to non-engineers", "Aggregated metrics across runs", "Span-level detail for any step"],
-    "ko": ["시각적 탐색으로 빠른 디버깅", "비엔지니어도 접근 가능", "여러 실행에 걸친 집계 메트릭", "모든 단계의 스팬 수준 세부 정보"]
+    "en": ["Fast debugging: Navigate complex workflows visually", "Accessible: Non-engineers can debug without log permissions", "Aggregated metrics: See patterns across many runs", "Span-level detail: Drill into any step of execution"],
+    "ko": ["빠른 디버깅: 복잡한 워크플로우를 시각적으로 탐색", "접근성: 비엔지니어도 로그 권한 없이 디버깅 가능", "집계 메트릭: 여러 실행에 걸친 패턴 확인", "스팬 수준 세부 정보: 실행의 모든 단계를 상세 조사"]
   },
   "cons": {
-    "en": ["Vendor dependency", "Enterprise observability can be expensive", "Adds latency overhead (usually minimal)", "Access control complexity"],
-    "ko": ["벤더 의존성", "엔터프라이즈 관측성은 비쌀 수 있음", "지연 오버헤드 추가 (보통 미미)", "접근 제어 복잡성"]
+    "en": ["Vendor dependency: Locked into observability platform", "Cost: Enterprise observability can be expensive", "Overhead: Adds latency (usually minimal)", "Access control: Balancing visibility with security"],
+    "ko": ["벤더 의존성: 관측성 플랫폼에 종속", "비용: 엔터프라이즈 관측성은 비쌀 수 있음", "오버헤드: 지연 추가 (보통 미미)", "접근 제어: 가시성과 보안의 균형"]
   },
-  "tags": ["observability", "logging", "debugging", "tracing", "datadog", "langsmith", "monitoring", "llmops"]
+  "tags": ["observability", "logging", "debugging", "tracing", "datadog", "langsmith", "spans", "monitoring", "llmops"]
 }

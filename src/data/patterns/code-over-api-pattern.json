@@ -6,27 +6,59 @@
   "status": "established",
   "original_url": "https://www.anthropic.com/engineering/code-execution-with-mcp",
   "problem": {
-    "en": "When agents make direct API calls, all intermediate data flows through context window. Processing 10,000 spreadsheet rows can consume 150,000+ tokens just moving data.",
-    "ko": "에이전트가 직접 API를 호출하면 모든 중간 데이터가 컨텍스트 윈도우를 통해 흐릅니다. 10,000개의 스프레드시트 행을 처리하면 데이터 이동만으로 150,000+ 토큰을 소비할 수 있습니다."
+    "en": "When agents make direct API or tool calls, all intermediate data must flow through the model's context window. For data-heavy workflows (processing spreadsheets, filtering logs, transforming datasets), this creates massive token consumption and increased latency. A workflow that fetches 10,000 spreadsheet rows and filters them can easily consume 150,000+ tokens just moving data through the context.",
+    "ko": "에이전트가 직접 API 또는 도구를 호출하면 모든 중간 데이터가 모델의 컨텍스트 윈도우를 통해 흘러야 합니다. 데이터 중심 워크플로우(스프레드시트 처리, 로그 필터링, 데이터셋 변환)에서는 이로 인해 대규모 토큰 소비와 지연 증가가 발생합니다. 10,000개의 스프레드시트 행을 가져와 필터링하는 워크플로우는 데이터 이동만으로 쉽게 150,000+ 토큰을 소비할 수 있습니다."
   },
   "solution": {
-    "en": "Agents write and execute code that interacts with tools. Data processing happens in execution environment, with only results flowing back to model context (150K → 2K tokens).",
-    "ko": "에이전트가 도구와 상호작용하는 코드를 작성하고 실행합니다. 데이터 처리는 실행 환경에서 발생하고, 결과만 모델 컨텍스트로 반환됩니다 (150K → 2K 토큰)."
+    "en": "Instead of making direct tool calls, agents write and execute code that interacts with tools. Data processing, filtering, and transformation happens in the execution environment, with only results flowing back to the model context.\n\n**Core insight**: LLMs are better at writing code to call APIs than at calling APIs directly—due to training data alignment with millions of open-source code repositories.\n\n**Direct API approach (high token cost):**\n\n```pseudo\n# Agent makes tool call\nrows = api_call(\"spreadsheet.getRows\", sheet_id=\"abc123\")\n# All 10,000 rows flow through context → 150K tokens\n\n# Agent processes in context\nfiltered = [row for row in rows if row.status == \"active\"]\n# More tokens for processing\n\nreturn filtered\n```\n\n**Code-Over-API approach (low token cost):**\n\n```python\n# Agent writes code that executes in environment\ndef process_spreadsheet():\n    # Tool call happens in execution environment\n    rows = spreadsheet.getRows(sheet_id=\"abc123\")\n\n    # Filtering happens in code, not in context\n    filtered = [row for row in rows if row.status == \"active\"]\n\n    # Only log summary for agent visibility\n    print(f\"Processed {len(rows)} rows, found {len(filtered)} active\")\n    print(f\"First 5 active rows: {filtered[:5]}\")\n\n    return filtered\n\nresult = process_spreadsheet()\n# Only summary and sample flow to context → ~2K tokens\n```\n\nThe agent sees the log output and return value, but the full dataset never enters its context window.",
+    "ko": "직접 도구를 호출하는 대신, 에이전트가 도구와 상호작용하는 코드를 작성하고 실행합니다. 데이터 처리, 필터링, 변환이 실행 환경에서 발생하며, 결과만 모델 컨텍스트로 반환됩니다.\n\n핵심 통찰: LLM은 수백만 개의 오픈소스 코드 저장소와의 학습 데이터 정렬 덕분에 API를 직접 호출하는 것보다 API를 호출하는 코드를 작성하는 것에 더 능숙합니다.\n\n에이전트는 로그 출력과 반환 값만 확인하며, 전체 데이터셋은 컨텍스트 윈도우에 진입하지 않습니다."
   },
   "ascii_diagram": "DIRECT API (High Token):\nrows = api_call('getRows')\n→ 10,000 rows in context (150K tokens)\nfiltered = [r for r in rows if...]\n→ More tokens\n\nCODE-OVER-API (Low Token):\ndef process():\n    rows = spreadsheet.getRows()\n    filtered = [r for r in rows if...]\n    print(f'Found {len(filtered)} active')\n    return filtered[:5]  # Sample only\n→ ~2K tokens",
   "mermaid_diagram": "flowchart TD\n    A[Agent Task] --> B{Approach}\n    B -->|Direct API| C[Tool Call]\n    C --> D[Full Data in Context]\n    D --> E[High Token Cost]\n    B -->|Code-Over-API| F[Generate Code]\n    F --> G[Execute in Sandbox]\n    G --> H[Process Data Locally]\n    H --> I[Return Summary Only]\n    I --> J[Low Token Cost]",
   "code_example": "# Agent writes code that executes in environment\ndef process_spreadsheet():\n    # Tool call happens in execution environment\n    rows = spreadsheet.getRows(sheet_id='abc123')\n    \n    # Filtering happens in code, not in context\n    filtered = [row for row in rows if row.status == 'active']\n    \n    # Only log summary for agent visibility\n    print(f'Processed {len(rows)} rows, found {len(filtered)} active')\n    print(f'First 5: {filtered[:5]}')\n    \n    return filtered\n# Only summary flows to context → ~2K tokens",
   "when_to_use": {
-    "en": ["Data-heavy workflows", "Multi-step transformations", "Cost-sensitive applications"],
-    "ko": ["데이터 중심 워크플로우", "다단계 변환", "비용에 민감한 애플리케이션"]
+    "en": [
+      "Data-heavy workflows (spreadsheets, databases, logs)",
+      "Multi-step transformations or aggregations",
+      "Workflows with intermediate results that don't need model inspection",
+      "Cost-sensitive applications where token usage matters"
+    ],
+    "ko": [
+      "데이터 중심 워크플로우 (스프레드시트, 데이터베이스, 로그)",
+      "다단계 변환 또는 집계",
+      "모델 검사가 필요 없는 중간 결과가 있는 워크플로우",
+      "토큰 사용이 중요한 비용에 민감한 애플리케이션"
+    ]
   },
   "pros": {
-    "en": ["Dramatic token reduction (150K → 2K)", "Lower latency", "Natural fit for data processing"],
-    "ko": ["극적인 토큰 감소 (150K → 2K)", "낮은 지연", "데이터 처리에 자연스러운 적합"]
+    "en": [
+      "Dramatic token reduction (150K → 2K in reported cases)",
+      "Lower latency (fewer large context API calls)",
+      "Natural fit for data processing tasks",
+      "Intermediate data stays contained in execution environment"
+    ],
+    "ko": [
+      "극적인 토큰 감소 (보고된 사례에서 150K → 2K)",
+      "낮은 지연 시간 (대규모 컨텍스트 API 호출 감소)",
+      "데이터 처리 작업에 자연스러운 적합성",
+      "중간 데이터가 실행 환경에 격리됨"
+    ]
   },
   "cons": {
-    "en": ["Requires secure execution infrastructure", "More complex setup", "Debugging harder"],
-    "ko": ["보안 실행 인프라 필요", "더 복잡한 설정", "디버깅 어려움"]
+    "en": [
+      "Requires secure code execution infrastructure",
+      "More complex setup than direct tool calls",
+      "Agents must be capable of writing correct code",
+      "Debugging can be harder (errors happen in execution, not in context)",
+      "Needs monitoring, resource limits, and sandboxing"
+    ],
+    "ko": [
+      "보안 코드 실행 인프라 필요",
+      "직접 도구 호출보다 복잡한 설정",
+      "에이전트가 올바른 코드를 작성할 수 있어야 함",
+      "디버깅이 더 어려울 수 있음 (오류가 컨텍스트가 아닌 실행 환경에서 발생)",
+      "모니터링, 리소스 제한, 샌드박싱 필요"
+    ]
   },
   "tags": ["token-optimization", "code-execution", "data-processing", "mcp"]
 }

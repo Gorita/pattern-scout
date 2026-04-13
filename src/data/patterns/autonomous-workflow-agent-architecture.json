@@ -6,27 +6,67 @@
   "status": "established",
   "original_url": "https://www.together.ai/blog/ai-agents-to-automate-complex-engineering-tasks",
   "problem": {
-    "en": "Complex, long-running engineering workflows require extensive human oversight. Manual coordination, constant monitoring for errors, and context switching between workflow stages reduce productivity.",
-    "ko": "복잡하고 장기 실행되는 엔지니어링 워크플로우는 광범위한 인간 감독이 필요합니다. 수동 조정, 지속적인 오류 모니터링, 워크플로우 단계 간 컨텍스트 전환이 생산성을 저하시킵니다."
+    "en": "Complex, long-running engineering workflows traditionally require extensive human oversight and intervention. Tasks like model training pipelines, infrastructure configuration, and multi-step deployment processes involve manual coordination of multiple tools and systems, constant monitoring for errors and edge cases, time-consuming context switching between different workflow stages, risk of human error in repetitive tasks, and difficulty scaling engineering processes across teams. Engineers spend significant time on operational overhead rather than core development work, and workflows often fail at intermediate steps requiring manual debugging and restart.",
+    "ko": "복잡하고 장기 실행되는 엔지니어링 워크플로우는 전통적으로 광범위한 인간 감독과 개입이 필요합니다. 모델 훈련 파이프라인, 인프라 구성, 다단계 배포 프로세스와 같은 작업에는 여러 도구와 시스템의 수동 조정, 오류 및 엣지 케이스에 대한 지속적인 모니터링, 워크플로우 단계 간 시간 소모적 컨텍스트 전환, 반복 작업에서의 인적 오류 위험, 팀 간 엔지니어링 프로세스 확장의 어려움이 수반됩니다. 엔지니어들은 핵심 개발 작업보다 운영 오버헤드에 상당한 시간을 소비하며, 워크플로우는 중간 단계에서 자주 실패하여 수동 디버깅과 재시작이 필요합니다."
   },
   "solution": {
-    "en": "Create AI agents with containerized execution environments, tmux-based session management, intelligent monitoring, and context-aware error recovery for autonomous workflow handling.",
-    "ko": "자율 워크플로우 처리를 위해 컨테이너화된 실행 환경, tmux 기반 세션 관리, 지능형 모니터링, 컨텍스트 인식 오류 복구를 갖춘 AI 에이전트를 생성합니다."
+    "en": "Autonomous Workflow Agent Architecture creates AI agents with sophisticated workflow management capabilities that can handle multi-step engineering processes with minimal human intervention. The architecture combines containerized execution environments, tmux-based parallel process coordination, intelligent monitoring with adaptive wait/sleep mechanisms, robust error handling with context-aware retry strategies, and comprehensive logging and workflow documentation.\n\n**Key Distinction from Traditional Automation:**\n\nTraditional workflow automation follows a pre-defined script; autonomous agents follow a goal. Where traditional systems stop on error, these agents reason about *why* a step failed and determine *how* to recover, selecting alternative paths rather than executing predetermined retry logic.\n\n**Key Design Principles:**\n\n- Start with bounded, well-defined tasks\n- Implement explicit checkpoints at risky boundaries\n- Design for recoverability at each step\n- Maintain comprehensive logging throughout",
+    "ko": "자율 워크플로우 에이전트 아키텍처는 최소한의 인간 개입으로 다단계 엔지니어링 프로세스를 처리할 수 있는 정교한 워크플로우 관리 기능을 갖춘 AI 에이전트를 생성합니다. 이 아키텍처는 컨테이너화된 실행 환경, tmux 기반 병렬 프로세스 조정, 적응형 대기/슬립 메커니즘을 갖춘 지능형 모니터링, 컨텍스트 인식 재시도 전략을 갖춘 견고한 오류 처리, 포괄적인 로깅 및 워크플로우 문서화를 결합합니다.\n\n전통적인 워크플로우 자동화는 사전 정의된 스크립트를 따르지만, 자율 에이전트는 목표를 따릅니다. 전통적인 시스템이 오류 시 중단되는 반면, 이 에이전트들은 단계가 왜 실패했는지 추론하고 어떻게 복구할지 결정하여 사전 결정된 재시도 로직 대신 대안적 경로를 선택합니다."
   },
   "ascii_diagram": "┌────────────────┐\n│Workflow Define │\n└───────┬────────┘\n        │\n┌───────▼────────┐\n│ Container Setup│\n└───────┬────────┘\n        │\n┌───────▼────────┐\n│  tmux Session  │\n│  Management    │\n└───────┬────────┘\n        │\n┌───────▼────────┐\n│   Monitoring   │\n│ + Checkpoints  │\n└───────┬────────┘\n    ┌───┴───┐\n    ▼       ▼\n[Error?] [Continue]\n    │       │\n┌───▼───┐   │\n│Recover│───┘\n└───────┘",
-  "mermaid_diagram": "graph TD\n    A[Workflow Definition] --> B[Environment Setup]\n    B --> C[Containerized Execution]\n    C --> D[Session Management]\n    D --> E[Intelligent Monitoring]\n    E --> F{Error Found?}\n    F -->|Yes| G[Adaptive Recovery]\n    F -->|No| H[Progress Checkpoint]\n    G --> D\n    H --> I{Workflow Complete?}\n    I -->|No| D\n    I -->|Yes| J[Results Aggregation]",
-  "code_example": "class WorkflowAgent:\n    def __init__(self, container_image, workflow_config):\n        self.container = self.setup_container(container_image)\n        self.sessions = {}\n        self.checkpoints = []\n    \n    def execute_workflow(self, workflow_steps):\n        for step in workflow_steps:\n            session_id = self.create_session(step.name)\n            try:\n                result = self.execute_step(step, session_id)\n                self.create_checkpoint(step.name, result)\n            except Exception as e:\n                self.handle_error(step, e, session_id)",
+  "mermaid_diagram": "graph TD\n    A[Workflow Definition] --> B[Environment Setup]\n    B --> C[Containerized Execution]\n    C --> D[Session Management]\n    D --> E[Parallel Process Coordination]\n    E --> F[Intelligent Monitoring]\n    F --> G[Error Detection]\n    G --> H{Error Found?}\n    H -->|Yes| I[Adaptive Recovery]\n    H -->|No| J[Progress Checkpoint]\n    I --> D\n    J --> K{Workflow Complete?}\n    K -->|No| D\n    K -->|Yes| L[Results Aggregation]\n    L --> M[Documentation Update]",
+  "code_example": "class WorkflowAgent:\n    def __init__(self, container_image, workflow_config):\n        self.container = self.setup_container(container_image)\n        self.sessions = {}\n        self.checkpoints = []\n    \n    def execute_workflow(self, workflow_steps):\n        for step in workflow_steps:\n            session_id = self.create_session(step.name)\n            try:\n                result = self.execute_step(step, session_id)\n                self.create_checkpoint(step.name, result)\n            except Exception as e:\n                self.handle_error(step, e, session_id)\n    \n    def handle_error(self, step, error, session_id):\n        # Context-aware error recovery\n        if self.can_retry(error):\n            self.retry_with_backoff(step, session_id)\n        else:\n            self.escalate_to_human(step, error)",
   "when_to_use": {
-    "en": ["Model training pipelines", "Infrastructure provisioning", "Multi-stage deployments"],
-    "ko": ["모델 훈련 파이프라인", "인프라 프로비저닝", "다단계 배포"]
+    "en": [
+      "Model training and evaluation pipelines",
+      "Infrastructure provisioning and configuration",
+      "Multi-stage deployment workflows",
+      "Automated testing and quality assurance processes",
+      "Data processing and ETL pipelines"
+    ],
+    "ko": [
+      "모델 훈련 및 평가 파이프라인",
+      "인프라 프로비저닝 및 구성",
+      "다단계 배포 워크플로우",
+      "자동화된 테스트 및 품질 보증 프로세스",
+      "데이터 처리 및 ETL 파이프라인"
+    ]
   },
   "pros": {
-    "en": ["1.2-1.4x speedup", "Reduced human intervention", "Consistent execution"],
-    "ko": ["1.2-1.4배 속도 향상", "인간 개입 감소", "일관된 실행"]
+    "en": [
+      "Significant speedup: 1.22x-1.37x improvement in token processing and workflow execution",
+      "Reduced human intervention: agents can handle most routine workflow steps autonomously",
+      "Consistent execution: eliminates human error in repetitive tasks",
+      "Scalability: can run multiple workflows in parallel across different environments",
+      "Comprehensive logging: automatic documentation of all workflow steps and decisions",
+      "Recovery capability: intelligent error handling reduces workflow failures"
+    ],
+    "ko": [
+      "상당한 속도 향상: 토큰 처리 및 워크플로우 실행에서 1.22x-1.37x 개선",
+      "인간 개입 감소: 에이전트가 대부분의 일상적인 워크플로우 단계를 자율적으로 처리",
+      "일관된 실행: 반복 작업에서 인적 오류 제거",
+      "확장성: 여러 환경에서 다수의 워크플로우를 병렬 실행 가능",
+      "포괄적 로깅: 모든 워크플로우 단계 및 결정의 자동 문서화",
+      "복구 능력: 지능형 오류 처리로 워크플로우 실패 감소"
+    ]
   },
   "cons": {
-    "en": ["Limited novel failure handling", "Context window constraints", "Setup complexity"],
-    "ko": ["새로운 실패 처리 제한", "컨텍스트 윈도우 제약", "설정 복잡성"]
+    "en": [
+      "Limited novel failure handling: agents may struggle with completely unprecedented error scenarios",
+      "Context window constraints: long-running workflows may exceed agent context limits",
+      "Setup complexity: initial configuration of containers and monitoring requires significant investment",
+      "Documentation dependency: requires continuously updated workflow documentation for optimal performance",
+      "Resource intensive: container orchestration and parallel processing increase infrastructure costs",
+      "Human oversight still needed: critical workflows may still require human validation checkpoints"
+    ],
+    "ko": [
+      "새로운 실패 처리 한계: 에이전트가 완전히 전례 없는 오류 시나리오에 어려움을 겪을 수 있음",
+      "컨텍스트 윈도우 제약: 장기 실행 워크플로우가 에이전트 컨텍스트 한계를 초과할 수 있음",
+      "설정 복잡성: 컨테이너 및 모니터링 초기 구성에 상당한 투자 필요",
+      "문서화 의존성: 최적 성능을 위해 지속적으로 업데이트된 워크플로우 문서 필요",
+      "리소스 집약적: 컨테이너 오케스트레이션 및 병렬 처리로 인프라 비용 증가",
+      "인간 감독 여전히 필요: 핵심 워크플로우는 여전히 인간 검증 체크포인트 필요"
+    ]
   },
   "tags": ["workflow-automation", "containerization", "multi-agent", "engineering-tasks", "tmux"]
 }

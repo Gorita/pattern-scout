@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://github.com/anthropics/claude-code",
   "problem": {
-    "en": "Users communicate across multiple platforms (email, Slack, iMessage) and need to search for information that might exist in any of them. Searching each manually is slow and error-prone.",
-    "ko": "사용자는 여러 플랫폼(이메일, Slack, iMessage)에서 소통하며 어디에든 존재할 수 있는 정보를 검색해야 합니다. 각각을 수동으로 검색하는 것은 느리고 오류가 발생하기 쉽습니다."
+    "en": "Users communicate across multiple platforms (email, Slack, iMessage, etc.) and need to search for information that might exist in any of them. Searching each platform manually is slow and error-prone. An agent tasked with \"find what X said about Y\" must know which platform to check—or check all of them.",
+    "ko": "사용자는 여러 플랫폼(이메일, Slack, iMessage 등)에서 소통하며 어디에든 존재할 수 있는 정보를 검색해야 합니다. 각 플랫폼을 수동으로 검색하는 것은 느리고 오류가 발생하기 쉽습니다. \"X가 Y에 대해 뭐라고 했는지 찾아줘\"라는 작업을 받은 에이전트는 어떤 플랫폼을 확인해야 하는지 알아야 하거나, 모든 플랫폼을 확인해야 합니다."
   },
   "solution": {
-    "en": "Create unified search interface that queries all communication platforms in parallel and aggregates results into consistent format with platform adapters, parallel dispatch, and result normalization.",
-    "ko": "플랫폼 어댑터, 병렬 디스패치, 결과 정규화를 통해 모든 통신 플랫폼을 병렬로 쿼리하고 결과를 일관된 형식으로 집계하는 통합 검색 인터페이스를 생성합니다."
+    "en": "Create a unified search interface that queries all communication platforms in parallel and aggregates results into a single, consistent format. Also known academically as **Federated Search** or **Mediator-Based Integration**.\n\n**Key components:**\n\n1. **Platform Adapters**: Each platform has a CLI/API wrapper with consistent interface\n2. **Parallel Dispatcher**: Spawns searches concurrently (sub-agent pattern or background jobs)\n3. **Result Normalizer**: Converts platform-specific formats to unified schema\n4. **Aggregator**: Combines, deduplicates, and ranks results\n\n```bash\n# Example: Unified search skill implementation\nsearch_all() {\n    query=\"$1\"\n\n    # Spawn parallel searches\n    messages search \"$query\" > /tmp/messages.json &\n    slack-messages search \"$query\" > /tmp/slack.json &\n    fastmail.sh search \"$query\" > /tmp/fastmail.json &\n    gmail.sh search \"$query\" > /tmp/gmail.json &\n\n    wait  # All complete\n\n    # Aggregate and normalize\n    aggregate_results /tmp/*.json\n}\n```\n\n**Architectural variants:**\n\n- **Adapter Pattern**: Platform abstraction layer with unified API\n- **Gateway/Bridge Pattern**: Bidirectional message synchronization between platforms\n- **Unified Inbox Pattern**: Customer-centric aggregation for support/engagement workflows\n- **Event-Driven Architecture**: Async message brokering for scalability",
+    "ko": "모든 통신 플랫폼을 병렬로 쿼리하고 결과를 단일 일관된 형식으로 집계하는 통합 검색 인터페이스를 생성합니다. 학술적으로 **연합 검색(Federated Search)** 또는 **중재자 기반 통합(Mediator-Based Integration)**으로도 알려져 있습니다.\n\n**핵심 구성 요소:**\n\n1. **플랫폼 어댑터**: 각 플랫폼에 일관된 인터페이스의 CLI/API 래퍼 제공\n2. **병렬 디스패처**: 검색을 동시에 생성 (서브 에이전트 패턴 또는 백그라운드 작업)\n3. **결과 정규화기**: 플랫폼별 형식을 통합 스키마로 변환\n4. **집계기**: 결과를 결합, 중복 제거, 순위 지정\n\n**아키텍처 변형:**\n\n- **어댑터 패턴**: 통합 API를 가진 플랫폼 추상화 레이어\n- **게이트웨이/브리지 패턴**: 플랫폼 간 양방향 메시지 동기화\n- **통합 받은 편지함 패턴**: 지원/참여 워크플로우를 위한 고객 중심 집계\n- **이벤트 기반 아키텍처**: 확장성을 위한 비동기 메시지 브로커링"
   },
   "ascii_diagram": "┌─────────────────────┐\n│    User Query       │\n│'find project deadline'│\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│  Aggregator Agent   │\n└──────────┬──────────┘\n    ┌──────┼──────┐\n    ▼      ▼      ▼\n[iMsg] [Slack] [Email]\n    │      │      │\n    └──────┼──────┘\n           │\n┌──────────▼──────────┐\n│   Result Collector  │\n│ + Normalizer        │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│ Unified Results     │\n└─────────────────────┘",
   "mermaid_diagram": "graph TD\n    A[User Query] --> B[Aggregator Agent]\n    B --> C[iMessage Search]\n    B --> D[Slack Search]\n    B --> E[Email Search]\n    C --> F[Result Collector]\n    D --> F\n    E --> F\n    F --> G[Unified Results Table]",
   "code_example": "# Unified search implementation\nsearch_all() {\n    query=\"$1\"\n    \n    # Spawn parallel searches\n    messages search \"$query\" > /tmp/messages.json &\n    slack-search \"$query\" > /tmp/slack.json &\n    gmail-search \"$query\" > /tmp/gmail.json &\n    \n    wait  # All complete\n    \n    # Aggregate and normalize to common schema:\n    # {platform, sender, timestamp, content, url}\n    aggregate_results /tmp/*.json\n}",
   "when_to_use": {
-    "en": ["Cross-platform search", "Unified inbox features", "Compliance/audit searches"],
-    "ko": ["크로스 플랫폼 검색", "통합 받은 편지함 기능", "컴플라이언스/감사 검색"]
+    "en": ["User asks \"where did someone mention X\"", "User needs to find a conversation but doesn't remember the platform", "Cross-platform audit or compliance searches", "Building unified inbox or communication hub features"],
+    "ko": ["사용자가 \"누가 X를 언급한 곳이 어디지\"라고 질문할 때", "사용자가 대화를 찾아야 하지만 플랫폼을 기억하지 못할 때", "크로스 플랫폼 감사 또는 컴플라이언스 검색", "통합 받은 편지함 또는 커뮤니케이션 허브 기능 구축"]
   },
   "pros": {
-    "en": ["Single query searches all platforms", "Parallel execution minimizes latency", "Extensible"],
-    "ko": ["단일 쿼리로 모든 플랫폼 검색", "병렬 실행으로 지연 최소화", "확장 가능"]
+    "en": ["Single query searches all platforms—no context switching", "Parallel execution minimizes latency (total time ≈ slowest platform)", "Unified format makes comparison and filtering easy", "Extensible: add new platforms without changing interface", "Reduces \"which platform was that on?\" friction"],
+    "ko": ["단일 쿼리로 모든 플랫폼 검색 - 컨텍스트 전환 불필요", "병렬 실행으로 지연 최소화 (총 시간 ≈ 가장 느린 플랫폼)", "통합 형식으로 비교 및 필터링 용이", "확장 가능: 인터페이스 변경 없이 새 플랫폼 추가", "\"어느 플랫폼에 있었지?\" 마찰 감소"]
   },
   "cons": {
-    "en": ["Maintain adapters for each platform", "Cross-platform ranking is subjective", "Privacy concerns"],
-    "ko": ["각 플랫폼용 어댑터 유지", "크로스 플랫폼 순위는 주관적", "프라이버시 우려"]
+    "en": ["Requires maintaining adapters for each platform", "Rate limits may apply across platforms simultaneously", "Result ranking across platforms is subjective", "Privacy/security: aggregating data across platforms increases exposure", "Some platforms have poor search APIs (result quality varies)"],
+    "ko": ["각 플랫폼용 어댑터 유지 필요", "여러 플랫폼에 동시에 속도 제한 적용 가능", "크로스 플랫폼 결과 순위는 주관적", "프라이버시/보안: 플랫폼 간 데이터 집계로 노출 증가", "일부 플랫폼의 검색 API가 부실 (결과 품질 편차)"]
   },
   "tags": ["search", "aggregation", "parallel", "communication", "unified-interface"]
 }

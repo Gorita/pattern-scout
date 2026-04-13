@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://www.anthropic.com/engineering/code-execution-with-mcp",
   "problem": {
-    "en": "Loading all tools upfront wastes context on unused capabilities and slows initialization.",
-    "ko": "모든 도구를 미리 로드하면 사용하지 않는 기능에 컨텍스트가 낭비되고 초기화가 느려집니다."
+    "en": "When agents have access to large tool catalogs (dozens to thousands of available tools), loading all tool definitions upfront consumes excessive context window space. Most tools won't be used in a given workflow, making this preloading wasteful and limiting the context available for actual task execution.",
+    "ko": "에이전트가 대규모 도구 카탈로그(수십에서 수천 개의 사용 가능한 도구)에 접근할 때, 모든 도구 정의를 미리 로드하면 컨텍스트 윈도우 공간을 과도하게 소비합니다. 대부분의 도구는 주어진 워크플로우에서 사용되지 않아 사전 로딩이 낭비적이며, 실제 작업 실행에 사용할 수 있는 컨텍스트가 제한됩니다."
   },
   "solution": {
-    "en": "Lazy-load tools based on task requirements, discovering and loading them progressively as needed.",
-    "ko": "작업 요구사항에 따라 도구를 지연 로드하고, 필요에 따라 점진적으로 발견하고 로드합니다."
+    "en": "Present tools through a filesystem-like hierarchy where agents discover capabilities on-demand by exploring the structure. This pattern scales to 1000+ tools and is production-validated across major platforms (MCP, Cloudflare Code Mode, OpenAI, LangChain).\n\nImplement a `search_tools` capability that allows agents to request different levels of detail:\n\n1. **Name only**: Minimal context for initial browsing\n2. **Name + description**: Enough to understand tool purpose\n3. **Full definition with schemas**: Complete API details only when needed\n\nTools are organized hierarchically (e.g., `servers/google-drive/getDocument.ts`, `servers/slack/sendMessage.ts`) so agents can:\n- List the `./servers/` directory to see available integrations\n- Navigate into specific server directories to find relevant tools\n- Load full definitions only for tools they intend to use\n\n```pseudo\n# Agent workflow\n1. list_directory(\"./servers/\")\n   → Returns: [\"google-drive/\", \"slack/\", \"github/\", ...]\n\n2. search_tools(pattern=\"google-drive/*\", detail_level=\"name+description\")\n   → Returns: Brief descriptions of Google Drive tools\n\n3. get_tool_definition(\"servers/google-drive/getDocument\")\n   → Returns: Full JSON schema with parameters, types, examples\n```",
+    "ko": "파일 시스템과 유사한 계층 구조를 통해 도구를 제공하여 에이전트가 구조를 탐색하며 필요에 따라 기능을 발견합니다. 이 패턴은 1000개 이상의 도구로 확장 가능하며 주요 플랫폼(MCP, Cloudflare Code Mode, OpenAI, LangChain)에서 프로덕션 검증되었습니다.\n\n에이전트가 다양한 수준의 세부 정보를 요청할 수 있는 `search_tools` 기능을 구현합니다:\n\n1. **이름만**: 초기 탐색을 위한 최소 컨텍스트\n2. **이름 + 설명**: 도구 목적을 이해하기에 충분한 정보\n3. **스키마 포함 전체 정의**: 필요할 때만 완전한 API 세부 정보"
   },
   "ascii_diagram": "┌─────────────┐\n│   Task      │\n│ \"Edit file\" │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Discover:   │\n│ file_tools  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Load:     │\n│ read, write │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Execute   │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Task Arrives] --> B{Tool Needed?}\n    B -->|Yes| C[Discover Available Tools]\n    C --> D[Load Required Tool]\n    D --> E[Execute with Tool]\n    E --> B\n    B -->|No| F[Complete Task]",
   "code_example": "class ProgressiveToolLoader:\n    def __init__(self):\n        self.tool_registry = {}  # Not loaded yet\n        self.loaded_tools = {}\n    \n    def get_tool(self, task_type):\n        if task_type not in self.loaded_tools:\n            tool_name = self.discover(task_type)\n            self.loaded_tools[task_type] = self.load(tool_name)\n        return self.loaded_tools[task_type]",
   "when_to_use": {
-    "en": ["Many tool environments", "Context optimization", "MCP server setups"],
-    "ko": ["많은 도구 환경", "컨텍스트 최적화", "MCP 서버 설정"]
+    "en": ["Systems with 20+ available tools or integrations", "Model Context Protocol (MCP) server implementations", "Plugin architectures where agents select from many capabilities"],
+    "ko": ["20개 이상의 도구 또는 통합이 있는 시스템", "Model Context Protocol (MCP) 서버 구현", "에이전트가 다수의 기능에서 선택하는 플러그인 아키텍처"]
   },
   "pros": {
-    "en": ["Context efficiency", "Fast startup", "Flexible scaling"],
-    "ko": ["컨텍스트 효율", "빠른 시작", "유연한 확장"]
+    "en": ["Reduces initial context consumption by 70-90% (based on production data)", "Scales to 1000+ tools efficiently", "Agents learn about tool ecosystem through exploration", "Natural mapping to code-based tool interfaces", "Supports versioning and deprecation gracefully"],
+    "ko": ["초기 컨텍스트 소비를 70-90% 절감 (프로덕션 데이터 기반)", "1000개 이상의 도구로 효율적 확장", "에이전트가 탐색을 통해 도구 생태계 학습", "코드 기반 도구 인터페이스와 자연스러운 매핑", "버전 관리 및 지원 중단을 우아하게 처리"]
   },
   "cons": {
-    "en": ["Discovery latency", "Tool indexing required"],
-    "ko": ["발견 지연", "도구 인덱싱 필요"]
+    "en": ["Adds discovery overhead (extra tool calls before execution)", "Requires thoughtful organization and naming schemes", "Less effective if agents need most tools anyway", "May require multiple round-trips to find the right tool"],
+    "ko": ["발견 오버헤드 추가 (실행 전 추가 도구 호출)", "체계적인 조직 및 명명 규칙 필요", "에이전트가 대부분의 도구를 필요로 하면 효과 감소", "적합한 도구를 찾기 위해 여러 번의 왕복이 필요할 수 있음"]
   },
   "tags": ["mcp", "tool-discovery", "context-optimization", "lazy-loading"]
 }

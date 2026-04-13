@@ -6,27 +6,63 @@
   "status": "emerging",
   "original_url": "https://github.com/anthropics/claude-code",
   "problem": {
-    "en": "Agents with many skills face routing problems; users don't know what phrases activate which capabilities.",
-    "ko": "많은 스킬을 가진 에이전트가 라우팅 문제에 직면합니다. 사용자는 어떤 문구가 어떤 기능을 활성화하는지 모릅니다."
+    "en": "Agents with many skills face a routing problem: given a user's natural language input, which skill should handle it? Solutions like embedding-based similarity or LLM classification work but are opaque—users don't know what phrases will activate which capabilities. Additionally, agents may have skills that should activate proactively (without explicit request) when certain topics arise, but without explicit trigger lists, the agent may miss opportunities or activate inappropriately.",
+    "ko": "많은 스킬을 가진 에이전트는 라우팅 문제에 직면합니다: 사용자의 자연어 입력이 주어졌을 때 어떤 스킬이 처리해야 하는가? 임베딩 기반 유사성이나 LLM 분류 같은 솔루션은 작동하지만 불투명합니다 - 사용자는 어떤 문구가 어떤 기능을 활성화하는지 알 수 없습니다. 또한 에이전트에는 특정 주제가 발생할 때 명시적 요청 없이 능동적으로 활성화해야 하는 스킬이 있을 수 있지만, 명시적 트리거 목록 없이는 에이전트가 기회를 놓치거나 부적절하게 활성화할 수 있습니다."
   },
   "solution": {
-    "en": "Define explicit trigger vocabularies for each skill and document them visibly so users can learn the activation patterns.",
-    "ko": "각 스킬에 대한 명시적 트리거 어휘를 정의하고 사용자가 활성화 패턴을 배울 수 있도록 가시적으로 문서화합니다."
+    "en": "Define an explicit **trigger vocabulary** for each skill: a list of phrases, keywords, and patterns that should activate that skill. Document these triggers visibly so both humans and agents know the activation criteria.\n\n```yaml\n# Skill definition with explicit triggers\nskill: priority-report\ndescription: Generate prioritized task report\n\ntriggers:\n  exact: [\"sup\", \"priority report\", \"standup prep\"]\n  contains: [\"what should I work on\", \"what's pending\", \"my tasks\"]\n  patterns: [\"what.*on my plate\", \"action items\"]\n\nproactive: true  # Activate without explicit request when triggers match\n```\n\n**Key components:**\n\n1. **Trigger lists**: Explicit phrases per skill, documented in skill definitions\n2. **Proactive flag**: Whether skill should auto-activate on trigger match\n3. **Priority ordering**: When multiple skills match, which takes precedence\n4. **User visibility**: Triggers documented so users learn the vocabulary\n\n**Proactive activation categories:**\n\n- **Information offering**: Providing relevant information unprompted\n- **Suggestion**: Recommending actions or content\n- **Clarification**: Asking for missing information\n- **Correction**: Fixing user errors or misunderstandings\n\nUser acceptance of proactive activation depends on relevance (contextually appropriate), timing (not interrupting flow), and transparency (explaining why the action was taken).",
+    "ko": "각 스킬에 대해 명시적 **트리거 어휘**를 정의합니다: 해당 스킬을 활성화해야 하는 문구, 키워드, 패턴 목록입니다. 이러한 트리거를 가시적으로 문서화하여 인간과 에이전트 모두 활성화 기준을 알 수 있도록 합니다.\n\n핵심 구성 요소:\n\n1. 트리거 목록: 스킬 정의에 문서화된 스킬별 명시적 문구\n2. 능동적 플래그: 트리거 매칭 시 스킬이 자동 활성화되어야 하는지 여부\n3. 우선순위 정렬: 여러 스킬이 매칭될 때 어떤 것이 우선하는지\n4. 사용자 가시성: 사용자가 어휘를 학습할 수 있도록 트리거 문서화\n\n능동적 활성화의 사용자 수용은 관련성(컨텍스트에 적합), 타이밍(흐름을 방해하지 않음), 투명성(왜 해당 조치를 취했는지 설명)에 따라 결정됩니다."
   },
   "ascii_diagram": "┌─────────────────────┐\n│   User Input        │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│  Match Triggers?    │\n├─────────────────────┤\n│ \"sup\" → priority    │\n│ \"hn\"  → hn-search   │\n│ \"mail\"→ email-triage│\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│ Route to Skill      │\n└─────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Input] --> B{Match Triggers?}\n    B -->|sup| C[priority-report skill]\n    B -->|search hn| D[hn-search skill]\n    B -->|check mail| E[email-triage skill]\n    B -->|No match| F[General response]",
   "code_example": "# Skill definition with explicit triggers\nskill_config = {\n    'name': 'priority-report',\n    'triggers': {\n        'exact': ['sup', 'priority report', 'standup prep'],\n        'contains': ['what should I work on', 'my tasks'],\n        'patterns': ['what.*on my plate']\n    },\n    'proactive': True  # Activate without explicit request\n}",
   "when_to_use": {
-    "en": ["Multi-skill agents", "User-facing assistants", "Predictable routing needs"],
-    "ko": ["멀티 스킬 에이전트", "사용자 대상 어시스턴트", "예측 가능한 라우팅 필요"]
+    "en": [
+      "Multi-skill agents needing deterministic routing",
+      "User-facing assistants where discoverability matters",
+      "Agents with proactive capabilities that should activate on topic match",
+      "Systems requiring predictable, debuggable skill activation"
+    ],
+    "ko": [
+      "결정론적 라우팅이 필요한 멀티 스킬 에이전트",
+      "발견 가능성이 중요한 사용자 대상 어시스턴트",
+      "주제 매칭 시 활성화해야 하는 능동적 기능을 가진 에이전트",
+      "예측 가능하고 디버깅 가능한 스킬 활성화가 필요한 시스템"
+    ]
   },
   "pros": {
-    "en": ["Transparent", "Predictable", "Fast matching", "Documentable"],
-    "ko": ["투명함", "예측 가능", "빠른 매칭", "문서화 가능"]
+    "en": [
+      "Transparent: users can learn trigger phrases, feel in control",
+      "Predictable: same input always routes to same skill",
+      "Debuggable: easy to see why a skill activated (or didn't)",
+      "Fast: string matching faster than embedding lookup",
+      "Documentable: triggers become part of user-facing docs",
+      "Proactive: agent can jump in when relevant topics arise"
+    ],
+    "ko": [
+      "투명함: 사용자가 트리거 문구를 학습하고 제어감을 느낌",
+      "예측 가능: 동일한 입력이 항상 동일한 스킬로 라우팅",
+      "디버깅 용이: 스킬이 활성화된(또는 안 된) 이유를 쉽게 파악",
+      "빠름: 문자열 매칭이 임베딩 조회보다 빠름",
+      "문서화 가능: 트리거가 사용자 대상 문서의 일부가 됨",
+      "능동적: 관련 주제가 발생할 때 에이전트가 개입 가능"
+    ]
   },
   "cons": {
-    "en": ["Rigid (misses paraphrases)", "Maintenance overhead", "Cultural/language bias"],
-    "ko": ["경직됨 (의역 놓침)", "유지보수 오버헤드", "문화/언어 편향"]
+    "en": [
+      "Rigid: misses paraphrases not in trigger list",
+      "Maintenance: must update triggers as vocabulary evolves",
+      "Conflicts: multiple skills may want same triggers",
+      "Cultural/language bias: triggers may not translate",
+      "Discovery: users must learn the vocabulary (or read docs)"
+    ],
+    "ko": [
+      "경직됨: 트리거 목록에 없는 의역을 놓침",
+      "유지보수: 어휘가 발전함에 따라 트리거를 업데이트해야 함",
+      "충돌: 여러 스킬이 동일한 트리거를 원할 수 있음",
+      "문화/언어 편향: 트리거가 번역되지 않을 수 있음",
+      "발견: 사용자가 어휘를 학습해야 함 (또는 문서를 읽어야 함)"
+    ]
   },
   "tags": ["ux", "triggers", "intent-detection", "skill-routing"]
 }
