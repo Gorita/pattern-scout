@@ -356,27 +356,29 @@
     "title": "Memory Synthesis from Execution Logs",
     "title_ko": "실행 로그에서 메모리 합성",
     "category": "Context & Memory",
-    "description": "Individual task transcripts contain valuable learnings but are too specific, scattered across logs, and hard to abstract Implement two-tier memory: 1) Task diaries - agent writes structured logs for e",
-    "problem": "Individual task transcripts contain valuable learnings but are too specific, scattered across logs, and hard to abstract. Simply memorizing everything creates noise; ignoring everything loses valuable patterns.",
-    "solution": "Implement two-tier memory: 1) Task diaries - agent writes structured logs for each task (what tried, what failed, why), 2) Synthesis agents - periodically review multiple logs to extract reusable patterns. Feed insights back into system prompts and commands.",
+    "description": "Individual task execution transcripts contain valuable learnings, but they are too specific, have unknown relevance to future tasks, are scattered across hundreds of conversation logs, and present an ",
+    "problem": "Individual task execution transcripts contain valuable learnings, but they are too specific, have unknown relevance to future tasks, are scattered across hundreds of conversation logs, and present an abstraction challenge. Simply memorizing everything creates noise; ignoring everything loses valuable patterns.",
+    "solution": "Implement a **two-tier memory system**:\n\n1. **Task diaries**: Agent writes structured logs for each task (what it tried, what failed, why)\n2. **Synthesis agents**: Periodically review multiple task logs to extract reusable patterns\n\nThe synthesis step identifies recurring themes across logs, surfacing insights that aren't obvious from any single execution. This approach is validated by academic research: Reflexion (NeurIPS 2023) achieved 91% pass@1 on HumanEval using episodic memory with self-reflection, and Stanford's Generative Agents paper demonstrates \"reflection\" mechanisms that synthesize higher-level insights from multiple memories.\n\nStructured formats (event, outcome, rationale) outperform raw conversation logs—validated by Reflexion's \"memory blob\" structure and ParamMem's finding that structured records reduce repetition and improve synthesis.",
     "when_to_use": [
-      "Teams doing many similar tasks",
-      "Building institutional knowledge",
-      "Reducing repeated mistakes",
-      "Evolving agent capabilities over time"
+      "Phase 1 - Structured logging: Configure agents to write task diaries in consistent format covering what was attempted, what failed, what succeeded, edge cases discovered, and patterns that might generalize.",
+      "Phase 2 - Periodic synthesis: Run synthesis agents over recent logs (weekly, after N tasks, etc.) to identify patterns appearing in 3+ tasks.",
+      "Phase 3 - Knowledge integration: Feed synthesized insights back into system prompts (CLAUDE.md), reusable commands, automated checks/hooks, and test suites."
     ],
     "pros": [
-      "Pattern detection humans might miss",
-      "Right abstraction level via synthesis",
-      "Automatic knowledge extraction",
-      "Evidence-based patterns"
+      "Pattern detection: Finds recurring issues humans might miss",
+      "Right abstraction level: Synthesis across multiple tasks reveals what's general",
+      "Automatic knowledge extraction: Don't rely on humans remembering to document",
+      "Evolving memory: System learns and improves over time",
+      "Evidence-based: Patterns backed by multiple occurrences, not speculation"
     ],
     "cons": [
-      "Storage overhead for all logs",
-      "Synthesis requires sophisticated agents",
-      "May identify false patterns",
-      "Token costs for synthesis",
-      "Privacy concerns in logs"
+      "Storage overhead: Must persist all task logs",
+      "Synthesis complexity: Requires sophisticated agents to extract good patterns",
+      "False patterns: May identify coincidental correlations",
+      "Maintenance burden: Synthesized rules need periodic review",
+      "Privacy concerns: Logs may contain sensitive information",
+      "Token costs: Synthesis over many logs is expensive",
+      "Cold start problem: Insufficient data for reliable pattern extraction initially"
     ],
     "tags": [
       "memory",
@@ -987,27 +989,33 @@
     "title": "Self-Critique Evaluator Loop",
     "title_ko": "자기 비판 평가자 루프",
     "category": "Feedback Loops",
-    "description": "Human preference labels are costly and quickly become outdated as base models improve Train a self-taught evaluator that bootstraps from synthetic data, generating its own critiques and improving iter",
-    "problem": "Human preference labels are costly and quickly become outdated as base models improve.",
-    "solution": "Train a self-taught evaluator that bootstraps from synthetic data, generating its own critiques and improving iteratively.",
+    "description": "Human-labeled preference datasets are expensive to produce, slow to refresh, and quickly stale as base models and domains change Train a **self-taught evaluator** that bootstraps from synthetic data:\n",
+    "problem": "Human-labeled preference datasets are expensive to produce, slow to refresh, and quickly stale as base models and domains change. Teams need scalable evaluation signals that can keep pace with model evolution without waiting on large annotation cycles. Risk of evaluator collapse and bias amplification must be mitigated.",
+    "solution": "Train a **self-taught evaluator** that bootstraps from synthetic data:\n\n1. Generate multiple candidate outputs for an instruction.\n2. Ask the model to judge and explain which is better (reasoning trace).\n3. Fine-tune that judge on its own traces; iterate.\n4. Use the judge as a reward model or quality gate for the main agent.\n5. Periodically refresh with new synthetic debates to stay ahead of model drift.\n\n**Dual-model variant** (RLAIF): Use a separate critic model to evaluate the generator, reducing bias at higher cost.\n\nTo prevent evaluator collapse, keep evaluation prompts and generation prompts partially decoupled, inject adversarial counterexamples, and benchmark against a small human-labeled anchor set.",
     "when_to_use": [
-      "Reward model training",
-      "Quality evaluation",
-      "Synthetic data generation"
+      "Start with one narrow domain and define objective judge criteria before training.",
+      "Maintain a fixed holdout set with periodic human audits to detect evaluator drift.",
+      "Use the evaluator as a gate first, then expand to reward-shaping once reliability is proven.",
+      "Track disagreement rates between evaluator and human reviewers.",
+      "Consider dual-model setup (separate critic) for reduced bias in high-stakes domains."
     ],
     "pros": [
+      "Scales evaluation coverage quickly and reduces dependence on expensive human labeling",
       "Near-human eval accuracy without labels",
-      "Scales with compute"
+      "~100x cost reduction vs human labels (RLAIF)"
     ],
     "cons": [
+      "Can overfit to synthetic preferences and needs careful anti-collusion safeguards",
       "Risk of evaluator-model collusion",
-      "Needs adversarial tests"
+      "Needs adversarial tests and human anchors"
     ],
     "tags": [
       "self-critique",
       "evaluator",
       "reward-model",
-      "synthetic-data"
+      "synthetic-data",
+      "reflexion",
+      "rlaif"
     ],
     "related": []
   },
@@ -1046,21 +1054,24 @@
     "title": "Spec-As-Test Feedback Loop",
     "title_ko": "스펙을 테스트로 사용하는 피드백 루프",
     "category": "Feedback Loops",
-    "description": "Even in spec-first projects, implementations can drift as code evolves Generate executable assertions directly from the spec and let the agent auto-regenerate test suites on spec/code commits",
-    "problem": "Even in spec-first projects, implementations can drift as code evolves. Silent divergence erodes trust.",
-    "solution": "Generate executable assertions directly from the spec and let the agent auto-regenerate test suites on spec/code commits.",
+    "description": "Even in spec-first projects, implementations can drift as code evolves and the spec changes (or vice-versa) Generate **executable assertions** directly from the spec (e",
+    "problem": "Even in spec-first projects, implementations can drift as code evolves and the spec changes (or vice-versa). Silent divergence erodes trust.",
+    "solution": "Generate **executable assertions** directly from the spec (e.g., unit or integration tests) and let the agent:\n\n- Watch for any spec or code commit.\n- Auto-regenerate test suite from latest spec snapshot.\n- Run tests; if failures appear, open an *agent-authored* PR that either:\n  - updates code to match spec, or\n  - flags unclear spec segments for human review.\n\nThis creates a continuous feedback loop ensuring specification and implementation remain synchronized.\n\n**Four-phase architecture:**\n1. Specification Layer: Parse specs (YAML/JSON/BDD) into internal representation\n2. Test Generation Layer: Create executable tests (unit, integration, property)\n3. Execution Layer: Run tests in parallel via CI/CD\n4. Feedback Layer: Route failures to auto-fix PRs or human review",
     "when_to_use": [
-      "Spec-driven development",
-      "Contract-first APIs",
-      "Compliance-critical systems"
+      "Use this when agent quality improves only after iterative critique or retries.",
+      "Start with one objective metric and one feedback loop trigger.",
+      "Record failure modes so each loop produces reusable learning artifacts."
     ],
     "pros": [
-      "Catches drift early",
-      "Keeps spec and impl in lock-step"
+      "Catches drift early; prevents silent spec-implementation divergence",
+      "Immune to 'pass by deletion' when combined with immutable feature lists",
+      "Provides measurable progress metrics (X/Y features passing)",
+      "Survives session boundaries; test state persists across context loss"
     ],
     "cons": [
-      "Heavy CI usage",
-      "False positives if spec wording is too loose"
+      "Heavy CI usage; false positives if spec wording is ambiguous",
+      "Upfront spec investment required; overhead exceeds benefit for small/one-off tasks",
+      "Test explosion risk without intelligent selection; spec churn creates test churn"
     ],
     "tags": [
       "validation",
@@ -1281,23 +1292,30 @@
     "title": "Skill Library Evolution",
     "title_ko": "스킬 라이브러리 진화",
     "category": "Learning & Adaptation",
-    "description": "Agents frequently solve similar problems but must rediscover solutions each time, wasting tokens and time Persist working code implementations as reusable functions in a skills/ directory",
-    "problem": "Agents frequently solve similar problems but must rediscover solutions each time, wasting tokens and time. Organizations want agents to build up capability over time.",
-    "solution": "Persist working code implementations as reusable functions in a skills/ directory. Over time, these evolve into documented, tested skills that become higher-level agent capabilities.",
+    "description": "Agents frequently solve similar problems across different sessions or workflows Agents persist working code implementations as reusable functions in a `skills/` directory",
+    "problem": "Agents frequently solve similar problems across different sessions or workflows. Without a mechanism to preserve and reuse working code, agents must rediscover solutions each time, wasting tokens and time. Organizations want agents to build up capability over time rather than starting from scratch every session.",
+    "solution": "Agents persist working code implementations as reusable functions in a `skills/` directory. Over time, these implementations evolve into well-documented, tested \"skills\" that become higher-level capabilities the agent can leverage.\n\n**Skill types:**\n- **Atomic skills**: Single-purpose functions (e.g., `analyze_sentiment`) that serve as building blocks\n- **Composite skills**: Multi-step workflows that combine atomic skills into higher-level capabilities\n\n**Progressive disclosure with on-demand loading (Imprint approach):**\nInstead of loading all skills into context, inject skill descriptions into system prompt and provide a `load_skills` tool for full content.\n\n**Lazy-loading MCP tools via skills (Amp approach):**\nMCP servers often expose many tools that consume significant context. Bind MCP servers to skills with selective tool loading.\n\n**Token savings example:**\n- chrome-devtools MCP: 26 tools = 17k tokens\n- Lazy-loaded subset: 4 tools = 1.5k tokens (91% reduction)",
     "when_to_use": [
-      "Recurring problem patterns",
-      "Building organizational knowledge base",
-      "Long-running agent projects"
+      "Ad-hoc to Saved: Agent writes code to solve immediate problem; if solution works, save to skills/ directory with descriptive names.",
+      "Saved to Reusable: Refactor for generalization (parameterize hard-coded values), add basic error handling, create simple function signature.",
+      "Reusable to Documented: Add docstrings with purpose, parameters, returns, examples; include prerequisites or dependencies; note when last tested.",
+      "Documented to Capability: Agent can discover skills through directory listing; skills become part of agent's effective capability set; skills are composed into higher-level workflows."
     ],
     "pros": [
-      "Builds capability over time",
-      "Reduces redundant work",
-      "Skills can be tested and versioned"
+      "Builds agent capability over time",
+      "Reduces redundant problem-solving across sessions",
+      "Creates organizational knowledge base in code form",
+      "Skills can be tested, versioned, and improved",
+      "Enables composition of higher-level capabilities",
+      "Reduces token consumption (reuse vs. rewrite)"
     ],
     "cons": [
-      "Requires discipline to save/organize",
-      "Skills can become stale",
-      "Quality varies"
+      "Requires discipline to save and organize skills",
+      "Skills can become stale or outdated",
+      "Need maintenance and testing infrastructure",
+      "Namespace conflicts if skills grow large",
+      "Agents must be prompted to check skills before writing new code",
+      "Quality varies (not all saved code is good code)"
     ],
     "tags": [
       "code-reuse",
@@ -2323,23 +2341,28 @@
     "title": "Parallel Tool Call Learning",
     "title_ko": "병렬 도구 호출 학습",
     "category": "Orchestration & Control",
-    "description": "Agents execute tool calls sequentially even when they could run in parallel, causing unnecessary latency Use Agent RFT to teach the model to parallelize independent tool calls",
-    "problem": "Agents execute tool calls sequentially even when they could run in parallel, causing unnecessary latency. Base models may not naturally parallelize without training signal.",
-    "solution": "Use Agent RFT to teach the model to parallelize independent tool calls. The model discovers through RL exploration that parallel patterns receive similar rewards in less time.",
+    "description": "Agents often execute tool calls sequentially even when they could run in parallel **Use Agent RFT to teach the model to parallelize independent tool calls, dramatically reducing latency when tool exec",
+    "problem": "Agents often execute tool calls sequentially even when they could run in parallel. This causes unnecessary latency as sequential calls add up when tool execution time dominates inference time, inefficient exploration where the agent waits for one result before deciding the next action, poor tool utilization with multiple independent information needs handled one-by-one, and suboptimal learned behavior since base models may not naturally parallelize without training signal.",
+    "solution": "**Use Agent RFT to teach the model to parallelize independent tool calls, dramatically reducing latency when tool execution is faster than inference.**\n\nDuring RL exploration, the agent discovers that multiple tool calls can be made simultaneously, and when tool results arrive together the next reasoning step has more context. Parallel patterns receive similar rewards in less time.\n\n**Tool Classification for Safe Parallelization:**\n\nAgents learn to distinguish between:\n- **Read-only tools**: Safe to parallelize (search, read_file, list)\n- **State-modifying tools**: Require serialization (write_file, delete, state-changing APIs)\n\n**Natural Emergence through RL:**\n\nUnlike explicit programming, the parallelization emerges from exploration, reward shaping (faster completions may get slight bonuses), efficiency pressure (light penalty on token usage), and pattern reinforcement (successful parallel patterns get reinforced).",
     "when_to_use": [
-      "Tool execution faster than inference",
-      "Independent information gathering",
-      "Broad exploration phases"
+      "Tool execution time is much less than inference time (e.g., API calls, database queries, file reads)",
+      "Independent information gathering with multiple search queries or reading multiple files",
+      "Broad exploration phases such as initial reconnaissance (find all Python files, check all tests simultaneously)",
+      "Infrastructure supports parallel tool execution with async and multiple workers"
     ],
     "pros": [
-      "40-50% latency reduction",
-      "Emerges naturally from training",
-      "Adapts to specific tools"
+      "Dramatic latency reduction: 40-50% reduction common when applicable",
+      "No manual coding: Parallelization emerges from training, not programming",
+      "Adaptive: Model learns optimal parallelization for your specific tools and tasks",
+      "Scales naturally: Works across different numbers of tools and complexity levels",
+      "Better UX: Faster agent responses improve user experience"
     ],
     "cons": [
-      "Infrastructure must support concurrent requests",
-      "Higher peak resource usage",
-      "Debugging complexity"
+      "Infrastructure requirements: Tool servers must handle concurrent requests",
+      "Resource usage: More simultaneous tool calls means higher peak resource usage",
+      "Doesn't always emerge: Requires enough variance in training data",
+      "May need reward shaping: Explicit latency bonuses can help if parallelization doesn't emerge naturally",
+      "Debugging complexity: Parallel execution makes traces harder to follow"
     ],
     "tags": [
       "parallelization",
@@ -2461,28 +2484,39 @@
     "title": "Progressive Complexity Escalation",
     "title_ko": "점진적 복잡성 확대",
     "category": "Orchestration & Control",
-    "description": "Organizations deploy AI agents with overly ambitious capabilities from day one, leading to unreliable outputs Start with low-complexity, high-reliability tasks and progressively unlock more complex ca",
-    "problem": "Organizations deploy AI agents with overly ambitious capabilities from day one, leading to unreliable outputs.",
-    "solution": "Start with low-complexity, high-reliability tasks and progressively unlock more complex capabilities as trust is established.",
+    "description": "Organizations deploy AI agents with overly ambitious capabilities from day one, leading to unreliable outputs when agents tackle tasks beyond current model capabilities, failed implementations that da",
+    "problem": "Organizations deploy AI agents with overly ambitious capabilities from day one, leading to unreliable outputs when agents tackle tasks beyond current model capabilities, failed implementations that damage stakeholder confidence, complex reasoning tasks producing inconsistent results, wasted engineering effort building infrastructure for capabilities models can't yet deliver, and safety risks from autonomous execution of high-stakes operations. The gap between theoretical agent capabilities and practical reliability creates deployment failures.",
+    "solution": "Design agent systems to start with low-complexity, high-reliability tasks and progressively unlock more complex capabilities as models improve and trust is established. Match task complexity to current model capabilities rather than building to theoretical potential.\n\n**Core principles:**\n\n- Draws from curriculum learning theory and scaffolding research\n- Optimal learning occurs at 70-90% success rate (Zone of Proximal Development)\n- Start with tasks \"too dynamic for traditional automation, but predictable enough for AI to handle reliably\"\n- Define capability tiers (Tier 1: data entry/research, Tier 2: multi-step workflows with human gates, Tier 3: autonomous decision-making)\n- Performance metrics trigger capability expansion with human review gates before promoting to higher tiers",
     "when_to_use": [
-      "Production deployments",
-      "High-stakes domains",
-      "New agent capabilities"
+      "Deploying agents into production environments",
+      "Building internal automation tools",
+      "Customer-facing agent applications",
+      "High-stakes or regulated domains",
+      "New agent capabilities with unproven reliability"
     ],
     "pros": [
-      "Risk mitigation",
-      "Stakeholder confidence building",
-      "Focused engineering"
+      "Risk mitigation: Limits blast radius of agent errors",
+      "Stakeholder confidence: Builds trust through proven reliability",
+      "Focused engineering: Resources spent on proven capabilities",
+      "Graceful degradation: System remains useful even at lower tiers",
+      "Model evolution readiness: Architecture prepared for capability growth",
+      "Realistic expectations: Aligns deployment with actual model performance"
     ],
     "cons": [
-      "Delayed full value",
-      "Tier management complexity"
+      "Delayed value: Full automation benefits realized over time, not immediately",
+      "Complexity: Requires tier management and promotion logic",
+      "Maintenance overhead: Multiple capability paths to test and maintain",
+      "Promotion friction: Manual review of metrics and promotion decisions",
+      "User confusion: Inconsistent capabilities across deployment phases",
+      "Engineering investment: Building infrastructure for future capabilities"
     ],
     "tags": [
       "capabilities",
       "gradual-rollout",
       "risk-management",
-      "trust-building"
+      "evolution",
+      "adaptive-systems",
+      "complexity-management"
     ],
     "related": []
   },
@@ -2688,29 +2722,37 @@
     "title": "Swarm Migration Pattern",
     "title_ko": "스웜 마이그레이션 패턴",
     "category": "Orchestration & Control",
-    "description": "Large-scale migrations require changes across hundreds of files, exceeding single agent capacity Spawn multiple sub-agents in parallel (like a swarm), each handling a subset of files, then merge resul",
-    "problem": "Large-scale migrations require changes across hundreds of files, exceeding single agent capacity.",
-    "solution": "Spawn multiple sub-agents in parallel (like a swarm), each handling a subset of files, then merge results.",
+    "description": "Large-scale code migrations are time-consuming when done sequentially:\n\n- Framework upgrades (e Use a **swarm architecture** where the main agent orchestrates 10-20 parallel subagents working simultan",
+    "problem": "Large-scale code migrations are time-consuming when done sequentially:\n\n- Framework upgrades (e.g., testing library A to testing library B)\n- Lint rule rollouts across hundreds of files\n- API migrations when dependencies change\n- Code modernization (e.g., class components to hooks)\n- Refactoring patterns across the codebase\n\nHumans doing these manually is tedious; single agents doing them sequentially is slow.",
+    "solution": "Use a **swarm architecture** where the main agent orchestrates 10-20 parallel subagents working simultaneously on independent chunks of the migration.\n\n**Pattern:**\n\n1. **Main agent creates migration plan**: Enumerate all files/targets needing migration\n2. **Create todo list**: Break work into parallelizable chunks\n3. **Spawn subagent swarm**: Start 10+ agents concurrently, each taking N items\n4. **Map-reduce execution**: Each subagent migrates its chunk independently\n5. **Verification**: Main agent validates results, may spawn additional agents for fixes\n6. **Consolidation**: Combine results (single PR or coordinated merge)",
     "when_to_use": [
-      "Framework upgrades",
-      "API migrations",
-      "Large-scale refactoring"
+      "Lint rule enforcement: Apply new ESLint/Biome rules across files",
+      "Framework migration: Jest to Vitest, Mocha to Jest, etc.",
+      "API updates: Update to new library versions",
+      "Code modernization: var to const/let, callbacks to async/await",
+      "Import path changes: Relative to absolute paths"
     ],
     "pros": [
-      "Massive parallelization",
-      "Fast completion",
-      "Failure isolation"
+      "Massive parallelization: 6-10x speedup vs. sequential migration",
+      "Easy verification: Each subagent handles tractable chunk",
+      "Fault isolation: One subagent failing doesn't break others",
+      "Cost-effective for scale: 100x+ ROI despite 10x token cost increase",
+      "Reproducible: Same migration applied consistently across all files"
     ],
     "cons": [
-      "Coordination complexity",
-      "Merge conflicts",
-      "Higher costs"
+      "High token cost: Running 10+ agents simultaneously",
+      "Coordination complexity: Main agent must track all subagents",
+      "Merge conflicts: Parallel changes might conflict",
+      "Requires independence: Only works if migration targets are separable",
+      "Verification burden: Need to validate 10+ agent outputs"
     ],
     "tags": [
       "swarm",
       "map-reduce",
       "migration",
-      "parallelization"
+      "parallelization",
+      "sub-agents",
+      "scalability"
     ],
     "related": []
   },
@@ -2821,23 +2863,21 @@
     "title": "Tree-of-Thought Reasoning",
     "title_ko": "생각의 나무 추론",
     "category": "Orchestration & Control",
-    "description": "Linear chain-of-thought limits exploration of alternative solution paths and can get stuck in local optima Explore multiple reasoning branches in parallel, evaluating and pruning paths systematically ",
-    "problem": "Linear chain-of-thought limits exploration of alternative solution paths and can get stuck in local optima.",
-    "solution": "Explore multiple reasoning branches in parallel, evaluating and pruning paths systematically to find optimal solutions.",
+    "description": "Linear reasoning commits early to one path and can fail silently when intermediate assumptions are wrong Explore a search tree of intermediate thoughts instead of a single chain",
+    "problem": "Linear reasoning commits early to one path and can fail silently when intermediate assumptions are wrong. On complex planning or synthesis tasks, this causes premature convergence, weak recovery from mistakes, and missed alternatives that a broader search would discover.",
+    "solution": "Explore a search tree of intermediate thoughts instead of a single chain. Generate multiple candidate continuations, score partial states, prune weak branches, and continue expanding the most promising paths until a stopping condition is met.\n\nThis turns reasoning into guided search: backtracking is explicit, branch quality is measurable, and the final answer can be chosen from competing candidates rather than the first trajectory.\n\nThe quality of the evaluation function significantly impacts performance—external verifiers (code execution, tests) outperform self-reflection scoring.\n\n```pseudo\nqueue = [root_problem]\nwhile queue:\n    thought = queue.pop()\n    for step in expand(thought):\n        score = evaluate(step)\n        queue.push((score, step))\n    prune_weak_branches(queue)\nselect_best(queue)\n```",
     "when_to_use": [
-      "Math problems",
-      "Game strategies",
-      "Complex decision making"
+      "Apply when tasks benefit from exploring many potential strategies—puzzles, code generation, or planning. Use heuristics or a value function to prune unpromising branches.",
+      "Algorithm variants: BFS for exhaustive exploration, DFS for deep paths with limited memory, Beam search for memory-constrained scenarios with good heuristics."
     ],
     "pros": [
-      "Better solution exploration",
-      "Systematic evaluation",
-      "Backtracking possible"
+      "Covers more possibilities; improves reliability on hard tasks (22-28% over CoT on multi-step reasoning)",
+      "Enables explicit backtracking from failed paths"
     ],
     "cons": [
-      "High computational cost",
-      "Complex implementation",
-      "Risk of branch explosion"
+      "Higher compute cost (3-10x more tokens than Chain-of-Thought)",
+      "Needs a good evaluation function to guide search",
+      "Inherently slower latency; overkill for simple linear tasks"
     ],
     "tags": [
       "branching",
@@ -4151,22 +4191,29 @@
     "title": "Dual-Use Tool Design",
     "title_ko": "이중 사용 도구 설계",
     "category": "Tool Use & Environment",
-    "description": "Maintaining separate tools for humans and agents creates overhead and inconsistent behavior Design all tools to be equally accessible and usable by both humans and AI agents",
-    "problem": "Maintaining separate tools for humans and agents creates overhead and inconsistent behavior.",
-    "solution": "Design all tools to be equally accessible and usable by both humans and AI agents.",
+    "description": "Building separate tools for humans and AI agents creates maintenance overhead (two implementations of similar functionality), inconsistent behavior (human tools work differently than agent tools), lea",
+    "problem": "Building separate tools for humans and AI agents creates maintenance overhead (two implementations of similar functionality), inconsistent behavior (human tools work differently than agent tools), learning curve (users must learn one interface, agents another), feature drift (human and agent capabilities diverge over time), and testing burden (must validate both interfaces separately).",
+    "solution": "Design all tools to be **dual-use**—equally accessible and useful to both humans and AI agents. When a human can invoke a tool manually, the agent should be able to call it programmatically, and vice versa.\n\n**Core principle**: \"Everything you can do, Claude can do. There's nothing in between.\"\n\n**Academic support**: Validated by LLM-HAS research (arXiv:2505.00753, 2025) showing shared interfaces reduce coordination overhead and improve human-agent collaboration.\n\n**Key characteristics of dual-use tools:**\n1. **Same interface**: Humans and agents use identical APIs/commands\n2. **Shared logic**: One implementation serves both use cases\n3. **Composable**: Tools can be chained by either humans or agents\n4. **Observable**: Both see the same outputs (transparency)\n5. **Documented once**: Single source of truth for behavior",
     "when_to_use": [
-      "CLI tool development",
-      "Slash command design",
-      "Automation pipelines"
+      "Start with human ergonomics: If it makes sense to humans, it usually makes sense to agents.",
+      "Make everything scriptable: What humans can click, agents should be able to call.",
+      "Shared state visibility: Both see the same terminal output, file changes, etc.",
+      "Consistent permissions: Same security rules apply to both.",
+      "Unified logging: Single structured log stream (JSONL) that both can parse."
     ],
     "pros": [
-      "Reduced maintenance",
-      "Consistent behavior",
-      "Shared improvements"
+      "Reduced maintenance: One tool implementation serves both audiences",
+      "Consistency: Identical behavior whether human or agent invokes",
+      "Shared improvements: Optimizations benefit both use cases",
+      "Easier testing: Single test suite validates both paths",
+      "Better UX: Humans can replicate agent workflows manually",
+      "Transparency: Agents use the same observable tools humans understand"
     ],
     "cons": [
-      "Design constraints",
-      "Optimization trade-offs"
+      "Design constraints: Must satisfy both human ergonomics AND API cleanliness",
+      "May compromise optimization: Separate tools could be more specialized",
+      "Complexity in edge cases: Some behaviors might need conditional logic",
+      "Documentation challenge: Must explain dual usage clearly"
     ],
     "tags": [
       "tools",
@@ -4886,29 +4933,39 @@
     "title": "Human-in-the-Loop Approval Framework",
     "title_ko": "휴먼 인 더 루프 승인 프레임워크",
     "category": "UX & Collaboration",
-    "description": "Fully autonomous agents may take risky actions without human oversight, leading to costly mistakes Route high-risk operations through human approval gates via Slack, email, or other channels before ex",
-    "problem": "Fully autonomous agents may take risky actions without human oversight, leading to costly mistakes.",
-    "solution": "Route high-risk operations through human approval gates via Slack, email, or other channels before execution.",
+    "description": "Autonomous AI agents need to execute high-risk or irreversible operations (database modifications, production deployments, system configurations, API calls) but allowing unsupervised execution creates",
+    "problem": "Autonomous AI agents need to execute high-risk or irreversible operations (database modifications, production deployments, system configurations, API calls) but allowing unsupervised execution creates unacceptable safety and compliance risks. Blocking all such operations defeats the purpose of agent automation.",
+    "solution": "Systematically insert human approval gates for designated high-risk functions while maintaining agent autonomy for safe operations. Create lightweight feedback loops that enable time-sensitive human decisions without blocking the entire agent workflow.\n\n**Core components:**\n\n- **Risk classification**: Identify functions requiring human approval, define approval criteria (cost thresholds, data sensitivity, reversibility)\n- **Multi-channel approval interface**: Slack integration for real-time notifications, email for asynchronous approvals, SMS for urgent/critical operations, web dashboard for batch reviews\n- **Approval workflow**: Agent requests permission before executing risky function, human receives context-rich approval request, quick approve/reject/modify decision, timeout handling with configurable escalation (default deny recommended)\n- **Audit trail**: Log all approval requests and responses, track who approved what and when",
     "when_to_use": [
-      "Production deployments",
-      "Financial transactions",
-      "Delete/modify operations"
+      "Production database operations (DELETE, DROP, ALTER)",
+      "External API calls with side effects (payments, emails, webhooks)",
+      "System configuration changes (firewall rules, permissions)",
+      "Destructive file operations (bulk deletes, overwrites)",
+      "Compliance-sensitive operations (GDPR, HIPAA, SOC2)"
     ],
     "pros": [
-      "Improved safety",
-      "Audit trail",
-      "Trust building"
+      "Enables safe autonomous execution of risky operations",
+      "Maintains human oversight where it matters most",
+      "Lightweight integration (Slack buttons, not complex UIs)",
+      "Audit trail for compliance and debugging",
+      "Reduces agent anxiety about mistakes",
+      "Allows gradual trust expansion over time"
     ],
     "cons": [
-      "Latency",
-      "Human bottleneck",
-      "24/7 coverage needed"
+      "Requires human availability and responsiveness",
+      "Can bottleneck agent workflows if approvals are slow",
+      "Infrastructure complexity (notification systems, state management)",
+      "Risk of approval fatigue leading to rubber-stamping",
+      "Requires clear classification of what needs approval",
+      "May interrupt human focus with frequent requests"
     ],
     "tags": [
       "human-oversight",
       "safety",
       "approvals",
-      "risk-management"
+      "risk-management",
+      "collaboration",
+      "slack-integration"
     ],
     "related": []
   },
