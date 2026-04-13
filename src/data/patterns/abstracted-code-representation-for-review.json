@@ -6,27 +6,27 @@
   "status": "proposed",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "Reviewing large volumes of AI-generated code line-by-line is tedious, error-prone, and inefficient. Human reviewers are often more interested in verifying high-level intent and logical correctness than minute syntactic details.",
-    "ko": "대량의 AI 생성 코드를 한 줄씩 검토하는 것은 지루하고, 오류가 발생하기 쉬우며, 비효율적입니다. 인간 검토자는 종종 미세한 구문 세부사항보다 높은 수준의 의도와 논리적 정확성을 검증하는 데 더 관심이 있습니다."
+    "en": "Reviewing AI-generated code line-by-line is time-intensive and cognitively demanding. Research shows developers prefer understanding *why* changes were made over *how* they were implemented—intent-level review is faster and more effective than syntax-level verification.",
+    "ko": "AI가 생성한 코드를 한 줄씩 검토하는 것은 시간이 많이 걸리고 인지적으로 부담이 큽니다. 연구에 따르면 개발자는 변경이 *어떻게* 구현되었는지보다 *왜* 변경되었는지를 이해하는 것을 선호합니다. 의도 수준의 리뷰가 구문 수준의 검증보다 더 빠르고 효과적입니다."
   },
   "solution": {
-    "en": "Provide higher-level abstracted representation of code changes for review: pseudocode, intent summaries, logical diffs, or visualizations. This must come with guarantees that it accurately maps to actual low-level code modifications.",
-    "ko": "리뷰를 위한 코드 변경의 더 높은 수준의 추상화된 표현 제공: 의사코드, 의도 요약, 논리적 diff, 또는 시각화. 이는 실제 저수준 코드 수정에 정확하게 매핑된다는 보장이 함께 제공되어야 합니다."
+    "en": "Provide abstracted representations of code changes for human review:\n\n- **Pseudocode:** Concise, human-readable representation of logic\n- **Intent Summaries:** Functional description of what changes achieve\n- **Logical Diffs:** Behavioral changes rather than textual differences\n- **Visualizations:** Control flow, data flow, or architectural diagrams\n\n**Critical requirement:** Abstracted representations must have strong guarantees that they accurately map to actual code changes. Formal verification of this mapping remains an open research challenge; current implementations rely on confidence scoring and drill-down capability for verification.\n\n**Production examples:** GitHub Copilot Workspace (multi-stage workflows), Cursor AI (intent-based editing), Claude Code (plan-then-execute verification), PR summarization tools (Augment: 59% F-Score, Cursor Bugbot: 49%, Greptile: 45%, CodeRabbit: 39%, Claude Code: 31%, GitHub Copilot: 25%).",
+    "ko": "인간 리뷰를 위한 추상화된 코드 변경 표현을 제공합니다:\n\n- **의사코드:** 간결하고 인간이 읽을 수 있는 로직 표현\n- **의도 요약:** 변경이 달성하는 것의 기능적 설명\n- **논리적 Diff:** 텍스트 차이가 아닌 동작 변경\n- **시각화:** 제어 흐름, 데이터 흐름, 또는 아키텍처 다이어그램\n\n**핵심 요구사항:** 추상화된 표현은 실제 코드 변경에 정확하게 매핑된다는 강력한 보장이 있어야 합니다. 이 매핑의 형식적 검증은 아직 열린 연구 과제이며, 현재 구현은 신뢰도 점수와 드릴다운 기능에 의존합니다.\n\n**프로덕션 사례:** GitHub Copilot Workspace (다단계 워크플로우), Cursor AI (의도 기반 편집), Claude Code (계획 후 실행 검증), PR 요약 도구 (Augment: 59% F-Score, Cursor Bugbot: 49%, Greptile: 45%, CodeRabbit: 39%, Claude Code: 31%, GitHub Copilot: 25%)."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   AI Generates 500 Lines        │\n│   of Code Changes               │\n└───────────────┬─────────────────┘\n                │\n        ┌───────▼───────┐\n        │  Abstraction  │\n        │    Layer      │\n        └───────┬───────┘\n                │\n    ┌───────────┼───────────┐\n    │           │           │\n┌───▼───┐ ┌─────▼─────┐ ┌───▼───────┐\n│Pseudo │ │ Intent    │ │ Logical   │\n│Code   │ │ Summary   │ │ Diff      │\n└───────┘ └───────────┘ └───────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Human Reviews Abstraction     │\n│   (with mapping guarantee)      │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Much Faster Verification      │\n└─────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[AI Generates Code] --> B[Abstraction Layer]\n    B --> C[Pseudocode View]\n    B --> D[Intent Summary]\n    B --> E[Logical Diff]\n    B --> F[Flow Visualization]\n    C --> G[Human Review]\n    D --> G\n    E --> G\n    F --> G\n    G --> H{Conceptually Correct?}\n    H -->|Yes| I[Approve with Confidence]\n    H -->|No| J[Request Changes]\n    I --> K[Guaranteed Mapping to Real Code]",
   "code_example": "# Instead of reviewing 50 lines of Python implementing sorting:\n\n# TRADITIONAL REVIEW (tedious):\n# + def quicksort(arr):\n# +     if len(arr) <= 1:\n# +         return arr\n# +     pivot = arr[len(arr) // 2]\n# +     left = [x for x in arr if x < pivot]\n# +     ... (50 more lines)\n\n# ABSTRACTED REVIEW (fast):\nchange_summary = {\n    'intent': 'Changed sorting logic for user_list',\n    'from': 'bubble sort',\n    'to': 'quicksort',\n    'reason': 'Improve performance for large lists',\n    'test_coverage': 'maintained',\n    'complexity_change': 'O(n^2) → O(n log n)',\n    'mapping_guarantee': 'verified'\n}\n\n# Reviewer can approve conceptual change\n# with confidence it maps to correct implementation",
   "when_to_use": {
-    "en": ["Reviewing large AI-generated changes", "When conceptual correctness matters more than syntax", "High-velocity code review workflows", "Trusted AI generation pipelines"],
-    "ko": ["대량의 AI 생성 변경 검토", "구문보다 개념적 정확성이 더 중요할 때", "고속 코드 리뷰 워크플로우", "신뢰할 수 있는 AI 생성 파이프라인"]
+    "en": ["Use this when humans and agents share ownership of work across handoffs.", "Start with clear interaction contracts for approvals, overrides, and escalation.", "Capture user feedback in structured form so prompts and workflows can improve."],
+    "ko": ["인간과 에이전트가 핸드오프 간 작업 소유권을 공유할 때", "승인, 오버라이드, 에스컬레이션을 위한 명확한 상호작용 계약부터 시작", "프롬프트와 워크플로우 개선을 위해 사용자 피드백을 구조화된 형태로 수집"]
   },
   "pros": {
-    "en": ["Much faster review cycles", "Focus on intent not syntax", "Reduced reviewer fatigue", "Scales with AI code volume"],
-    "ko": ["훨씬 빠른 리뷰 주기", "구문이 아닌 의도에 집중", "리뷰어 피로 감소", "AI 코드 볼륨에 맞춰 확장"]
+    "en": ["Creates clearer human-agent handoffs and better operational trust."],
+    "ko": ["더 명확한 인간-에이전트 핸드오프와 더 나은 운영 신뢰 구축"]
   },
   "cons": {
-    "en": ["Requires strong mapping guarantees", "May miss subtle bugs", "Trust dependency on abstraction layer", "New tooling required"],
-    "ko": ["강력한 매핑 보장 필요", "미묘한 버그를 놓칠 수 있음", "추상화 레이어에 대한 신뢰 의존", "새로운 도구 필요"]
+    "en": ["Needs explicit process design and coordination across teams."],
+    "ko": ["명시적 프로세스 설계와 팀 간 조정 필요"]
   },
   "tags": ["code-review", "verification", "abstraction", "pseudocode", "intent-based-review", "explainability"]
 }

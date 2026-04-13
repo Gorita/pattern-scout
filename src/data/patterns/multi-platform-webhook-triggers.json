@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://lethain.com/agents-triggers/",
   "problem": {
-    "en": "An internal agent only provides value when its workflows are initiated. Building out trigger mechanisms is core to agent adoption. Without easy triggers, employees can't effectively automate workflows.",
-    "ko": "내부 에이전트는 워크플로우가 시작될 때만 가치를 제공합니다. 트리거 메커니즘 구축이 에이전트 채택의 핵심입니다. 쉬운 트리거 없이는 직원들이 워크플로우를 효과적으로 자동화할 수 없습니다."
+    "en": "An internal agent only provides value when its workflows are initiated. Building out a library of workflow initialization mechanisms (triggers) is core to agent adoption. Without easy triggers, employees can't effectively automate their day-to-day workflows.",
+    "ko": "내부 에이전트는 워크플로우가 시작될 때만 가치를 제공합니다. 워크플로우 초기화 메커니즘(트리거) 라이브러리 구축이 에이전트 채택의 핵심입니다. 쉬운 트리거 없이는 직원들이 일상적인 워크플로우를 효과적으로 자동화할 수 없습니다."
   },
   "solution": {
-    "en": "Implement multi-platform webhook triggers: Notion webhooks for document changes, Slack messages/reacji, Jira issue events, and scheduled events via cron or GitHub Actions.",
-    "ko": "다중 플랫폼 웹훅 트리거 구현: 문서 변경용 Notion 웹훅, Slack 메시지/이모지 반응, Jira 이슈 이벤트, cron 또는 GitHub Actions를 통한 예약 이벤트."
+    "en": "Implement **multi-platform webhook triggers** that allow external SaaS tools to initiate agent workflows automatically. This pattern leverages a mature ecosystem of workflow automation platforms (n8n with 400+ integrations, Zapier with 6,000+, Make.com with 1,000+) that can be used directly or as reference implementations.\n\n**Trigger types implemented:**\n\n1. **Notion webhooks**: Fire on page/database modifications (document status changes, RFC workflows, auto-assign reviewers, in-line commenting)\n2. **Slack messages**: Bot responds in channels (public/private channel support, channel creation triggers, default prompts)\n3. **Jira webhooks**: Issue lifecycle events (creation, updates, comments, custom routing)\n4. **Slack reacji (emoji reactions)**: Quick workflow initiation (listen for specific emojis, e.g. `:jira:` reaction turns thread into ticket)\n5. **Scheduled events**: Periodic triggers (Slack workflows, GitHub Actions cron jobs)\n\n```pseudo\n# Trigger flow\nPlatform Event → Webhook → Agent Trigger → Workflow Execution\n```",
+    "ko": "외부 SaaS 도구가 에이전트 워크플로우를 자동으로 시작할 수 있는 **다중 플랫폼 웹훅 트리거**를 구현합니다. 이 패턴은 성숙한 워크플로우 자동화 플랫폼 생태계(n8n 400+ 통합, Zapier 6,000+, Make.com 1,000+)를 활용하며, 직접 사용하거나 참조 구현으로 사용할 수 있습니다.\n\n**구현된 트리거 유형:**\n\n1. **Notion 웹훅**: 페이지/데이터베이스 수정 시 실행 (문서 상태 변경, RFC 워크플로우, 리뷰어 자동 할당, 인라인 코멘트)\n2. **Slack 메시지**: 채널에서 봇 응답 (공개/비공개 채널 지원, 채널 생성 트리거, 기본 프롬프트)\n3. **Jira 웹훅**: 이슈 생명주기 이벤트 (생성, 업데이트, 코멘트, 커스텀 라우팅)\n4. **Slack 이모지 반응(reacji)**: 빠른 워크플로우 시작 (특정 이모지 감지, 예: `:jira:` 반응으로 스레드를 티켓으로 변환)\n5. **예약 이벤트**: 주기적 트리거 (Slack 워크플로우, GitHub Actions cron 작업)\n\n```pseudo\n# 트리거 흐름\n플랫폼 이벤트 → 웹훅 → 에이전트 트리거 → 워크플로우 실행\n```"
   },
   "ascii_diagram": "┌───────────────────────────────────┐\n│        Platform Events           │\n├───────────────────────────────────┤\n│ Notion: page_updated             │\n│ Slack: message, reacji           │\n│ Jira: issue_created              │\n│ Cron: scheduled                  │\n└─────────────┬─────────────────────┘\n              │\n┌─────────────▼─────────────────────┐\n│         Webhook Handler           │\n└─────────────┬─────────────────────┘\n              │\n┌─────────────▼─────────────────────┐\n│         Agent Trigger             │\n└─────────────┬─────────────────────┘\n              │\n┌─────────────▼─────────────────────┐\n│       Workflow Execution          │\n└───────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Notion Webhook] --> E[Agent Trigger]\n    B[Slack Message/Reacji] --> E\n    C[Jira Issue Event] --> E\n    D[Scheduled Cron] --> E\n    E --> F[Workflow Execution]\n    F --> G[Results/Actions]",
   "code_example": "# Trigger configuration\nnotion_triggers:\n  - database: 'RFC Database'\n    event: 'page_updated'\n    filter: 'status.draft → status.ready_for_review'\n    workflow: 'assign_reviewers'\n\nslack_reacji:\n  - emoji: ':jira:'\n    scope: 'any_channel'\n    workflow: 'thread_to_ticket'\n\nscheduled_triggers:\n  - cron: '0 9 * * MON'\n    workflow: 'weekly_standup_prep'\n    via: 'github_actions'",
   "when_to_use": {
-    "en": ["Internal agent platforms", "Document-heavy workflows (RFCs, reviews)", "Automated routing and triage"],
-    "ko": ["내부 에이전트 플랫폼", "문서 중심 워크플로우 (RFC, 리뷰)", "자동화된 라우팅 및 분류"]
+    "en": ["Internal agent platforms with multiple integration points", "Teams already using Slack, Notion, Jira extensively", "Document-heavy workflows (RFCs, reviews, approvals)", "Need for automated routing and triage"],
+    "ko": ["다수의 통합 포인트가 있는 내부 에이전트 플랫폼", "Slack, Notion, Jira를 이미 광범위하게 사용하는 팀", "문서 중심 워크플로우 (RFC, 리뷰, 승인)", "자동화된 라우팅 및 분류 필요"]
   },
   "pros": {
-    "en": ["Low friction workflow initiation", "Platform-native UX", "Reactive to events"],
-    "ko": ["저마찰 워크플로우 시작", "플랫폼 네이티브 UX", "이벤트에 반응"]
+    "en": ["Low friction: Easy workflow initiation enables iterative learning", "Platform-native: Users work in existing tools (Slack, Notion, Jira)", "Reactive: Agent responds to events, not just explicit requests", "Flexible: Support for custom routing and nuanced workflows", "Scalable: Easy to add new trigger types by pasting docs to LLM"],
+    "ko": ["저마찰: 쉬운 워크플로우 시작으로 반복 학습 가능", "플랫폼 네이티브: 사용자가 기존 도구(Slack, Notion, Jira)에서 작업", "반응형: 에이전트가 명시적 요청뿐 아니라 이벤트에 응답", "유연함: 커스텀 라우팅과 세밀한 워크플로우 지원", "확장 가능: LLM에 문서를 붙여넣어 새 트리거 유형 추가 용이"]
   },
   "cons": {
-    "en": ["Maintenance overhead per platform", "Security complexity", "Platform lock-in"],
-    "ko": ["플랫폼당 유지보수 오버헤드", "보안 복잡성", "플랫폼 종속"]
+    "en": ["Maintenance overhead: Each platform integration requires ongoing work", "Security complexity: Private channels, auth tokens, request verification", "Platform lock-in: Deep integration with specific tools", "Observability challenges: Must avoid logging sensitive data", "Custom vs off-the-shelf: Building vs buying (Zapier, n8n)"],
+    "ko": ["유지보수 오버헤드: 각 플랫폼 통합에 지속적 작업 필요", "보안 복잡성: 비공개 채널, 인증 토큰, 요청 검증", "플랫폼 종속: 특정 도구와의 깊은 통합", "관찰 가능성 과제: 민감한 데이터 로깅 방지 필요", "커스텀 vs 기성품: 직접 구축 vs 구매(Zapier, n8n)"]
   },
   "tags": ["webhooks", "triggers", "integrations", "slack", "notion", "jira", "event-driven"]
 }
