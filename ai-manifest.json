@@ -4,26 +4,23 @@
     "title": "Agent-Powered Codebase Q&A / Onboarding",
     "title_ko": "에이전트 기반 코드베이스 Q&A / 온보딩",
     "category": "Context & Memory",
-    "description": "Understanding a large or unfamiliar codebase is a significant challenge, especially when onboarding or debugging complex systems Leverage AI agents with retrieval, search, and Q&A capabilities to assi",
-    "problem": "Understanding a large or unfamiliar codebase is a significant challenge, especially when onboarding or debugging complex systems. Manually searching and tracing code paths is time-consuming and error-prone.",
-    "solution": "Leverage AI agents with retrieval, search, and Q&A capabilities to assist codebase understanding. Agent indexes the codebase, responds to natural language queries about code behavior, identifies function calls and component interactions, and summarizes modules.",
+    "description": "Understanding a large or unfamiliar codebase can be a significant challenge for developers, especially when onboarding to a new project or trying to debug a complex system Leverage an AI agent with re",
+    "problem": "Understanding a large or unfamiliar codebase can be a significant challenge for developers, especially when onboarding to a new project or trying to debug a complex system. Manually searching and tracing code paths is time-consuming.",
+    "solution": "Leverage an AI agent with retrieval, search, and question-answering capabilities to assist developers in understanding a codebase. The agent can:\n\n- **Index the codebase** using semantic embeddings, AST parsing (e.g., Tree-sitter), and code graphs that capture symbol relationships\n- **Respond to natural language queries** about code behavior, location of features, and component interactions\n- **Support multiple query types**: location (\"Where is X implemented?\"), behavioral (\"What happens when Y?\"), impact (\"What modules are affected?\"), and relationship queries\n- **Generate documentation** and summaries automatically from code analysis\n\nEffective systems combine semantic search (embeddings) with structural understanding (code graphs) for repository-scale context, not just file-level analysis.",
     "when_to_use": [
-      "Onboarding to new codebases",
-      "Debugging complex systems",
-      "Understanding legacy code",
-      "Finding function callers and dependencies"
+      "Use for onboarding to new codebases, exploring legacy systems, and answering repository-wide questions",
+      "Provide configuration files (e.g., CLAUDE.md) with project-specific instructions to guide agent behavior",
+      "Consider MCP (Model Context Protocol) integration for standardized tool and data source connectivity",
+      "Combine single-agent approaches (simpler, lower cost) with multi-agent systems for specialized roles (navigation, QA, documentation)"
     ],
     "pros": [
-      "Massive step function for unfamiliar code",
-      "Accelerates developer onboarding",
-      "Natural language interface to code",
-      "Finds interactions manual search would miss"
+      "Accelerates onboarding and codebase understanding",
+      "Enables natural language exploration of complex systems",
+      "Scales from single-file to repository-wide context"
     ],
     "cons": [
-      "May miss dynamic/runtime behavior",
-      "Index quality affects answers",
-      "Large codebases need good retrieval",
-      "Answers need verification"
+      "Indexing quality directly impacts answer accuracy",
+      "Requires ongoing maintenance of code graphs and embeddings as codebases evolve"
     ],
     "tags": [
       "code-understanding",
@@ -167,22 +164,26 @@
     "title": "Curated File Context Window",
     "title_ko": "큐레이션된 파일 컨텍스트 윈도우",
     "category": "Context & Memory",
-    "description": "Dumping all files into the agent's prompt quickly exceeds token limits and introduces noise Maintain a sterile main context with only task-relevant files, using sub-agents to search and summarize seco",
-    "problem": "Dumping all files into the agent's prompt quickly exceeds token limits and introduces noise.",
-    "solution": "Maintain a sterile main context with only task-relevant files, using sub-agents to search and summarize secondary files.",
+    "description": "A coding agent often needs to reason about multiple source files, but dumping all files into its prompt quickly exceeds token limits or inference budget, introduces noise from unrelated files (e Maint",
+    "problem": "A coding agent often needs to reason about multiple source files, but dumping all files into its prompt quickly exceeds token limits or inference budget, introduces noise from unrelated files (e.g., tests for other modules, assets, docs) that distract the agent, and makes the agent's output slower and less focused on the immediate coding task.",
+    "solution": "Maintain a **sterile, curated \"main\" context window** containing only the code files directly relevant to the current task, and let **helper sub-agents** gather and rank additional files without polluting the main context:\n\n**1. Identify Primary Files**\n- At task kickoff, the agent selects the set of files where changes are intended.\n- Load only those files (plus any explicit dependencies) into the Main Context Window.\n\n**2. Spawn a File-Search Sub-Agent**\n- The sub-agent runs a quick search using agentic techniques (ripgrep, grep, AST heuristics) over the repository.\n- Modern implementations favor direct search (e.g., `rg`) over complex vector embeddings for simplicity and freshness.\n- It returns a ranked list of file paths.\n\n**3. Fetch & Summarize Secondary Files**\n- For each top-N file (e.g., N = 5), determine loading strategy by file size and relevance:\n  - Small files (<~200 tokens): load full content\n  - Medium files with high relevance: load full content or specific sections\n  - Large or peripheral files: load summaries, function signatures, or class structure only\n- Append those summaries if they pass a relevance threshold:\n  - **Symbol overlap**: file shares ≥50% of symbols with primary files\n  - **Dependency distance**: file is within 1-2 hops in dependency graph\n  - **Semantic similarity**: content exceeds similarity threshold (when embeddings available)\n\n**4. Proceed with Coding Task**\n- With a compact, high-signal context, the agent generates or refactors code, focusing solely on the curated set.",
     "when_to_use": [
-      "Large monorepo projects",
-      "Limited context windows",
-      "Complex multi-file tasks"
+      "Agent receives a natural-language or structured request (e.g., \"Add validation to `signup()` in `UserController.java`\").",
+      "Automatically parse the request to identify \"primary files\".",
+      "Invoke a Search Sub-Agent via shell commands (e.g., `rg \"signup\" -tjava`) or lightweight AST traversal.",
+      "For each matched file, run snippet extraction (method signatures, class definitions referencing task symbols).",
+      "Pass snippets back to main agent; filter for purely relevant code."
     ],
     "pros": [
-      "Minimal prompt size",
-      "Faster response times",
-      "Scales to large repos"
+      "Keeps the agent's prompt size minimum and directly on-target",
+      "Improves response time and reduces hallucinations from irrelevant code",
+      "Scales to large repositories because only a handful of files are ever loaded",
+      "Agentic search (ripgrep/AST) works with uncommitted changes and requires no indexing infrastructure"
     ],
     "cons": [
-      "May miss edge cases",
-      "Index maintenance required"
+      "Requires a file-search mechanism (ripgrep for simplicity, or indexed AST for scale)",
+      "May miss edge cases if the sub-agent's ranking heuristic is suboptimal—critical files can be omitted",
+      "When using indexed approaches, the index must stay up-to-date as code changes (agentic search avoids this)"
     ],
     "tags": [
       "code-context",
@@ -936,23 +937,19 @@
     "title": "Reflection Loop",
     "title_ko": "반성 루프 패턴",
     "category": "Feedback Loops",
-    "description": "LLM outputs may contain errors or suboptimal solutions without self-correction mechanisms Agent reviews and critiques its own outputs, iteratively improving until quality thresholds are met",
-    "problem": "LLM outputs may contain errors or suboptimal solutions without self-correction mechanisms.",
-    "solution": "Agent reviews and critiques its own outputs, iteratively improving until quality thresholds are met.",
+    "description": "Single-pass generation frequently misses edge cases, constraints, or quality criteria that become obvious on review After generating a draft, run an explicit self-evaluation pass against defined crite",
+    "problem": "Single-pass generation frequently misses edge cases, constraints, or quality criteria that become obvious on review. Without a structured revision loop, agents return the first plausible answer even when a better answer is reachable with lightweight critique.",
+    "solution": "After generating a draft, run an explicit self-evaluation pass against defined criteria and feed the critique into a revision attempt. Repeat until the output clears a threshold or retry budget is exhausted.\n\nUse stable scoring rubrics (correctness, completeness, safety, style) so the loop improves objective quality rather than free-form restyling. For reduced bias, use a separate model for critique (dual-model architecture) at the cost of additional compute.\n\n```pseudo\nfor attempt in range(max_iters):\n    draft = generate(prompt)\n    score, critique = evaluate(draft, metric)\n    if score >= threshold:\n        return draft\n    prompt = incorporate(critique, prompt)\n```",
     "when_to_use": [
-      "Code generation quality improvement",
-      "Writing enhancement",
-      "Complex reasoning validation"
+      "Use when quality must meet explicit criteria in writing, reasoning, or code generation.",
+      "Keep loop budgets small (2-3 iterations are typically optimal; beyond 3 shows diminishing returns).",
+      "Log score deltas to verify that extra iterations are producing measurable gains."
     ],
     "pros": [
-      "Improved output quality",
-      "Automatic error detection",
-      "No additional models needed"
+      "Improves outputs with little supervision"
     ],
     "cons": [
-      "Increased latency",
-      "Higher token costs",
-      "Risk of infinite loops"
+      "Extra compute; may stall if the metric is poorly defined"
     ],
     "tags": [
       "self-feedback",
@@ -1033,22 +1030,26 @@
     "title": "Self-Discover: LLM Self-Composed Reasoning Structures",
     "title_ko": "자기 발견: LLM 자체 구성 추론 구조",
     "category": "Feedback Loops",
-    "description": "Different reasoning tasks require different thinking strategies LLM automatically discovers and composes task-specific reasoning structures by selecting and adapting atomic reasoning modules",
-    "problem": "Different reasoning tasks require different thinking strategies. Fixed reasoning patterns may be suboptimal for diverse problems.",
-    "solution": "LLM automatically discovers and composes task-specific reasoning structures by selecting and adapting atomic reasoning modules.",
+    "description": "Different reasoning tasks require different thinking strategies Self-Discover enables LLMs to automatically discover and compose task-specific reasoning structures",
+    "problem": "Different reasoning tasks require different thinking strategies. While techniques like Chain-of-Thought (CoT) work well for some problems, they may be suboptimal for others. Current approaches typically use fixed reasoning patterns regardless of the specific problem at hand, leading to inefficient problem-solving and suboptimal performance on diverse tasks.",
+    "solution": "Self-Discover enables LLMs to automatically discover and compose task-specific reasoning structures. The process involves:\n\n1. **SELECT**: Choose 3-5 relevant reasoning modules from a predefined library of atomic reasoning primitives\n2. **ADAPT**: Transform generic modules into task-specific reasoning steps tailored to the exact problem\n3. **COMPOSE**: Organize adapted modules into a coherent reasoning structure with defined order of operations\n4. **EXECUTE**: Solve the problem using the self-discovered structure\n\nThis approach allows the model to adapt its reasoning strategy to match the problem's unique characteristics, leading to significant performance improvements.",
     "when_to_use": [
-      "Complex reasoning tasks",
-      "Diverse problem types",
-      "Performance optimization"
+      "Use this for complex reasoning tasks where different problems require different reasoning strategies (mathematical problem solving, strategic planning, multi-step code generation)",
+      "Best suited for applications where performance gains justify the additional computational overhead",
+      "Consider when interpretability of reasoning approach is valuable",
+      "Start with a diverse module library covering decomposition, verification, improvement, knowledge retrieval, and strategic reasoning"
     ],
     "pros": [
-      "Task-specific optimization",
-      "Up to 32% improvement over CoT",
-      "Creates reusable templates"
+      "Significant performance improvements on diverse reasoning tasks",
+      "More efficient than trying all reasoning strategies",
+      "Creates reusable reasoning templates",
+      "Adapts to novel problem types"
     ],
     "cons": [
-      "Additional overhead for structure discovery",
-      "May over-engineer simple problems"
+      "Computational overhead: approximately 2-3x the cost of single-pass Chain-of-Thought due to multiple LLM calls",
+      "Requires a diverse set of reasoning modules (typically 20-30 for good coverage)",
+      "May over-engineer simple problems",
+      "Structure quality depends on task analysis accuracy"
     ],
     "tags": [
       "reasoning",
@@ -1375,13 +1376,13 @@
     "title": "Action-Selector Pattern",
     "title_ko": "액션 선택자 패턴",
     "category": "Orchestration & Control",
-    "description": "Untrusted input can hijack an agent's reasoning once tool feedback re-enters the context window, leading to arbitrary, harmful actions Treat the LLM as an instruction decoder only: map user requests t",
-    "problem": "Untrusted input can hijack an agent's reasoning once tool feedback re-enters the context window, leading to arbitrary, harmful actions.",
-    "solution": "Treat the LLM as an instruction decoder only: map user requests to pre-approved actions without feeding tool outputs back to the LLM.",
+    "description": "In tool-enabled agents, untrusted data from emails, web pages, and API responses is often fed back into the model between steps Treat the LLM as an instruction decoder, not a live controller",
+    "problem": "In tool-enabled agents, untrusted data from emails, web pages, and API responses is often fed back into the model between steps. That creates a control-flow vulnerability: injected text can influence which action the agent chooses next, enabling control-flow hijacking. Even if individual tools are safe, a compromised action-selection loop can trigger harmful sequences at the orchestration layer and enable cascading prompt injection attacks.",
+    "solution": "Treat the LLM as an instruction decoder, not a live controller. The model maps user intent to a pre-approved action ID plus schema-validated parameters, and execution is handled by deterministic code.\n\n- Map natural language to a constrained action allowlist.\n- Validate parameters against strict schemas before execution.\n- Prevent tool outputs from re-entering the selector prompt.\n- For multi-step workflows, compose actions in code with explicit state transitions.\n\nThis preserves natural-language usability while removing post-selection prompt-injection leverage. By preventing tool outputs from re-entering the LLM context, the pattern provides provable resistance to prompt injection through separation of duties and input/output control.\n\n```pseudo\naction = LLM.translate(prompt, allowlist)\nexecute(action)\n# tool output NOT returned to LLM\n```",
     "when_to_use": [
-      "Customer service bots",
-      "Notification routers",
-      "Kiosk interfaces"
+      "Provide a hard allowlist of actions (API calls, SQL templates, page links) and version it like an API contract",
+      "Use strict schema validation (e.g., Pydantic, JSON Schema) for all parameters",
+      "Use it for customer-service bots, routing assistants, kiosk flows, and approval systems where allowed actions are finite and auditable"
     ],
     "pros": [
       "Near-immunity to prompt injection",
@@ -2018,23 +2019,28 @@
     "title": "Hybrid LLM/Code Workflow Coordinator",
     "title_ko": "하이브리드 LLM/코드 워크플로우 코디네이터",
     "category": "Orchestration & Control",
-    "description": "LLM-driven workflows are non-deterministic Support both LLM-driven and code-driven workflows via configurable coordinator parameter",
-    "problem": "LLM-driven workflows are non-deterministic. For some tasks, occasional errors are unacceptable. You need both flexibility for prototyping and determinism when it matters.",
-    "solution": "Support both LLM-driven and code-driven workflows via configurable coordinator parameter. Start with LLM for rapid prototyping, migrate to code when determinism is needed.",
+    "description": "LLM-driven workflows are non-deterministic—even well-crafted prompts can produce unpredictable results Support both LLM-driven and code-driven workflows via a **configurable coordinator** parameter",
+    "problem": "LLM-driven workflows are non-deterministic—even well-crafted prompts can produce unpredictable results. For some tasks (e.g., adding emoji to Slack messages based on PR status), occasional errors are unacceptable. But LLM workflows are fast to prototype and work well for many cases. You need both: flexibility when experimenting and determinism when it matters.",
+    "solution": "Support both LLM-driven and code-driven workflows via a **configurable coordinator** parameter. Start with LLM for rapid prototyping, then migrate to code when you need determinism.\n\nThis pattern builds on the neuro-symbolic AI principle that combining neural reasoning (LLMs) with symbolic computation (code) produces more reliable systems than either approach alone.\n\n**Coordinator configuration:**\n\n```yaml\n# LLM-driven (default, fastest to iterate)\ncoordinator: llm\n\n# Code-driven (deterministic, goes through code review)\ncoordinator: script\ncoordinator_script: scripts/pr_merged.py\n```\n\n**When `coordinator: llm`:**\n- Handler selects configuration based on trigger\n- Loads prompt, tools, virtual files\n- LLM decides which tools to call\n- Handler coordinates tool calls based on LLM responses\n\n**When `coordinator: script`:**\n- Custom Python script controls workflow\n- Same access to tools, trigger data, virtual files as LLM\n- Can invoke LLM via subagent tool when explicitly needed\n- Goes through code review like any other software\n\n**Progressive enhancement approach:**\n\n1. **Start with LLM** - Fast to prototype, works for many cases\n2. **Observe failures** - Track where non-determinism causes problems\n3. **Rewrite to script** - Use Claude Code to one-shot rewrite prompt → code\n4. **Ship with confidence** - Code goes through review, deterministic behavior",
     "when_to_use": [
-      "Workflows needing both flexibility and determinism",
-      "Production systems with prototyping phase",
-      "Critical workflows requiring code review"
+      "Prototype with `coordinator: llm`, deploy and observe failure modes.",
+      "When failures are problematic, ask Claude Code: \"Rewrite this workflow as a script\".",
+      "Update config to `coordinator: script`, PR goes through review, merge with confidence.",
+      "Use LLM-driven when prototyping, logic changes frequently, or fast iteration matters.",
+      "Use code-driven when errors are unacceptable, determinism required, or workflow is stable."
     ],
     "pros": [
-      "Best of both worlds",
-      "Easy migration path",
-      "Same tool capabilities for both"
+      "Best of both worlds: LLM flexibility when prototyping, code determinism when mature",
+      "Token efficiency: Code-first processing reduces token usage by 75-99% for data-heavy tasks",
+      "Easy migration: One-shot rewrite from prompt to script",
+      "Same capabilities: Scripts have access to all tools, can still use LLM via subagent",
+      "Code review: Critical workflows go through standard review process",
+      "Progressive enhancement: Don't over-engineer from the start"
     ],
     "cons": [
-      "Two code paths to maintain",
-      "Rewrite cost when migrating",
-      "Scripts harder to change"
+      "Two code paths: Need to maintain both LLM and script handlers",
+      "Rewrite cost: Time investment to migrate from LLM to script",
+      "Less dynamic: Scripts are harder to change than prompts"
     ],
     "tags": [
       "hybrid",
@@ -3344,26 +3350,23 @@
     "title": "No-Token-Limit Magic",
     "title_ko": "토큰 제한 없는 마법",
     "category": "Reliability & Eval",
-    "description": "Aggressive prompt compression to save tokens stifles reasoning depth and self-correction During prototyping, remove hard token limits",
-    "problem": "Aggressive prompt compression to save tokens stifles reasoning depth and self-correction. Premature optimization of token usage prevents discovery of what the model can actually achieve.",
-    "solution": "During prototyping, remove hard token limits. Allow lavish context and multiple reasoning passes. Yes, it's pricier - but dramatically better outputs surface valuable patterns before optimizing for production.",
+    "description": "Teams often optimize token spend too early, forcing prompts and context windows into tight constraints before they understand what high-quality behavior looks like During discovery and prototyping, re",
+    "problem": "Teams often optimize token spend too early, forcing prompts and context windows into tight constraints before they understand what high-quality behavior looks like. Early compression hides failure modes, reduces reasoning depth, and can lock in mediocre workflows that are cheap but unreliable.",
+    "solution": "During discovery and prototyping, relax hard token limits and optimize for learning velocity. Allow richer context, deeper deliberation, and multiple critique passes to discover what a strong solution path actually requires. After the behavior is stable, measure where context can be compressed without degrading outcomes.\n\nThis pattern treats cost optimization as a second phase, not the first objective.",
     "when_to_use": [
-      "Early prototyping and exploration",
-      "Discovering optimal patterns",
-      "Complex reasoning tasks",
-      "Before production optimization"
+      "Use this during pattern discovery, architecture design, and early benchmark creation",
+      "Instrument token usage and quality scores from day one so later optimization has data",
+      "Set a temporary spend ceiling per experiment while intentionally allowing larger contexts",
+      "Transition to cost-tuned prompts only after quality thresholds are repeatable"
     ],
     "pros": [
-      "Discovers what model can actually achieve",
-      "Better output quality surfaces patterns",
-      "Prevents premature optimization",
-      "Justified by productivity gains"
+      "Faster insight discovery",
+      "Better baseline quality",
+      "Fewer premature architecture decisions"
     ],
     "cons": [
-      "Higher prototyping costs",
-      "Not suitable for production",
-      "Requires later optimization phase",
-      "May develop habits that don't scale"
+      "Higher short-term inference cost",
+      "Risk of delaying production-grade efficiency work"
     ],
     "tags": [
       "performance",
@@ -3478,22 +3481,33 @@
     "title": "Structured Output Specification",
     "title_ko": "구조화된 출력 명세",
     "category": "Reliability & Eval",
-    "description": "Free-form agent outputs are difficult to validate, parse, and integrate with downstream systems Constrain agent outputs using deterministic schemas (Zod, Pydantic, JSON Schema) for machine-readable re",
-    "problem": "Free-form agent outputs are difficult to validate, parse, and integrate with downstream systems.",
-    "solution": "Constrain agent outputs using deterministic schemas (Zod, Pydantic, JSON Schema) for machine-readable results.",
+    "description": "Free-form agent outputs are difficult to validate, parse, and integrate with downstream systems Constrain agent outputs using deterministic schemas that enforce structured, machine-readable results",
+    "problem": "Free-form agent outputs are difficult to validate, parse, and integrate with downstream systems. When agents return unstructured text, you face unpredictable output formats requiring complex parsing, difficult validation and error handling, brittle integration with automated workflows, inconsistent categorization and classification, and manual post-processing to extract structured data. This makes it nearly impossible to build reliable multi-step workflows where one agent's output feeds into another system or agent.",
+    "solution": "Constrain agent outputs using deterministic schemas that enforce structured, machine-readable results. Instead of allowing free-form text responses, specify exact output formats using type systems, JSON schemas, or framework-specific structured output APIs.\n\n**Core approach:**\n\n**Define explicit output schemas:**\n- Use TypeScript interfaces, JSON Schema, or Pydantic models\n- Specify required fields, types, and constraints\n- Define enumerations for categorical outputs\n- Document field semantics and validation rules\n\n**Leverage framework structured output APIs:**\n- OpenAI's structured outputs with JSON schema (constrained decoding)\n- Anthropic's tool use for structured results\n- Vercel AI SDK's `generateObject` function\n- LangChain's output parsers\n- LlamaIndex Pydantic programs\n- Instructor retry wrapper\n\n**Validate at generation time:**\n- Framework ensures LLM adheres to schema\n- Type errors caught before reaching application code\n- Guaranteed parseable outputs\n\n```typescript\nimport { generateObject } from 'ai';\nimport { z } from 'zod';\n\nconst LeadQualificationSchema = z.object({\n  qualification: z.enum(['qualified', 'unqualified', 'needs_review']),\n  confidence: z.number().min(0).max(1),\n  companySize: z.enum(['enterprise', 'mid-market', 'smb', 'unknown']),\n  estimatedBudget: z.string().optional(),\n  nextSteps: z.array(z.string()),\n  reasoning: z.string()\n});\n\nconst result = await generateObject({\n  model: openai('gpt-4'),\n  schema: LeadQualificationSchema,\n  prompt: `Analyze this lead: ${leadData}`\n});\n\nif (result.object.qualification === 'qualified') {\n  await sendToSalesTeam(result.object);\n}\n```",
     "when_to_use": [
-      "Multi-phase workflows",
-      "Classification tasks",
-      "API integrations"
+      "Multi-phase agent workflows requiring structured handoffs",
+      "Classification and categorization tasks",
+      "Data extraction and transformation",
+      "Integration with databases or APIs",
+      "Compliance and audit requirements",
+      "Quality assurance and validation"
     ],
     "pros": [
-      "Reliability",
-      "Type safety",
-      "Easy validation"
+      "Guaranteed parseable outputs eliminate parsing errors",
+      "Compile-time type safety in typed languages",
+      "Seamless integration to databases, APIs, workflows",
+      "Built-in constraint enforcement for validation",
+      "Schema validation prevents prompt injection before execution",
+      "Explicit contracts between system components for maintainability",
+      "Easy to verify output correctness for testability"
     ],
     "cons": [
-      "Schema rigidity",
-      "May limit expressiveness"
+      "Schema changes require coordinated updates",
+      "Requires upfront schema design effort",
+      "May constrain useful free-form outputs",
+      "Relies on LLM provider schema support",
+      "Too strict schemas may cause generation failures",
+      "Adapting schemas as requirements change creates friction"
     ],
     "tags": [
       "structured-output",
@@ -4111,22 +4125,20 @@
     "title": "CLI-Native Agent Orchestration",
     "title_ko": "CLI 네이티브 에이전트 오케스트레이션",
     "category": "Tool Use & Environment",
-    "description": "Web chat UIs are awkward for repeat runs, local file edits, or scripting inside CI pipelines Expose agent capabilities through a first-class CLI: spec run for code generation, spec test for validation",
-    "problem": "Web chat UIs are awkward for repeat runs, local file edits, or scripting inside CI pipelines.",
-    "solution": "Expose agent capabilities through a first-class CLI: spec run for code generation, spec test for validation, repl for interactive sessions. Integrate in Makefiles, Git hooks, or cron jobs.",
+    "description": "Most agent workflows start in chat UIs that are optimized for one-off conversations, not repeatable engineering operations Expose agent capabilities through a **first-class command-line interface** (h",
+    "problem": "Most agent workflows start in chat UIs that are optimized for one-off conversations, not repeatable engineering operations. Teams struggle to automate runs, compose agent steps with existing shell tools, and enforce the same behavior in local development and CI. Without a CLI surface, orchestration logic becomes manual and hard to reproduce.\n\nThe CLI-Native approach applies 50+ years of Unix design principles—modularity, composition, and explicit execution—to agent orchestration.",
+    "solution": "Expose agent capabilities through a **first-class command-line interface** (here: *Claude CLI*).\n\n- `claude spec run` — generate/update code from a spec file.\n- `claude spec test` — run the Spec-As-Test suite.\n- `claude repl` — drop into an interactive shell with all project context pre-loaded.\n\n**Key mechanisms:**\n- **Structured output**: JSON for scripts (`--json` flag), human-readable for terminals\n- **Exit code semantics**: `0` for success, non-zero for failure\n- **TTY detection**: Auto-switch output format based on execution context\n\nDevelopers can integrate these commands into Makefiles, Git hooks, cron jobs, and CI workflows. The CLI becomes the stable contract between humans, scripts, and automation systems, enabling headless operation with auditable command history.",
     "when_to_use": [
-      "CI/CD integration",
-      "Local development automation",
-      "Headless scripting"
+      "Start by wrapping one high-friction workflow (for example, spec-to-code generation) in a single CLI command.",
+      "Standardize flags and output formats so scripts can parse outcomes deterministically.",
+      "Add CLI commands to `make` targets and CI jobs before expanding scope.",
+      "Log command invocations and artifact paths for replay and debugging."
     ],
     "pros": [
-      "Scriptable",
-      "Works with local context",
-      "Easy to embed in other tools"
+      "Scriptable, works offline with local context, easy to embed in other tools"
     ],
     "cons": [
-      "Initial install/auth setup",
-      "Learning curve for CLI flags"
+      "Initial install & auth; learning curve for CLI flags"
     ],
     "tags": [
       "cli",
@@ -4623,22 +4635,20 @@
     "title": "Tool Use Steering via Prompting",
     "title_ko": "프롬프팅을 통한 도구 사용 조종",
     "category": "Tool Use & Environment",
-    "description": "Agents with multiple tools need clear guidance on when, why, and how to use them Guide tool selection through explicit natural language instructions: direct tool invocation, teaching tool usage with -",
-    "problem": "Agents with multiple tools need clear guidance on when, why, and how to use them. Simply having tools available doesn't guarantee appropriate use, especially for custom or team-specific tools.",
-    "solution": "Guide tool selection through explicit natural language instructions: direct tool invocation, teaching tool usage with -h flags, implicit tool suggestions via shorthands, and 'think hard' prompts for careful consideration.",
+    "description": "AI agents equipped with multiple tools (e Guide the agent's tool selection and execution through explicit natural language instructions within the prompt",
+    "problem": "AI agents equipped with multiple tools (e.g., shell access, file system operations, web search, custom CLIs) need clear guidance on when, why, and how to use these tools effectively. Simply having tools available doesn't guarantee they will be used appropriately for the task at hand, especially for tools unfamiliar to the base model or specific to a team's workflow.",
+    "solution": "Guide the agent's tool selection and execution through explicit natural language instructions within the prompt. This includes:\n\n- **Direct Tool Invocation:** Telling the agent which tool to use for a specific part of a task (e.g., \"Use the file search tool to find...\", \"Run a bash command to...\").\n- **Teaching Tool Usage:** Instructing the agent on how to learn about or use a new or custom tool, including how to discover its options (e.g., \"Use our `barley` CLI to check logs. You can use `-h` to see how to use it.\").\n- **Implicit Tool Suggestion:** Using phrases or shorthands that the agent learns to associate with specific tool sequences (e.g., \"commit, push, pr\" for a Git workflow).\n- **Encouraging Deeper Reasoning for Tool Use:** Adding phrases like \"*think hard*\" to prompt more careful consideration before acting, potentially leading to better tool choices or sequences.\n\nThis pattern emphasizes the user's role in actively shaping the agent's behavior with respect to its available tools, rather than relying solely on autonomous tool selection.\n\nThe technique is grounded in research showing that interleaving reasoning traces with action execution—where the model explicitly thinks about which tool to use before acting—significantly improves outcomes (Yao et al., 2022, ReAct).",
     "when_to_use": [
-      "Custom/team-specific tools",
-      "Complex tool selection scenarios",
-      "Teaching agents new tools"
+      "Use when agent success depends on reliable tool invocation, especially with custom tools or smaller models (<7B parameters).",
+      "Structure guidance hierarchically: task categorization first, then tool selection rules.",
+      "Include decision frameworks (e.g., \"if modifying existing code, use Edit; if creating new file, use Write\").",
+      "Add verification gates: always run build/test after code changes to prevent error cascades."
     ],
     "pros": [
-      "Improves tool usage accuracy",
-      "Works with custom tools",
-      "Natural language control"
+      "Improves execution success, reduces tool-call failures, enables context-preserving operations (Edit over Write = ~66% token reduction)"
     ],
     "cons": [
-      "Requires user knowledge of tools",
-      "May add prompt overhead"
+      "Introduces integration coupling, requires prompt maintenance as tool interfaces evolve, adds ~400-700 tokens per session overhead"
     ],
     "tags": [
       "tool-use",
