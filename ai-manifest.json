@@ -434,23 +434,26 @@
     "title": "Progressive Disclosure for Large Files",
     "title_ko": "대용량 파일을 위한 점진적 공개",
     "category": "Context & Memory",
-    "description": "Large files (PDFs, DOCXs, images) overwhelm context when loaded naively, wasting tokens on irrelevant content Load file metadata first, then provide tools to load content on-demand (load, peek, extrac",
-    "problem": "Large files (PDFs, DOCXs, images) overwhelm context when loaded naively, wasting tokens on irrelevant content.",
-    "solution": "Load file metadata first, then provide tools to load content on-demand (load, peek, extract).",
+    "description": "Large files (PDFs, DOCXs, images) overwhelm the context window when loaded naively Apply **progressive disclosure**: load file metadata first, then provide tools to load content on-demand",
+    "problem": "Large files (PDFs, DOCXs, images) overwhelm the context window when loaded naively. A 5-10MB PDF may contain only 10-20KB of relevant text/tables, but the entire file is often shoved into context, wasting tokens and degrading performance.",
+    "solution": "Apply **progressive disclosure**: load file metadata first, then provide tools to load content on-demand.\n\n**Core approach:**\n\n1. **Always include file metadata** in the prompt (not full content):\n\n   ```\n   Files:\n     - id: f_a1\n       name: my_image.png\n       size: 500,000\n       preloaded: false\n     - id: f_b3\n       name: report.pdf\n       size: 8500000\n       preloaded: false\n   ```\n\n2. **Optionally preload first N KB** of appropriate mimetypes (configurable per-workflow, can be 0)\n\n3. **Provide three file operations:**\n\n   - `load_file(id)` - Load entire file into context\n   - `peek_file(id, start, stop)` - Load a section of file\n   - `extract_file(id)` - Transform PDF/DOCX/PPT into simplified text\n\n4. **Include a `large_files` skill** explaining when/how to use these tools",
     "when_to_use": [
-      "Document comparison workflows",
-      "File attachment processing",
-      "Large report analysis"
+      "Document comparison workflows (multiple PDFs)",
+      "Ticket systems with file attachments (images, PDFs)",
+      "Data export analysis (large reports in various formats)",
+      "Any workflow where agents need file content but files are large"
     ],
     "pros": [
-      "Works with files larger than context",
-      "Agent controls loading",
-      "Extracted content is much smaller"
+      "Enables working with files much larger than context window",
+      "Agent has control over what/when to load",
+      "Reusable across workflows via large_files skill",
+      "Extracted content is often 100x smaller than original file"
     ],
     "cons": [
-      "Tool call overhead",
-      "Extraction can be slow",
-      "Agent may make poor loading decisions"
+      "Adds tool call overhead (multiple round-trips)",
+      "Requires preloading heuristics (how much is enough?)",
+      "Extraction from complex formats (DOCX) can be slow without native dependencies",
+      "Agent may make poor loading decisions without proper guidance"
     ],
     "tags": [
       "progressive-disclosure",
@@ -1507,23 +1510,31 @@
     "title": "Autonomous Workflow Agent Architecture",
     "title_ko": "자율 워크플로우 에이전트 아키텍처",
     "category": "Orchestration & Control",
-    "description": "Complex, long-running engineering workflows require extensive human oversight Create AI agents with containerized execution environments, tmux-based session management, intelligent monitoring, and con",
-    "problem": "Complex, long-running engineering workflows require extensive human oversight. Manual coordination, constant monitoring for errors, and context switching between workflow stages reduce productivity.",
-    "solution": "Create AI agents with containerized execution environments, tmux-based session management, intelligent monitoring, and context-aware error recovery for autonomous workflow handling.",
+    "description": "Complex, long-running engineering workflows traditionally require extensive human oversight and intervention Autonomous Workflow Agent Architecture creates AI agents with sophisticated workflow manage",
+    "problem": "Complex, long-running engineering workflows traditionally require extensive human oversight and intervention. Tasks like model training pipelines, infrastructure configuration, and multi-step deployment processes involve manual coordination of multiple tools and systems, constant monitoring for errors and edge cases, time-consuming context switching between different workflow stages, risk of human error in repetitive tasks, and difficulty scaling engineering processes across teams. Engineers spend significant time on operational overhead rather than core development work, and workflows often fail at intermediate steps requiring manual debugging and restart.",
+    "solution": "Autonomous Workflow Agent Architecture creates AI agents with sophisticated workflow management capabilities that can handle multi-step engineering processes with minimal human intervention. The architecture combines containerized execution environments, tmux-based parallel process coordination, intelligent monitoring with adaptive wait/sleep mechanisms, robust error handling with context-aware retry strategies, and comprehensive logging and workflow documentation.\n\n**Key Distinction from Traditional Automation:**\n\nTraditional workflow automation follows a pre-defined script; autonomous agents follow a goal. Where traditional systems stop on error, these agents reason about *why* a step failed and determine *how* to recover, selecting alternative paths rather than executing predetermined retry logic.\n\n**Key Design Principles:**\n\n- Start with bounded, well-defined tasks\n- Implement explicit checkpoints at risky boundaries\n- Design for recoverability at each step\n- Maintain comprehensive logging throughout",
     "when_to_use": [
-      "Model training pipelines",
-      "Infrastructure provisioning",
-      "Multi-stage deployments"
+      "Model training and evaluation pipelines",
+      "Infrastructure provisioning and configuration",
+      "Multi-stage deployment workflows",
+      "Automated testing and quality assurance processes",
+      "Data processing and ETL pipelines"
     ],
     "pros": [
-      "1.2-1.4x speedup",
-      "Reduced human intervention",
-      "Consistent execution"
+      "Significant speedup: 1.22x-1.37x improvement in token processing and workflow execution",
+      "Reduced human intervention: agents can handle most routine workflow steps autonomously",
+      "Consistent execution: eliminates human error in repetitive tasks",
+      "Scalability: can run multiple workflows in parallel across different environments",
+      "Comprehensive logging: automatic documentation of all workflow steps and decisions",
+      "Recovery capability: intelligent error handling reduces workflow failures"
     ],
     "cons": [
-      "Limited novel failure handling",
-      "Context window constraints",
-      "Setup complexity"
+      "Limited novel failure handling: agents may struggle with completely unprecedented error scenarios",
+      "Context window constraints: long-running workflows may exceed agent context limits",
+      "Setup complexity: initial configuration of containers and monitoring requires significant investment",
+      "Documentation dependency: requires continuously updated workflow documentation for optimal performance",
+      "Resource intensive: container orchestration and parallel processing increase infrastructure costs",
+      "Human oversight still needed: critical workflows may still require human validation checkpoints"
     ],
     "tags": [
       "workflow-automation",
@@ -2040,23 +2051,26 @@
     "title": "Inference-Time Scaling",
     "title_ko": "추론 시간 스케일링",
     "category": "Orchestration & Control",
-    "description": "Traditional language models have fixed performance once trained Allocate additional compute during inference: generate multiple candidates, perform extended reasoning chains, iterate and refine output",
-    "problem": "Traditional language models have fixed performance once trained. For challenging problems, we cannot simply 'think harder' by allocating more computational resources at inference time.",
-    "solution": "Allocate additional compute during inference: generate multiple candidates, perform extended reasoning chains, iterate and refine outputs, search solution spaces more thoroughly.",
+    "description": "Traditional language models are limited by their training-time capabilities Inference-Time Scaling allocates additional computational resources during inference to improve output quality",
+    "problem": "Traditional language models are limited by their training-time capabilities. Once trained, their performance is essentially fixed, regardless of how much compute is available at inference time. This means that for particularly challenging problems, we cannot simply \"think harder\" by allocating more computational resources to find better solutions. This limitation becomes especially apparent in complex reasoning tasks where more deliberation could lead to better outcomes.",
+    "solution": "Inference-Time Scaling allocates additional computational resources during inference to improve output quality. Instead of generating a single response, the system can:\n\n1. **Generate multiple candidates** and select the best one (Best-of-N)\n2. **Perform extended reasoning** chains before responding (Chain-of-Thought)\n3. **Iterate and refine** outputs through multiple passes (Self-Refinement)\n4. **Search through solution spaces** more thoroughly (Tree-of-Thought, MCTS)\n5. **Verify and validate** answers before returning them (Self-Consistency)\n\nThis approach trades compute time for solution quality, allowing smaller models with inference-time scaling to outperform larger models using standard inference.",
     "when_to_use": [
-      "Complex reasoning tasks",
-      "Math/coding problems",
-      "When quality matters more than latency"
+      "Tasks needing explicit control flow between planning, execution, and fallback",
+      "Start with one high-volume workflow before applying across all agent lanes",
+      "Define ownership for each phase so failures can be routed and recovered quickly"
     ],
     "pros": [
-      "Dramatically improves complex task performance",
-      "Cost-effective vs larger models",
-      "Dynamic resource allocation"
+      "Can dramatically improve performance on complex tasks",
+      "More cost-effective than training larger models",
+      "Allows dynamic resource allocation based on task difficulty",
+      "Enables \"System 2\" thinking in AI systems"
     ],
     "cons": [
-      "Increased latency",
-      "Higher inference costs",
-      "Diminishing returns beyond threshold"
+      "Increased latency for responses",
+      "Higher inference costs for complex problems",
+      "Diminishing returns beyond certain compute thresholds",
+      "Not beneficial for simple tasks",
+      "Requires careful tuning of scaling strategies"
     ],
     "tags": [
       "scaling",
@@ -3256,26 +3270,26 @@
     "title": "LLM Observability",
     "title_ko": "LLM 관측성",
     "category": "Reliability & Eval",
-    "description": "Agents introduce non-determinism - same input can produce different outputs Integrate LLM observability platforms (Datadog LLM Observability, LangSmith, etc",
-    "problem": "Agents introduce non-determinism - same input can produce different outputs. Debugging issues requires tracing complex multi-step workflows, but standard logging (CloudWatch, Lambda logs) is painful to navigate. Without easy debugging, agents won't get adopted.",
-    "solution": "Integrate LLM observability platforms (Datadog LLM Observability, LangSmith, etc.) that provide span-level tracing of agent workflows. Get visual UI showing each LLM call, tool use, and intermediate result instead of spelunking through raw logs.",
+    "description": "Agents introduce non-determinism—the same input can produce different outputs Integrate **LLM observability platforms** (Datadog LLM Observability, LangSmith, etc",
+    "problem": "Agents introduce non-determinism—the same input can produce different outputs. When agents do something sub-optimal, users flag it as a \"bug\" even if it's just prompt ambiguity. Debugging these issues requires tracing through complex multi-step workflows, but standard logging (CloudWatch, Lambda logs) is painful to navigate. Engineers need easy access to workflow execution details to debug quickly, or agents won't get adopted.",
+    "solution": "Integrate **LLM observability platforms** (Datadog LLM Observability, LangSmith, etc.) that provide **span-level tracing** of agent workflows. Instead of spelunking through raw logs, get a visual UI showing each step of the agent's execution.\n\n**Key capabilities:**\n\n- **Span visualization**: See each LLM call, tool use, and intermediate result\n- **Workflow linking**: Trace from user input through all sub-steps to final output\n- **Dashboarding**: Aggregate metrics on cost, latency, success rates\n- **Accessible debugging**: Non-engineers can debug without log access\n- **Event sourcing**: Structured logs enable replay, state reconstruction, and verification\n\n**Evolution from standard logging:**\n\n1. **Print to stdout** → Captured in Lambda logs (hard to access)\n2. **Slack channel** → Post run summary + AWS log link (better, still spelunking)\n3. **LLM observability** → Visual span tracing, easy navigation",
     "when_to_use": [
-      "Multi-step agent workflows",
-      "Non-deterministic behaviors",
-      "Team debugging needs",
-      "Production monitoring"
+      "Choose observability platform: Datadog LLM Observability, LangSmith, Arize, etc.",
+      "Install SDK and add to agent code (often 1-2 lines)",
+      "Configure tracing: tag workflows, users, environments",
+      "Give broader team access (not just engineers)"
     ],
     "pros": [
-      "Fast debugging with visual navigation",
-      "Accessible to non-engineers",
-      "Aggregated metrics across runs",
-      "Span-level detail for any step"
+      "Fast debugging: Navigate complex workflows visually",
+      "Accessible: Non-engineers can debug without log permissions",
+      "Aggregated metrics: See patterns across many runs",
+      "Span-level detail: Drill into any step of execution"
     ],
     "cons": [
-      "Vendor dependency",
-      "Enterprise observability can be expensive",
-      "Adds latency overhead (usually minimal)",
-      "Access control complexity"
+      "Vendor dependency: Locked into observability platform",
+      "Cost: Enterprise observability can be expensive",
+      "Overhead: Adds latency (usually minimal)",
+      "Access control: Balancing visibility with security"
     ],
     "tags": [
       "observability",
@@ -3284,6 +3298,7 @@
       "tracing",
       "datadog",
       "langsmith",
+      "spans",
       "monitoring",
       "llmops"
     ],
@@ -3529,26 +3544,29 @@
     "title": "Workflow Evals with Mocked Tools",
     "title_ko": "모의 도구를 사용한 워크플로우 평가",
     "category": "Reliability & Eval",
-    "description": "Unit tests and linters validate individual components but don't test agent workflows end-to-end Implement workflow evals (simulations) that test complete agent workflows with mocked tools",
-    "problem": "Unit tests and linters validate individual components but don't test agent workflows end-to-end. It's easy to create prompts that don't work well despite all underlying pieces being correct. Need to validate that prompts and tools work together as a system.",
-    "solution": "Implement workflow evals (simulations) that test complete agent workflows with mocked tools. Every tool has true and mock versions. Evaluate with objective criteria (which tools called) and subjective criteria (agent-as-judge). Integrate with CI/CD.",
+    "description": "Unit tests, linters, and typecheckers validate individual components but don't test agent workflows end-to-end Implement **workflow evals (simulations)** that test complete agent workflows with mocked",
+    "problem": "Unit tests, linters, and typecheckers validate individual components but don't test agent workflows end-to-end. It's easy to create prompts that don't work well despite all underlying pieces being correct. You need to validate that prompts and tools work together effectively as a system.",
+    "solution": "Implement **workflow evals (simulations)** that test complete agent workflows with mocked tools.\n\n**Core components (Sierra-inspired approach):**\n\n1. **Dual tool implementations**: Every tool has both `true` and `mock` versions\n\n   ```python\n   # True implementation - calls real APIs\n   def search_knowledge_base_true(query: str) -> str:\n       return kb_api.search(query)\n\n   # Mock implementation - returns static/test data\n   def search_knowledge_base_mock(query: str) -> str:\n       return TEST_KB_RESULTS.get(query, DEFAULT_RESULT)\n   ```\n\n2. **Simulation configuration**: Each eval defines:\n   - **Initial prompt**: What the agent receives\n   - **Metadata**: Situation context available to harness\n   - **Evaluation criteria**: Success/failure determination\n\n3. **Dual evaluation criteria**:\n   - **Objective criteria**: Which tools were called, which were NOT called, tags/states added\n   - **Subjective criteria**: Agent-as-judge assessments, LLM evaluations of qualitative outcomes\n\n4. **CI/CD integration**: Run evals automatically on every PR\n\n```pseudo\n# Eval execution flow\n1. Load eval configuration\n2. Swap in mock implementations for all tools\n3. Run agent with initial prompt + metadata\n4. Track which tools agent calls\n5. Evaluate against objective criteria (tool usage)\n6. Run agent-as-judge for subjective criteria\n7. Report pass/fail with details\n```",
     "when_to_use": [
-      "Agent workflows with tool side effects",
-      "CI/CD pipeline validation",
+      "Agent workflows where tools have side effects (APIs, databases)",
+      "CI/CD pipelines requiring workflow validation",
       "Prompt engineering and optimization",
-      "Regression testing for agent changes"
+      "Regression testing for agent behavior changes"
     ],
     "pros": [
-      "End-to-end validation of prompts + tools",
-      "Fast feedback before production",
-      "Safe testing with mocked side effects",
-      "Both objective and subjective criteria"
+      "End-to-end validation: Tests prompts + tools together as a system",
+      "Fast feedback: Catch regressions before they reach production",
+      "Safe testing: Mocked tools avoid side effects during testing",
+      "Clear criteria: Both objective (tool calls) and subjective (quality) measures",
+      "CI/CD integration: Automated validation on every PR"
     ],
     "cons": [
-      "LLM non-determinism causes flaky tests",
-      "Mock maintenance overhead",
-      "Prompt-driven workflows more flaky",
-      "Mixed results provide ambiguous signal"
+      "Non-deterministic: LLM variability makes flaky tests common",
+      "Mock maintenance: Need to keep mocks synced with real tool behavior",
+      "Prompt-driven fragility: Prompt-dependent workflows (vs code-driven) more flaky",
+      "Not blocking-ready: Hard to use as CI gate due to variability",
+      "Tuning overhead: Need continuous adjustment of prompts and mock responses",
+      "Limited signal: Mixed pass/fail results provide ambiguous guidance"
     ],
     "tags": [
       "evals",
@@ -3556,7 +3574,8 @@
       "ci-cd",
       "mocked-tools",
       "simulations",
-      "workflow-validation"
+      "workflow-validation",
+      "end-to-end-testing"
     ],
     "related": []
   },
@@ -3914,23 +3933,25 @@
     "title": "Agent SDK for Programmatic Control",
     "title_ko": "프로그래밍 방식 제어를 위한 에이전트 SDK",
     "category": "Tool Use & Environment",
-    "description": "Interactive terminal or chat interfaces are not suitable for CI/CD pipelines, scheduled jobs, or building applications on top of agent capabilities Provide an SDK that exposes agent core functionaliti",
-    "problem": "Interactive terminal or chat interfaces are not suitable for CI/CD pipelines, scheduled jobs, or building applications on top of agent capabilities.",
-    "solution": "Provide an SDK that exposes agent core functionalities for programmatic access via Python/TypeScript libraries, CLI scripting, and headless operation.",
+    "description": "Interactive terminal or chat interfaces are suitable for many agent tasks, but not for all Provide a Software Development Kit (SDK) that exposes the agent's core functionalities for programmatic acces",
+    "problem": "Interactive terminal or chat interfaces are suitable for many agent tasks, but not for all. Integrating agent capabilities into automated workflows (e.g., CI/CD pipelines, scheduled jobs, batch processing) or building more complex applications on top of core agent functionalities requires a programmatic interface.",
+    "solution": "Provide a Software Development Kit (SDK) that exposes the agent's core functionalities for programmatic access. This SDK allows developers to:\n\n- Invoke agent actions (e.g., process a prompt, use a tool, access memory) from code (e.g., Python, TypeScript)\n- Configure agent behavior and tool access in a non-interactive manner\n- Integrate agent logic into larger software systems\n- Automate repetitive tasks that involve the agent\n- Build custom user interfaces or applications powered by the agent's backend\n- Control resource limits (token budgets, execution time, cost caps)\n- Implement fine-grained permission management and authorization scopes\n\nThe SDK typically includes libraries, command-line interfaces (CLIs) for scripting, and documentation for headless or embedded use of the agent.",
     "when_to_use": [
-      "CI/CD pipeline integration",
-      "Automated batch processing",
-      "Building agent-powered applications"
+      "CI/CD pipeline integration and automated workflows",
+      "Batch processing across multiple files or projects",
+      "Building custom applications or UIs powered by agent backends",
+      "High-performance requirements where caching and reduced overhead matter",
+      "External developer integration and standardization needs"
     ],
     "pros": [
-      "Enables automation",
-      "Integrates with existing workflows",
-      "Programmable agent behavior"
+      "Enables automation and CI/CD integration",
+      "Provides fine-grained control over permissions, resources, and observability",
+      "Supports batch processing and custom UIs"
     ],
     "cons": [
-      "Learning curve for SDK",
-      "Initial auth/setup required",
-      "Version compatibility concerns"
+      "Introduces integration coupling and environment-specific upkeep",
+      "Loses conversational interactivity and clarification",
+      "Requires programmatic error handling with robust retry/fallback logic"
     ],
     "tags": [
       "sdk",
@@ -4165,23 +4186,27 @@
     "title": "Code-Over-API Pattern",
     "title_ko": "API 대신 코드 패턴",
     "category": "Tool Use & Environment",
-    "description": "When agents make direct API calls, all intermediate data flows through context window Agents write and execute code that interacts with tools",
-    "problem": "When agents make direct API calls, all intermediate data flows through context window. Processing 10,000 spreadsheet rows can consume 150,000+ tokens just moving data.",
-    "solution": "Agents write and execute code that interacts with tools. Data processing happens in execution environment, with only results flowing back to model context (150K → 2K tokens).",
+    "description": "When agents make direct API or tool calls, all intermediate data must flow through the model's context window Instead of making direct tool calls, agents write and execute code that interacts with too",
+    "problem": "When agents make direct API or tool calls, all intermediate data must flow through the model's context window. For data-heavy workflows (processing spreadsheets, filtering logs, transforming datasets), this creates massive token consumption and increased latency. A workflow that fetches 10,000 spreadsheet rows and filters them can easily consume 150,000+ tokens just moving data through the context.",
+    "solution": "Instead of making direct tool calls, agents write and execute code that interacts with tools. Data processing, filtering, and transformation happens in the execution environment, with only results flowing back to the model context.\n\n**Core insight**: LLMs are better at writing code to call APIs than at calling APIs directly—due to training data alignment with millions of open-source code repositories.\n\n**Direct API approach (high token cost):**\n\n```pseudo\n# Agent makes tool call\nrows = api_call(\"spreadsheet.getRows\", sheet_id=\"abc123\")\n# All 10,000 rows flow through context → 150K tokens\n\n# Agent processes in context\nfiltered = [row for row in rows if row.status == \"active\"]\n# More tokens for processing\n\nreturn filtered\n```\n\n**Code-Over-API approach (low token cost):**\n\n```python\n# Agent writes code that executes in environment\ndef process_spreadsheet():\n    # Tool call happens in execution environment\n    rows = spreadsheet.getRows(sheet_id=\"abc123\")\n\n    # Filtering happens in code, not in context\n    filtered = [row for row in rows if row.status == \"active\"]\n\n    # Only log summary for agent visibility\n    print(f\"Processed {len(rows)} rows, found {len(filtered)} active\")\n    print(f\"First 5 active rows: {filtered[:5]}\")\n\n    return filtered\n\nresult = process_spreadsheet()\n# Only summary and sample flow to context → ~2K tokens\n```\n\nThe agent sees the log output and return value, but the full dataset never enters its context window.",
     "when_to_use": [
-      "Data-heavy workflows",
-      "Multi-step transformations",
-      "Cost-sensitive applications"
+      "Data-heavy workflows (spreadsheets, databases, logs)",
+      "Multi-step transformations or aggregations",
+      "Workflows with intermediate results that don't need model inspection",
+      "Cost-sensitive applications where token usage matters"
     ],
     "pros": [
-      "Dramatic token reduction (150K → 2K)",
-      "Lower latency",
-      "Natural fit for data processing"
+      "Dramatic token reduction (150K → 2K in reported cases)",
+      "Lower latency (fewer large context API calls)",
+      "Natural fit for data processing tasks",
+      "Intermediate data stays contained in execution environment"
     ],
     "cons": [
-      "Requires secure execution infrastructure",
-      "More complex setup",
-      "Debugging harder"
+      "Requires secure code execution infrastructure",
+      "More complex setup than direct tool calls",
+      "Agents must be capable of writing correct code",
+      "Debugging can be harder (errors happen in execution, not in context)",
+      "Needs monitoring, resource limits, and sandboxing"
     ],
     "tags": [
       "token-optimization",
@@ -4362,23 +4387,28 @@
     "title": "Multi-Platform Communication Aggregation",
     "title_ko": "다중 플랫폼 커뮤니케이션 집계",
     "category": "Tool Use & Environment",
-    "description": "Users communicate across multiple platforms (email, Slack, iMessage) and need to search for information that might exist in any of them Create unified search interface that queries all communication p",
-    "problem": "Users communicate across multiple platforms (email, Slack, iMessage) and need to search for information that might exist in any of them. Searching each manually is slow and error-prone.",
-    "solution": "Create unified search interface that queries all communication platforms in parallel and aggregates results into consistent format with platform adapters, parallel dispatch, and result normalization.",
+    "description": "Users communicate across multiple platforms (email, Slack, iMessage, etc Create a unified search interface that queries all communication platforms in parallel and aggregates results into a single, co",
+    "problem": "Users communicate across multiple platforms (email, Slack, iMessage, etc.) and need to search for information that might exist in any of them. Searching each platform manually is slow and error-prone. An agent tasked with \"find what X said about Y\" must know which platform to check—or check all of them.",
+    "solution": "Create a unified search interface that queries all communication platforms in parallel and aggregates results into a single, consistent format. Also known academically as **Federated Search** or **Mediator-Based Integration**.\n\n**Key components:**\n\n1. **Platform Adapters**: Each platform has a CLI/API wrapper with consistent interface\n2. **Parallel Dispatcher**: Spawns searches concurrently (sub-agent pattern or background jobs)\n3. **Result Normalizer**: Converts platform-specific formats to unified schema\n4. **Aggregator**: Combines, deduplicates, and ranks results\n\n```bash\n# Example: Unified search skill implementation\nsearch_all() {\n    query=\"$1\"\n\n    # Spawn parallel searches\n    messages search \"$query\" > /tmp/messages.json &\n    slack-messages search \"$query\" > /tmp/slack.json &\n    fastmail.sh search \"$query\" > /tmp/fastmail.json &\n    gmail.sh search \"$query\" > /tmp/gmail.json &\n\n    wait  # All complete\n\n    # Aggregate and normalize\n    aggregate_results /tmp/*.json\n}\n```\n\n**Architectural variants:**\n\n- **Adapter Pattern**: Platform abstraction layer with unified API\n- **Gateway/Bridge Pattern**: Bidirectional message synchronization between platforms\n- **Unified Inbox Pattern**: Customer-centric aggregation for support/engagement workflows\n- **Event-Driven Architecture**: Async message brokering for scalability",
     "when_to_use": [
-      "Cross-platform search",
-      "Unified inbox features",
-      "Compliance/audit searches"
+      "User asks \"where did someone mention X\"",
+      "User needs to find a conversation but doesn't remember the platform",
+      "Cross-platform audit or compliance searches",
+      "Building unified inbox or communication hub features"
     ],
     "pros": [
-      "Single query searches all platforms",
-      "Parallel execution minimizes latency",
-      "Extensible"
+      "Single query searches all platforms—no context switching",
+      "Parallel execution minimizes latency (total time ≈ slowest platform)",
+      "Unified format makes comparison and filtering easy",
+      "Extensible: add new platforms without changing interface",
+      "Reduces \"which platform was that on?\" friction"
     ],
     "cons": [
-      "Maintain adapters for each platform",
-      "Cross-platform ranking is subjective",
-      "Privacy concerns"
+      "Requires maintaining adapters for each platform",
+      "Rate limits may apply across platforms simultaneously",
+      "Result ranking across platforms is subjective",
+      "Privacy/security: aggregating data across platforms increases exposure",
+      "Some platforms have poor search APIs (result quality varies)"
     ],
     "tags": [
       "search",
@@ -4462,22 +4492,26 @@
     "title": "Progressive Tool Discovery",
     "title_ko": "점진적 도구 발견",
     "category": "Tool Use & Environment",
-    "description": "Loading all tools upfront wastes context on unused capabilities and slows initialization Lazy-load tools based on task requirements, discovering and loading them progressively as needed",
-    "problem": "Loading all tools upfront wastes context on unused capabilities and slows initialization.",
-    "solution": "Lazy-load tools based on task requirements, discovering and loading them progressively as needed.",
+    "description": "When agents have access to large tool catalogs (dozens to thousands of available tools), loading all tool definitions upfront consumes excessive context window space Present tools through a filesystem",
+    "problem": "When agents have access to large tool catalogs (dozens to thousands of available tools), loading all tool definitions upfront consumes excessive context window space. Most tools won't be used in a given workflow, making this preloading wasteful and limiting the context available for actual task execution.",
+    "solution": "Present tools through a filesystem-like hierarchy where agents discover capabilities on-demand by exploring the structure. This pattern scales to 1000+ tools and is production-validated across major platforms (MCP, Cloudflare Code Mode, OpenAI, LangChain).\n\nImplement a `search_tools` capability that allows agents to request different levels of detail:\n\n1. **Name only**: Minimal context for initial browsing\n2. **Name + description**: Enough to understand tool purpose\n3. **Full definition with schemas**: Complete API details only when needed\n\nTools are organized hierarchically (e.g., `servers/google-drive/getDocument.ts`, `servers/slack/sendMessage.ts`) so agents can:\n- List the `./servers/` directory to see available integrations\n- Navigate into specific server directories to find relevant tools\n- Load full definitions only for tools they intend to use\n\n```pseudo\n# Agent workflow\n1. list_directory(\"./servers/\")\n   → Returns: [\"google-drive/\", \"slack/\", \"github/\", ...]\n\n2. search_tools(pattern=\"google-drive/*\", detail_level=\"name+description\")\n   → Returns: Brief descriptions of Google Drive tools\n\n3. get_tool_definition(\"servers/google-drive/getDocument\")\n   → Returns: Full JSON schema with parameters, types, examples\n```",
     "when_to_use": [
-      "Many tool environments",
-      "Context optimization",
-      "MCP server setups"
+      "Systems with 20+ available tools or integrations",
+      "Model Context Protocol (MCP) server implementations",
+      "Plugin architectures where agents select from many capabilities"
     ],
     "pros": [
-      "Context efficiency",
-      "Fast startup",
-      "Flexible scaling"
+      "Reduces initial context consumption by 70-90% (based on production data)",
+      "Scales to 1000+ tools efficiently",
+      "Agents learn about tool ecosystem through exploration",
+      "Natural mapping to code-based tool interfaces",
+      "Supports versioning and deprecation gracefully"
     ],
     "cons": [
-      "Discovery latency",
-      "Tool indexing required"
+      "Adds discovery overhead (extra tool calls before execution)",
+      "Requires thoughtful organization and naming schemes",
+      "Less effective if agents need most tools anyway",
+      "May require multiple round-trips to find the right tool"
     ],
     "tags": [
       "mcp",
@@ -5081,24 +5115,29 @@
     "title": "Proactive Trigger Vocabulary",
     "title_ko": "능동적 트리거 어휘",
     "category": "UX & Collaboration",
-    "description": "Agents with many skills face routing problems; users don't know what phrases activate which capabilities Define explicit trigger vocabularies for each skill and document them visibly so users can lear",
-    "problem": "Agents with many skills face routing problems; users don't know what phrases activate which capabilities.",
-    "solution": "Define explicit trigger vocabularies for each skill and document them visibly so users can learn the activation patterns.",
+    "description": "Agents with many skills face a routing problem: given a user's natural language input, which skill should handle it? Solutions like embedding-based similarity or LLM classification work but are opaque",
+    "problem": "Agents with many skills face a routing problem: given a user's natural language input, which skill should handle it? Solutions like embedding-based similarity or LLM classification work but are opaque—users don't know what phrases will activate which capabilities. Additionally, agents may have skills that should activate proactively (without explicit request) when certain topics arise, but without explicit trigger lists, the agent may miss opportunities or activate inappropriately.",
+    "solution": "Define an explicit **trigger vocabulary** for each skill: a list of phrases, keywords, and patterns that should activate that skill. Document these triggers visibly so both humans and agents know the activation criteria.\n\n```yaml\n# Skill definition with explicit triggers\nskill: priority-report\ndescription: Generate prioritized task report\n\ntriggers:\n  exact: [\"sup\", \"priority report\", \"standup prep\"]\n  contains: [\"what should I work on\", \"what's pending\", \"my tasks\"]\n  patterns: [\"what.*on my plate\", \"action items\"]\n\nproactive: true  # Activate without explicit request when triggers match\n```\n\n**Key components:**\n\n1. **Trigger lists**: Explicit phrases per skill, documented in skill definitions\n2. **Proactive flag**: Whether skill should auto-activate on trigger match\n3. **Priority ordering**: When multiple skills match, which takes precedence\n4. **User visibility**: Triggers documented so users learn the vocabulary\n\n**Proactive activation categories:**\n\n- **Information offering**: Providing relevant information unprompted\n- **Suggestion**: Recommending actions or content\n- **Clarification**: Asking for missing information\n- **Correction**: Fixing user errors or misunderstandings\n\nUser acceptance of proactive activation depends on relevance (contextually appropriate), timing (not interrupting flow), and transparency (explaining why the action was taken).",
     "when_to_use": [
-      "Multi-skill agents",
-      "User-facing assistants",
-      "Predictable routing needs"
+      "Multi-skill agents needing deterministic routing",
+      "User-facing assistants where discoverability matters",
+      "Agents with proactive capabilities that should activate on topic match",
+      "Systems requiring predictable, debuggable skill activation"
     ],
     "pros": [
-      "Transparent",
-      "Predictable",
-      "Fast matching",
-      "Documentable"
+      "Transparent: users can learn trigger phrases, feel in control",
+      "Predictable: same input always routes to same skill",
+      "Debuggable: easy to see why a skill activated (or didn't)",
+      "Fast: string matching faster than embedding lookup",
+      "Documentable: triggers become part of user-facing docs",
+      "Proactive: agent can jump in when relevant topics arise"
     ],
     "cons": [
-      "Rigid (misses paraphrases)",
-      "Maintenance overhead",
-      "Cultural/language bias"
+      "Rigid: misses paraphrases not in trigger list",
+      "Maintenance: must update triggers as vocabulary evolves",
+      "Conflicts: multiple skills may want same triggers",
+      "Cultural/language bias: triggers may not translate",
+      "Discovery: users must learn the vocabulary (or read docs)"
     ],
     "tags": [
       "ux",
