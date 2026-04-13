@@ -670,26 +670,22 @@
     "title": "Background Agent with CI Feedback",
     "title_ko": "CI 피드백을 포함한 백그라운드 에이전트",
     "category": "Feedback Loops",
-    "description": "Long-running tasks tie up the editor and require developers to babysit the agent Run the agent asynchronously: it pushes a branch, waits for CI, ingests pass/fail output, iterates on failures, and pin",
-    "problem": "Long-running tasks tie up the editor and require developers to babysit the agent. Developers can't step away while the agent works on complex tasks like upgrades or migrations.",
-    "solution": "Run the agent asynchronously: it pushes a branch, waits for CI, ingests pass/fail output, iterates on failures, and pings the user when green. Perfect for mobile kick-offs ('fix flaky test while I'm at soccer practice').",
+    "description": "Long-running refactors and flaky-fix cycles force developers into synchronous supervision Run the agent asynchronously in the background with CI as the objective feedback channel",
+    "problem": "Long-running refactors and flaky-fix cycles force developers into synchronous supervision. When the agent must wait on tests, build jobs, and deployment checks, human attention gets wasted on polling instead of decision-making. This bottleneck is worse in distributed teams where CI feedback arrives minutes later and context-switch cost is high.",
+    "solution": "Run the agent asynchronously in the background with CI as the objective feedback channel. The agent pushes a branch, waits for CI results, patches failures, and repeats until policy-defined stopping conditions are met. Users are only pulled back in for approvals, ambiguous failures, or final review.\n\nProduction implementations include GitHub Agentic Workflows, Cursor Background Agent, and OpenHands.\n\nKey mechanics:\n- Branch-per-task isolation (often via cloud-based execution or git worktrees).\n- CI log ingestion into structured failure signals.\n- Retry budget and stop rules to avoid infinite churn.\n- Notification on terminal states (`green`, `blocked`, `needs-human`).",
     "when_to_use": [
-      "Long-running upgrade tasks",
-      "Flaky test fixes",
-      "Migration tasks",
-      "When developer can't monitor continuously"
+      "Start with deterministic tasks: dependency upgrades, lint migrations, flaky test triage.",
+      "Define retry budgets (`max_attempts`, `max_runtime`) and escalation triggers.",
+      "Use safe defaults: read-only permissions where possible, draft PRs for AI-generated changes.",
+      "Keep artifact links in notifications so humans can review failures quickly.",
+      "Gate merge on CI plus at least one human approval for high-risk repos.",
+      "Consider durable execution mechanisms (Temporal, LangGraph) for long-running tasks."
     ],
     "pros": [
-      "Frees developer from babysitting",
-      "Uses existing CI as feedback",
-      "Iterates automatically on failures",
-      "Perfect for mobile workflows"
+      "Better developer focus, lower waiting time, and tighter CI-driven iteration loops."
     ],
     "cons": [
-      "CI costs for multiple runs",
-      "May iterate too many times",
-      "Needs good CI coverage",
-      "Notification infrastructure needed"
+      "Requires robust task lifecycle management, failure triage logic, and notification discipline."
     ],
     "tags": [
       "asynchronous",
@@ -1107,30 +1103,37 @@
     "title": "Agent Reinforcement Fine-Tuning (Agent RFT)",
     "title_ko": "에이전트 강화 미세조정 (Agent RFT)",
     "category": "Learning & Adaptation",
-    "description": "Agents underperform on specific business tasks due to domain shift, inefficient tool use, and suboptimal reasoning Train model weights end-to-end on agentic tasks using real tool calls during training",
-    "problem": "Agents underperform on specific business tasks due to domain shift, inefficient tool use, and suboptimal reasoning. Traditional fine-tuning can't train end-to-end on multi-step tool interactions.",
-    "solution": "Train model weights end-to-end on agentic tasks using real tool calls during training, custom reward signals, and exploration-based learning.",
+    "description": "After optimizing prompts and task design, agents may still underperform on your specific business tasks because: domain shift means your tools and business context differ from what the base model was ",
+    "problem": "After optimizing prompts and task design, agents may still underperform on your specific business tasks because: domain shift means your tools and business context differ from what the base model was trained on, inefficient tool use leads to too many tool calls or wrong tools causing high latency, suboptimal reasoning means the model doesn't reason well across your specific tool outputs, and sample scarcity in domains like new GPU hardware or specialized finance lack training data. Traditional fine-tuning approaches don't work well because they can't train the agent end-to-end on multi-step tool interactions with your environment.",
+    "solution": "Agent Reinforcement Fine-Tuning (Agent RFT) trains the model weights end-to-end on agentic tasks by allowing the model to:\n\n1. Explore via actual tool calls: During training rollouts, the agent calls your real tool endpoints, learning from actual responses\n2. Receive custom reward signals: You define what \"good\" looks like via flexible graders (model-based, endpoint-based, or string-based)\n3. Learn multi-step reasoning: The agent learns to reason across tool outputs in the context window\n4. Optimize for your metrics: Reduce tool calls, improve accuracy, or balance both based on your reward function\n\nKey Components:\n- Tool Endpoints: Host your tools (same as production) that the model calls during training\n- Grader Endpoint: Define custom reward logic that evaluates final answers and/or tool call traces\n- Unique Rollout IDs: Each training rollout gets a unique ID for state management across tool calls\n\nGrader Design Best Practices:\n- Use gradient rewards: Provide 0-1 floating point scores rather than binary 0/1 for clearer learning signals\n- Prevent reward hacking: Evaluate reasoning process, not just final answers; detect \"lucky guesses\"\n- Align with domain knowledge: Measure grader-human consistency (e.g., Cohen's Kappa) before training\n- Multi-dimensional evaluation: Consider correctness, format compliance, efficiency, and safety",
     "when_to_use": [
-      "Domain-specific agent optimization",
-      "Reducing tool call latency",
-      "Sample-scarce specialized domains"
+      "Well-specified, constrained task with consensus on correct answers",
+      "Non-zero baseline performance where model sometimes gets it right",
+      "Quality training data with 100-1000 samples, quality over quantity",
+      "Hosted tool endpoints that mirror production behavior",
+      "Need to optimize ML performance, latency, or sample efficiency"
     ],
     "pros": [
-      "End-to-end optimization",
-      "Sample efficient (100-1000 samples)",
-      "Natural latency reduction"
+      "End-to-end optimization: Trains the entire agent loop, not just final outputs",
+      "Sample efficient: Can work with 100-1000 samples vs millions for pre-training",
+      "Flexible rewards: Support for complex, multi-criteria grading logic",
+      "Natural speedups: Models learn to use fewer tokens and tool calls organically",
+      "Domain adaptation: Closes distribution gap between base model and your business context"
     ],
     "cons": [
-      "Infrastructure complexity",
-      "Bursty traffic during training",
-      "Requires careful reward engineering"
+      "Infrastructure complexity: Must host robust tool and grader endpoints",
+      "Bursty traffic: Training sends hundreds of simultaneous requests at training step boundaries",
+      "Grader design effort: Requires careful reward engineering to avoid gaming",
+      "Training cost: More expensive than supervised fine-tuning due to exploration",
+      "Debugging difficulty: Hard to trace why model learned certain behaviors"
     ],
     "tags": [
       "reinforcement-learning",
       "fine-tuning",
       "tool-use",
       "multi-step-rl",
-      "agent-training"
+      "agent-training",
+      "exploration"
     ],
     "related": []
   },
@@ -1407,23 +1410,27 @@
     "title": "Agent-Driven Research",
     "title_ko": "에이전트 주도 리서치",
     "category": "Orchestration & Control",
-    "description": "Traditional research methods lack ability to adapt search strategies based on emerging results, limiting efficiency and potential discoveries Allow AI agents to independently conduct the entire resear",
-    "problem": "Traditional research methods lack ability to adapt search strategies based on emerging results, limiting efficiency and potential discoveries.",
-    "solution": "Allow AI agents to independently conduct the entire research process: create queries, execute searches, examine data, adjust strategy, and compile summaries.",
+    "description": "Traditional research methods often lack the ability to adapt search strategies based on emerging results, limiting efficiency and potential discoveries Allow AI agents to independently conduct the ent",
+    "problem": "Traditional research methods often lack the ability to adapt search strategies based on emerging results, limiting efficiency and potential discoveries. Complex research tasks require multi-round investigation, cross-source synthesis, and dynamic strategy adjustment that static retrieval systems cannot provide.",
+    "solution": "Allow AI agents to independently conduct the entire research process. Given a research question, the agent creates its own search queries through dynamic planning, executes the searches across multiple sources, examines the data and evaluates quality/relevance, reflects on whether sufficient information has been gathered, adjusts its search strategy based on findings and gaps, repeats until satisfaction criteria are met, and synthesizes findings into a comprehensive, well-sourced report.\n\nThe key mechanism is a self-reflective iteration loop: after each search cycle, the agent evaluates results against its research goals and autonomously determines the next exploration direction. Production implementations typically combine four subsystems: planning (task decomposition), memory (context + vector store), action (tool orchestration), and reflection (quality evaluation).\n\nA common variant uses parallel multi-agent teams, where different agents simultaneously pursue different research angles and later synthesize findings.",
     "when_to_use": [
-      "Deep research tasks",
-      "Multi-source information gathering",
-      "Exploratory analysis"
+      "Open-ended research requiring strategy adaptation and multi-source synthesis",
+      "Tasks needing explicit control flow between planning, execution, and fallback",
+      "Define clear termination conditions (satisfaction-based or resource-limited)",
+      "Design for multi-source integration (web, databases, documents)",
+      "Combine with reflection loop for self-correction; with agentic RAG for document retrieval"
     ],
     "pros": [
-      "Adapts search strategy dynamically",
-      "Autonomous iteration",
-      "Comprehensive coverage"
+      "Enables autonomous multi-round investigation",
+      "Adapts strategy based on findings",
+      "Produces comprehensive, well-sourced outputs",
+      "Superior for complex analytical tasks"
     ],
     "cons": [
-      "May over-explore",
-      "Token costs can accumulate",
-      "Quality varies with tools"
+      "Higher token cost (5-10x vs. single-round retrieval)",
+      "Increased latency from multiple LLM calls",
+      "Planning stability challenges",
+      "Orchestration complexity adds states to debug"
     ],
     "tags": [
       "research",
@@ -2065,28 +2072,25 @@
     "title": "Inversion of Control",
     "title_ko": "제어의 역전",
     "category": "Orchestration & Control",
-    "description": "User-driven interaction limits agent autonomy and throughput, requiring constant human prompting Let the agent drive the interaction loop, requesting human input only when genuinely needed for decisio",
-    "problem": "User-driven interaction limits agent autonomy and throughput, requiring constant human prompting.",
-    "solution": "Let the agent drive the interaction loop, requesting human input only when genuinely needed for decisions or clarifications.",
+    "description": "Prompt-as-puppeteer workflows force humans to micromanage each step, turning agents into expensive autocomplete tools Give the agent tools and a clear high-level objective, then let it own execution s",
+    "problem": "Prompt-as-puppeteer workflows force humans to micromanage each step, turning agents into expensive autocomplete tools. This limits throughput, creates brittle instructions that break on small context changes, and prevents agents from using their own planning capability.",
+    "solution": "Give the agent tools and a clear high-level objective, then let it own execution strategy inside explicit guardrails. Humans define intent, constraints, and review criteria; the agent decides sequencing, decomposition, and local recovery steps.\n\nThis implements a three-layer architecture: Policy Layer (human-defined objectives and constraints), Control Layer (automated guardrail enforcement), and Execution Layer (agent-owned task decomposition and tool selection).\n\nThis flips control from \"human scripts every move\" to \"human sets policy, agent performs.\" The result is higher leverage while preserving oversight at critical checkpoints.",
     "when_to_use": [
-      "Autonomous operations",
-      "Batch processing",
-      "Background agents"
+      "Start with bounded tasks where success criteria are objective (tests pass, migration complete, docs generated).",
+      "Give explicit constraints: allowed tools, time budget, and escalation conditions.",
+      "Require checkpoints at risky boundaries (schema changes, deploy steps, external write actions).",
+      "Measure autonomy win-rate (target >80%) and human intervention rate per task class."
     ],
     "pros": [
-      "Higher throughput",
-      "Efficient human time",
-      "Autonomous execution"
+      "Higher developer leverage, faster execution loops, and better use of model planning ability."
     ],
     "cons": [
-      "Reduced control",
-      "Risk of unexpected behavior"
+      "Requires strong guardrails and telemetry to prevent silent drift or overreach."
     ],
     "tags": [
       "orchestration",
       "autonomy",
-      "control",
-      "agent-driven"
+      "control"
     ],
     "related": []
   },
@@ -2418,29 +2422,37 @@
     "title": "Progressive Autonomy with Model Evolution",
     "title_ko": "모델 진화에 따른 점진적 자율성",
     "category": "Orchestration & Control",
-    "description": "Agent scaffolding built for older models becomes unnecessary overhead as models improve, causing prompt bloat Actively remove scaffolding as models become more capable",
-    "problem": "Agent scaffolding built for older models becomes unnecessary overhead as models improve, causing prompt bloat.",
-    "solution": "Actively remove scaffolding as models become more capable. Push complexity into the model itself rather than external scaffolding.",
+    "description": "Agent scaffolding built for older models becomes unnecessary overhead as models improve: prompt bloat where system prompts accumulate instructions that newer models don't need, over-engineered flows w",
+    "problem": "Agent scaffolding built for older models becomes unnecessary overhead as models improve: prompt bloat where system prompts accumulate instructions that newer models don't need, over-engineered flows with complex orchestration for tasks models can now handle directly, wasted tokens paying for instructions the model already knows, slower execution from unnecessary steps adding latency, and maintenance burden with more code to maintain for diminishing benefit. Models improve faster than scaffolding is removed, creating technical debt.",
+    "solution": "Actively remove scaffolding as models become more capable. Regularly audit system prompts, orchestration logic, and agent architecture to eliminate what newer models have internalized.\n\nCore principle: Push complexity into the model itself rather than external scaffolding.\n\nOperationalize this as a repeating simplification loop:\n- Identify instructions that existed to compensate for older model weaknesses.\n- Remove a slice of scaffolding and run controlled evals against production-like tasks.\n- Keep deletions that preserve quality; revert deletions that increase failure risk.\n\nThe goal is not minimal prompts at all costs, but right-sized scaffolding for the current model generation.\n\n```pseudo\n# Claude Opus 4.1 (older model)\nsystem_prompt = \"\"\"\nWhen writing code:\n1. First check if file exists\n2. Read current contents\n3. Plan your changes\n4. Make minimal edits\n5. Verify syntax\n... [2000 more tokens of instructions]\n\"\"\"\n\n# Claude Sonnet 4.5 (newer model)\nsystem_prompt = \"\"\"\nWrite clean, tested code.\n\"\"\"  # Model already knows the steps\n```",
     "when_to_use": [
-      "After model upgrades",
-      "Prompt optimization",
-      "Cost reduction efforts"
+      "Track model releases and note when new models become available",
+      "Test simplified prompts by removing instructions and checking if quality degrades",
+      "Measure token usage to quantify savings from prompt reduction",
+      "A/B test scaffolding to compare outcomes with and without orchestration steps",
+      "Delete what works: if model performs equally without scaffolding, remove it"
     ],
     "pros": [
-      "Reduced token costs",
-      "Faster execution",
-      "Simpler maintenance"
+      "Reduced token costs: Shorter prompts = cheaper inference",
+      "Faster execution: Less processing overhead",
+      "Simpler maintenance: Less code/prompts to manage",
+      "Future-proof: Embraces model capabilities rather than fighting them",
+      "Better performance: Models often work better with less hand-holding"
     ],
     "cons": [
-      "Requires testing",
-      "Version management complexity",
-      "Risk of regression"
+      "Requires testing: Must validate that quality doesn't degrade",
+      "Version management: May need different configs for different models",
+      "Loss of explicit control: Less visibility into model's internal reasoning",
+      "Risk of regression: Removing too much can hurt performance",
+      "Documentation debt: May lose understanding of why scaffolding was added"
     ],
     "tags": [
       "model-evolution",
       "scaffolding",
       "autonomy",
-      "prompt-optimization"
+      "system-prompts",
+      "capabilities",
+      "model-intelligence"
     ],
     "related": []
   },
@@ -3592,29 +3604,34 @@
     "title": "Isolated VM per RL Rollout",
     "title_ko": "RL 롤아웃당 격리된 VM",
     "category": "Security & Safety",
-    "description": "During RL training with tool-using agents, parallel rollouts may run destructive commands, causing cross-contamination, state leakage, and corrupted reward signals Spin up an isolated VM or container ",
-    "problem": "During RL training with tool-using agents, parallel rollouts may run destructive commands, causing cross-contamination, state leakage, and corrupted reward signals.",
-    "solution": "Spin up an isolated VM or container for each RL rollout, ensuring complete environment isolation. Each VM starts fresh and is destroyed after rollout completion.",
+    "description": "During reinforcement learning training with tool-using agents, multiple rollouts execute simultaneously and may call destructive or stateful tools Spin up an isolated virtual machine (or container) fo",
+    "problem": "During reinforcement learning training with tool-using agents, multiple rollouts execute simultaneously and may call destructive or stateful tools. This challenge is well-established in distributed RL research—A3C and PPO both rely on parallel isolated environment instances for stable gradient estimation. Specific issues include: cross-contamination where one rollout's actions affect another rollout's environment, destructive commands where agents might run `rm -rf` corrupting shared state, state leakage where file system changes persist across rollouts creating inconsistent training data, reward corruption where if rollout B sees rollout A's side effects reward signals become meaningless, and debugging nightmares from non-deterministic failures due to race conditions.",
+    "solution": "Spin up an isolated virtual machine (or container) for each RL rollout, ensuring complete environment isolation.\n\nArchitecture:\n1. Rollout ID Tracking: OpenAI's Agent RFT platform assigns unique IDs to each rollout\n2. VM/Container Mapping: Your infrastructure maps rollout ID to a dedicated VM\n3. Clean State: Each VM starts fresh with identical filesystem, packages, and configuration\n4. Cleanup: VMs are destroyed after rollout completes (success or failure)\n\nKey Components:\n- VM Provisioning: Fast VM creation (typically cloud instances or containers)\n- Bursty Scaling: Handle 100s-500s of simultaneous VM requests at training step boundaries\n- State Isolation: No shared filesystems or databases between VMs\n- Timeout Handling: VMs auto-destroy after timeout to prevent resource leaks",
     "when_to_use": [
-      "Agent RFT with tool access",
-      "Training with destructive commands",
-      "Production parity requirements"
+      "Choose isolation technology: Modal/E2B for MicroVMs with ~1s startup (recommended), Docker containers per rollout, Kubernetes Jobs for production-grade, or Cloud VMs for maximum isolation",
+      "Implement rollout ID tracking where all tool endpoints accept and validate rollout_id",
+      "Handle bursty traffic with 100-500 simultaneous rollout requests at training step boundaries",
+      "Monitor infrastructure with critical metrics: VM provisioning time <5s, error rate <1%, rollout timeout rate <0.1%"
     ],
     "pros": [
-      "Complete isolation",
-      "Safe destructive commands",
-      "Deterministic rewards"
+      "Complete isolation: No cross-contamination between rollouts",
+      "Safety: Destructive commands can't affect other rollouts or host system",
+      "Determinism: Consistent environment for reliable reward signals",
+      "Production parity: Can use exact same environment as production"
     ],
     "cons": [
-      "High cost (100s of VMs)",
-      "Provisioning latency",
-      "Infrastructure complexity"
+      "Cost: Hundreds of VMs running simultaneously can be expensive",
+      "Provisioning time: VM startup adds latency (containers are faster)",
+      "Complexity: Requires robust infrastructure and monitoring",
+      "Scaling limits: Cloud provider quotas may limit concurrent VMs",
+      "Failure modes: Infrastructure issues can cause training collapse"
     ],
     "tags": [
       "isolation",
       "security",
       "reinforcement-learning",
       "infrastructure",
+      "state-management",
       "agent-rft"
     ],
     "related": []
@@ -3965,29 +3982,41 @@
     "title": "CLI-First Skill Design",
     "title_ko": "CLI 우선 스킬 설계",
     "category": "Tool Use & Environment",
-    "description": "Skills designed only for agent use are hard to test, debug, and iterate on quickly Design every skill as a CLI command first, making it testable and usable by both humans and agents",
-    "problem": "Skills designed only for agent use are hard to test, debug, and iterate on quickly.",
-    "solution": "Design every skill as a CLI command first, making it testable and usable by both humans and agents.",
+    "description": "When building agent skills (reusable capabilities), there's tension between:\n\n- **API-first design**: Skills as functions/classes—great for programmatic use, but hard to debug and test manually\n- **GU",
+    "problem": "When building agent skills (reusable capabilities), there's tension between:\n\n- **API-first design**: Skills as functions/classes—great for programmatic use, but hard to debug and test manually\n- **GUI-first design**: Skills as visual tools—easy for humans, but agents can't invoke them\n\nTeams end up building two interfaces or choosing one audience over the other.",
+    "solution": "Design all skills as **CLI tools first**. A well-designed CLI is naturally dual-use: humans can invoke it from the terminal, and agents can invoke it via shell commands.\n\n**Core principles:**\n\n1. **One script, one skill**: Each capability is a standalone executable\n2. **Subcommands for operations**: `skill.sh list`, `skill.sh get <id>`, `skill.sh create`\n3. **Structured output**: JSON for programmatic use, human-readable for TTY (auto-detect via `isatty()`)\n4. **Exit codes**: 0 for success, 1 for errors, 2 for incorrect usage, 127 if not found\n5. **Environment config**: Credentials via env vars, not hardcoded\n6. **Default non-interactive**: Avoid prompts; provide `--yes` or `--force` flags instead\n\n```bash\n# Example: Trello skill as CLI\ntrello.sh boards                    # List all boards\ntrello.sh cards <BOARD_ID>          # List cards on board\ntrello.sh create <LIST_ID> \"Title\"  # Create card\ntrello.sh move <CARD_ID> <LIST_ID>  # Move card\n```",
     "when_to_use": [
-      "Rapid skill development",
-      "Team collaboration",
-      "Debugging workflows"
+      "Standalone executable with shebang (`#!/bin/bash`)",
+      "Help text via `--help` or no-args",
+      "Subcommands for CRUD operations",
+      "JSON output (or TTY auto-detection)",
+      "Credentials from `~/.envrc` or environment",
+      "Meaningful exit codes (0=success, 1=error, 2=usage, 127=not found)",
+      "Stderr for errors, stdout for data",
+      "Non-interactive mode with `--yes`/`--force` flags"
     ],
     "pros": [
-      "Easy testing",
-      "Human-debuggable",
-      "Reusable across contexts"
+      "Dual-use by default: Same interface for humans and agents",
+      "Debuggable: Run manually to test, inspect output",
+      "Composable: Pipe, chain, and combine with Unix tools",
+      "Portable: Works in any shell, no runtime dependencies",
+      "Transparent: Agent's tool calls are visible shell commands",
+      "Testable: Easy to write integration tests"
     ],
     "cons": [
-      "CLI overhead for simple operations",
-      "Subprocess management"
+      "Shell limitations: Complex data structures awkward in bash",
+      "Error handling: Less structured than exceptions",
+      "Performance: Process spawn overhead vs function calls",
+      "State management: No persistent state between invocations",
+      "Windows compatibility: Requires WSL or Git Bash"
     ],
     "tags": [
       "cli",
       "skills",
-      "testing",
-      "debugging",
-      "design-pattern"
+      "shell",
+      "dual-use",
+      "composability",
+      "unix-philosophy"
     ],
     "related": []
   },
@@ -4282,23 +4311,28 @@
     "title": "Multi-Platform Webhook Triggers",
     "title_ko": "다중 플랫폼 웹훅 트리거",
     "category": "Tool Use & Environment",
-    "description": "An internal agent only provides value when its workflows are initiated Implement multi-platform webhook triggers: Notion webhooks for document changes, Slack messages/reacji, Jira issue events, and sc",
-    "problem": "An internal agent only provides value when its workflows are initiated. Building out trigger mechanisms is core to agent adoption. Without easy triggers, employees can't effectively automate workflows.",
-    "solution": "Implement multi-platform webhook triggers: Notion webhooks for document changes, Slack messages/reacji, Jira issue events, and scheduled events via cron or GitHub Actions.",
+    "description": "An internal agent only provides value when its workflows are initiated Implement **multi-platform webhook triggers** that allow external SaaS tools to initiate agent workflows automatically",
+    "problem": "An internal agent only provides value when its workflows are initiated. Building out a library of workflow initialization mechanisms (triggers) is core to agent adoption. Without easy triggers, employees can't effectively automate their day-to-day workflows.",
+    "solution": "Implement **multi-platform webhook triggers** that allow external SaaS tools to initiate agent workflows automatically. This pattern leverages a mature ecosystem of workflow automation platforms (n8n with 400+ integrations, Zapier with 6,000+, Make.com with 1,000+) that can be used directly or as reference implementations.\n\n**Trigger types implemented:**\n\n1. **Notion webhooks**: Fire on page/database modifications (document status changes, RFC workflows, auto-assign reviewers, in-line commenting)\n2. **Slack messages**: Bot responds in channels (public/private channel support, channel creation triggers, default prompts)\n3. **Jira webhooks**: Issue lifecycle events (creation, updates, comments, custom routing)\n4. **Slack reacji (emoji reactions)**: Quick workflow initiation (listen for specific emojis, e.g. `:jira:` reaction turns thread into ticket)\n5. **Scheduled events**: Periodic triggers (Slack workflows, GitHub Actions cron jobs)\n\n```pseudo\n# Trigger flow\nPlatform Event → Webhook → Agent Trigger → Workflow Execution\n```",
     "when_to_use": [
-      "Internal agent platforms",
-      "Document-heavy workflows (RFCs, reviews)",
-      "Automated routing and triage"
+      "Internal agent platforms with multiple integration points",
+      "Teams already using Slack, Notion, Jira extensively",
+      "Document-heavy workflows (RFCs, reviews, approvals)",
+      "Need for automated routing and triage"
     ],
     "pros": [
-      "Low friction workflow initiation",
-      "Platform-native UX",
-      "Reactive to events"
+      "Low friction: Easy workflow initiation enables iterative learning",
+      "Platform-native: Users work in existing tools (Slack, Notion, Jira)",
+      "Reactive: Agent responds to events, not just explicit requests",
+      "Flexible: Support for custom routing and nuanced workflows",
+      "Scalable: Easy to add new trigger types by pasting docs to LLM"
     ],
     "cons": [
-      "Maintenance overhead per platform",
-      "Security complexity",
-      "Platform lock-in"
+      "Maintenance overhead: Each platform integration requires ongoing work",
+      "Security complexity: Private channels, auth tokens, request verification",
+      "Platform lock-in: Deep integration with specific tools",
+      "Observability challenges: Must avoid logging sensitive data",
+      "Custom vs off-the-shelf: Building vs buying (Zapier, n8n)"
     ],
     "tags": [
       "webhooks",
@@ -4567,26 +4601,19 @@
     "title": "Abstracted Code Representation for Review",
     "title_ko": "코드 리뷰를 위한 추상화된 표현",
     "category": "UX & Collaboration",
-    "description": "Reviewing large volumes of AI-generated code line-by-line is tedious, error-prone, and inefficient Provide higher-level abstracted representation of code changes for review: pseudocode, intent summari",
-    "problem": "Reviewing large volumes of AI-generated code line-by-line is tedious, error-prone, and inefficient. Human reviewers are often more interested in verifying high-level intent and logical correctness than minute syntactic details.",
-    "solution": "Provide higher-level abstracted representation of code changes for review: pseudocode, intent summaries, logical diffs, or visualizations. This must come with guarantees that it accurately maps to actual low-level code modifications.",
+    "description": "Reviewing AI-generated code line-by-line is time-intensive and cognitively demanding Provide abstracted representations of code changes for human review:\n\n- **Pseudocode:** Concise, human-readable rep",
+    "problem": "Reviewing AI-generated code line-by-line is time-intensive and cognitively demanding. Research shows developers prefer understanding *why* changes were made over *how* they were implemented—intent-level review is faster and more effective than syntax-level verification.",
+    "solution": "Provide abstracted representations of code changes for human review:\n\n- **Pseudocode:** Concise, human-readable representation of logic\n- **Intent Summaries:** Functional description of what changes achieve\n- **Logical Diffs:** Behavioral changes rather than textual differences\n- **Visualizations:** Control flow, data flow, or architectural diagrams\n\n**Critical requirement:** Abstracted representations must have strong guarantees that they accurately map to actual code changes. Formal verification of this mapping remains an open research challenge; current implementations rely on confidence scoring and drill-down capability for verification.\n\n**Production examples:** GitHub Copilot Workspace (multi-stage workflows), Cursor AI (intent-based editing), Claude Code (plan-then-execute verification), PR summarization tools (Augment: 59% F-Score, Cursor Bugbot: 49%, Greptile: 45%, CodeRabbit: 39%, Claude Code: 31%, GitHub Copilot: 25%).",
     "when_to_use": [
-      "Reviewing large AI-generated changes",
-      "When conceptual correctness matters more than syntax",
-      "High-velocity code review workflows",
-      "Trusted AI generation pipelines"
+      "Use this when humans and agents share ownership of work across handoffs.",
+      "Start with clear interaction contracts for approvals, overrides, and escalation.",
+      "Capture user feedback in structured form so prompts and workflows can improve."
     ],
     "pros": [
-      "Much faster review cycles",
-      "Focus on intent not syntax",
-      "Reduced reviewer fatigue",
-      "Scales with AI code volume"
+      "Creates clearer human-agent handoffs and better operational trust."
     ],
     "cons": [
-      "Requires strong mapping guarantees",
-      "May miss subtle bugs",
-      "Trust dependency on abstraction layer",
-      "New tooling required"
+      "Needs explicit process design and coordination across teams."
     ],
     "tags": [
       "code-review",
@@ -5049,27 +5076,30 @@
     "title": "Team-Shared Agent Configuration as Code",
     "title_ko": "팀 공유 에이전트 설정 코드화",
     "category": "UX & Collaboration",
-    "description": "When each engineer configures their AI agent independently: inconsistent behavior across team, permission friction for safe commands, duplicated effort solving same problems, knowledge silos, onboardi",
-    "problem": "When each engineer configures their AI agent independently: inconsistent behavior across team, permission friction for safe commands, duplicated effort solving same problems, knowledge silos, onboarding overhead, and security gaps.",
-    "solution": "Check agent configuration into version control as part of the repository. Treat settings.json as code - reviewable, shareable, and versioned. Include pre-allowed commands, blocked paths, default subagents, slash commands, and hooks.",
+    "description": "When each engineer configures their AI agent independently: inconsistent behavior where agents work differently for different team members, permission friction with everyone getting prompted for the s",
+    "problem": "When each engineer configures their AI agent independently: inconsistent behavior where agents work differently for different team members, permission friction with everyone getting prompted for the same safe commands, duplicated effort solving the same configuration problems, knowledge silos where good configurations don't spread across the team, onboarding overhead where new team members start from scratch, and security gaps with no standardized rules about what agents can or cannot touch.",
+    "solution": "Check agent configuration into version control as part of the repository. Treat `settings.json` (or equivalent) as code—reviewable, shareable, and versioned alongside your project.\n\nKey configuration elements:\n1. Pre-allowed commands: Tools that don't need permission prompts\n2. Blocked files/directories: What the agent must never touch\n3. Default subagents: Team-standard specialized agents\n4. Slash commands: Shared workflows everyone can use\n5. Hooks: Standardized automation triggers\n\n```json\n// .claude/settings.json (checked into repo)\n{\n  \"permissions\": {\n    \"pre_allowed\": [\n      \"git add\",\n      \"git commit\",\n      \"git push\",\n      \"npm test\",\n      \"npm run lint\"\n    ],\n    \"blocked_paths\": [\n      \".env\",\n      \"secrets/\",\n      \"*.key\",\n      \"credentials.json\"\n    ]\n  },\n  \"subagents\": {\n    \"security-review\": \"./agents/security.md\",\n    \"migration-helper\": \"./agents/migration.md\"\n  },\n  \"hooks\": {\n    \"pre_commit\": \"./hooks/run_tests.sh\"\n  }\n}\n```",
     "when_to_use": [
-      "Enterprise agent deployments",
-      "Team-based development",
-      "Standardized security rules",
-      "Quick onboarding for new members"
+      "Create shared config file with common settings all team members need",
+      "Version control it with git add and commit",
+      "New team members automatically get configuration when they clone",
+      "Support local overrides via gitignored local files for individual customization",
+      "Iterate as a team through PRs and code review"
     ],
     "pros": [
-      "Consistent team experience",
-      "Faster onboarding",
-      "Reduced permission friction",
-      "Security standardization",
-      "Auditable version history"
+      "Consistent team experience: Everyone's agent behaves the same way",
+      "Faster onboarding: New members inherit team knowledge immediately",
+      "Reduced friction: Pre-allowed commands eliminate repetitive prompts",
+      "Security standardization: Uniform rules about sensitive files",
+      "Collaborative improvement: Team can improve config together via PRs",
+      "Auditable: Version history shows why configurations changed"
     ],
     "cons": [
-      "Less individual flexibility",
-      "Potential preference conflicts",
-      "Config complexity can grow",
-      "Must avoid secrets in config"
+      "Less individual flexibility: Can't customize as freely",
+      "Potential conflicts: Personal preferences vs. team standards",
+      "Config sprawl: Settings file can become complex",
+      "Override complexity: Need escape hatch for individual customization",
+      "Secrets exposure risk: Must ensure no credentials in committed config"
     ],
     "tags": [
       "configuration",
