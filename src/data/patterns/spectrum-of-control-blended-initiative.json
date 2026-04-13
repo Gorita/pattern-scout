@@ -6,27 +6,57 @@
   "status": "validated-in-production",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "One-size-fits-all agent autonomy doesn't cater to diverse user needs or varying task complexity.",
-    "ko": "획일적인 에이전트 자율성은 다양한 사용자 요구나 다양한 작업 복잡성을 충족시키지 못합니다."
+    "en": "AI agents for tasks like coding can offer various levels of assistance, from simple completions to complex, multi-step operations. A one-size-fits-all approach to agent autonomy doesn't cater to the diverse needs of users or the varying complexity of tasks. Users need to fluidly shift between direct control and delegating tasks to the agent.",
+    "ko": "코딩과 같은 작업을 위한 AI 에이전트는 간단한 완성부터 복잡한 다단계 작업까지 다양한 수준의 지원을 제공할 수 있습니다. 에이전트 자율성에 대한 획일적인 접근 방식은 사용자의 다양한 요구나 작업의 다양한 복잡성을 충족시키지 못합니다. 사용자는 직접 제어와 에이전트에게 작업을 위임하는 것 사이를 유동적으로 전환할 수 있어야 합니다."
   },
   "solution": {
-    "en": "Design interaction to support a spectrum of control levels, from simple completions to fully autonomous operations.",
-    "ko": "간단한 완성부터 완전 자율 작업까지 다양한 제어 수준을 지원하도록 상호작용을 설계합니다."
+    "en": "Design the human-agent interaction to support a spectrum of control, allowing users to choose the level of agent autonomy appropriate for the current task or their familiarity with the codebase. This involves providing multiple modes or features for interaction:\n\n- **Low Autonomy (High Human Control):** Simple, inline assistance like tab-completion for code, where the human is primarily driving and the AI augments their input.\n- **Medium Autonomy:** Agent assistance for more contained tasks, like editing a selected region of code or an entire file based on a specific instruction (e.g., \"Command K\" functionality). The human defines the scope and the high-level goal.\n- **High Autonomy:** Agent takes on larger, multi-file tasks or complex refactorings, potentially involving multiple steps, with less direct human guidance on each step (e.g., an \"Agent\" feature).\n- **Very High Autonomy (Asynchronous):** Background agents that can take on entire complex tasks like implementing a feature or fixing a set of bugs and creating a pull request, operating largely independently.\n\nUsers can seamlessly switch between these modes depending on their needs, allowing for a \"blended initiative\" where both human and AI contribute effectively.",
+    "ko": "사용자가 현재 작업이나 코드베이스 숙련도에 적합한 에이전트 자율성 수준을 선택할 수 있도록 제어 스펙트럼을 지원하는 인간-에이전트 상호작용을 설계합니다. 여러 상호작용 모드 또는 기능을 제공합니다:\n\n- **낮은 자율성 (높은 인간 제어):** 탭 완성과 같은 간단한 인라인 지원으로, 인간이 주도하고 AI가 입력을 보강합니다.\n- **중간 자율성:** 특정 지시에 따라 선택된 코드 영역이나 전체 파일을 편집하는 등 제한된 작업에 대한 에이전트 지원입니다 (예: \"Command K\" 기능). 인간이 범위와 상위 목표를 정의합니다.\n- **높은 자율성:** 에이전트가 더 큰 다중 파일 작업이나 복잡한 리팩토링을 수행하며, 각 단계에 대한 직접적인 인간 가이드가 적습니다 (예: \"Agent\" 기능).\n- **매우 높은 자율성 (비동기):** 기능 구현이나 버그 수정, PR 생성과 같은 전체 복잡한 작업을 대부분 독립적으로 수행하는 백그라운드 에이전트입니다.\n\n사용자는 필요에 따라 이러한 모드 간에 원활하게 전환할 수 있으며, 인간과 AI 모두가 효과적으로 기여하는 '혼합 주도권'이 가능합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│        Control Spectrum         │\n├─────────────────────────────────┤\n│ Tab     Cmd+K   Agent   BG Agent│\n│ Compl   Edit    Multi   Auto    │\n│   │       │       │       │     │\n│   ▼       ▼       ▼       ▼     │\n│ Human ◄──────────────────► AI   │\n│ Control                  Control│\n└─────────────────────────────────┘",
   "mermaid_diagram": "flowchart LR\n    subgraph Human Control\n        A[Tab Completion]\n    end\n    subgraph Shared Control\n        B[Command K - Edit Region]\n    end\n    subgraph Agent Control\n        C[Agent - Multi-File Edits]\n    end\n    subgraph Autonomous\n        D[Background Agent - PRs]\n    end\n    A --> B --> C --> D",
   "code_example": "class InteractionModes:\n    TAB_COMPLETE = 'low_autonomy'    # Human drives\n    COMMAND_K = 'medium_autonomy'    # Human defines scope\n    AGENT = 'high_autonomy'          # Agent multi-step\n    BACKGROUND = 'full_autonomy'     # Agent async, entire PRs\n\n# User can switch modes fluidly\nif task.complexity == 'simple':\n    use_mode(InteractionModes.TAB_COMPLETE)\nelse:\n    use_mode(InteractionModes.AGENT)",
   "when_to_use": {
-    "en": ["IDE integrations", "Coding assistants", "Varied task complexity"],
-    "ko": ["IDE 통합", "코딩 어시스턴트", "다양한 작업 복잡성"]
+    "en": [
+      "When humans and agents share ownership of work across handoffs",
+      "Start with clear interaction contracts for approvals, overrides, and escalation",
+      "Capture user feedback in structured form so prompts and workflows can improve",
+      "Implement mode-switching controls (keyboard shortcuts, UI toggles) for explicit autonomy level selection",
+      "Pair with human-in-the-loop approval at higher autonomy levels for high-risk operations"
+    ],
+    "ko": [
+      "인간과 에이전트가 핸드오프를 통해 작업 소유권을 공유하는 경우",
+      "승인, 오버라이드, 에스컬레이션에 대한 명확한 상호작용 계약으로 시작",
+      "프롬프트와 워크플로우 개선을 위해 구조화된 형태로 사용자 피드백 수집",
+      "명시적 자율성 수준 선택을 위한 모드 전환 컨트롤 구현 (키보드 단축키, UI 토글)",
+      "고위험 작업에서 높은 자율성 수준에 인간 승인 루프 결합"
+    ]
   },
   "pros": {
-    "en": ["User flexibility", "Appropriate control for each task", "Gradual trust building"],
-    "ko": ["사용자 유연성", "각 작업에 적합한 제어", "점진적 신뢰 구축"]
+    "en": [
+      "Creates clearer human-agent handoffs",
+      "Builds trust through progressive autonomy",
+      "Enables error containment at lower levels",
+      "Allows context-appropriate control selection"
+    ],
+    "ko": [
+      "더 명확한 인간-에이전트 핸드오프 생성",
+      "점진적 자율성을 통한 신뢰 구축",
+      "낮은 수준에서의 오류 억제 가능",
+      "컨텍스트에 적합한 제어 선택 가능"
+    ]
   },
   "cons": {
-    "en": ["Mode switching complexity", "UI/UX design challenges"],
-    "ko": ["모드 전환 복잡성", "UI/UX 설계 도전"]
+    "en": [
+      "Multiple modes can confuse users if not clearly presented",
+      "Requires building/maintaining several interaction paths",
+      "Users may struggle to choose appropriate autonomy level"
+    ],
+    "ko": [
+      "명확하게 제시되지 않으면 여러 모드가 사용자를 혼란스럽게 할 수 있음",
+      "여러 상호작용 경로를 구축하고 유지해야 함",
+      "사용자가 적절한 자율성 수준을 선택하기 어려울 수 있음"
+    ]
   },
-  "tags": ["human-agent-collaboration", "autonomy-spectrum", "interactive-control"]
+  "tags": ["human-agent-collaboration", "autonomy-spectrum", "interactive-control", "task-delegation", "code-editing", "ide-integration"]
 }

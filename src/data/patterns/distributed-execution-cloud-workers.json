@@ -6,27 +6,65 @@
   "status": "emerging",
   "original_url": "https://claude.com/blog/building-companies-with-claude-code",
   "problem": {
-    "en": "Single-session agent execution cannot scale for team-wide AI code generation workloads.",
-    "ko": "단일 세션 에이전트 실행은 팀 전체 AI 코드 생성 워크로드를 확장할 수 없습니다."
+    "en": "Single-session AI agent execution cannot scale to meet enterprise team demands. Complex projects require multiple simultaneous code changes across different parts of the codebase, but coordinating multiple agents introduces challenges around communication, conflict resolution, merge coordination, and infrastructure management.",
+    "ko": "단일 세션 AI 에이전트 실행은 기업 팀 요구를 충족하도록 확장할 수 없습니다. 복잡한 프로젝트는 코드베이스의 다양한 부분에서 동시에 여러 코드 변경을 필요로 하지만, 다수의 에이전트를 조정하면 통신, 충돌 해결, 병합 조정, 인프라 관리와 관련된 과제가 발생합니다."
   },
   "solution": {
-    "en": "Run multiple Claude sessions in parallel using git worktrees and cloud workers, coordinating via a central orchestrator.",
-    "ko": "git worktree와 클라우드 워커를 사용하여 여러 Claude 세션을 병렬로 실행하고, 중앙 오케스트레이터를 통해 조정합니다."
+    "en": "Implement a distributed execution framework that runs multiple Claude Code sessions in parallel using git worktrees and cloud-based worker infrastructure. This enables team-scale AI code generation with proper synchronization and conflict management.\n\nCore architecture:\n\n- Git worktrees for isolation: Each agent session runs in a dedicated worktree with shared Git object database (lightweight storage), independent indexes and working directories per agent, enabling parallel development without checkout conflicts.\n- Cloud worker deployment: Agent sessions execute on remote infrastructure, scaling horizontally based on workload with centralized task distribution and coordination.\n- Synchronization layer: Merge conflict detection and resolution, inter-agent communication protocols, shared state management for coordination, dependency-aware task scheduling (DAG-based), and work-stealing for load balancing.\n- Human oversight integration: Approval gates for risky operations, centralized monitoring dashboard, and team notification channels (Slack, email).",
+    "ko": "git worktree와 클라우드 기반 워커 인프라를 사용하여 여러 Claude Code 세션을 병렬로 실행하는 분산 실행 프레임워크를 구현합니다. 이를 통해 적절한 동기화 및 충돌 관리와 함께 팀 규모의 AI 코드 생성이 가능합니다.\n\n핵심 아키텍처:\n\n- 격리를 위한 Git worktree: 각 에이전트 세션이 전용 worktree에서 실행되며, 공유 Git 객체 데이터베이스(경량 저장소), 에이전트별 독립 인덱스와 작업 디렉토리로 체크아웃 충돌 없이 병렬 개발이 가능합니다.\n- 클라우드 워커 배포: 에이전트 세션이 원격 인프라에서 실행되며, 워크로드에 따라 수평 확장하고 중앙 집중식 작업 분배 및 조정을 합니다.\n- 동기화 레이어: 병합 충돌 감지 및 해결, 에이전트 간 통신 프로토콜, 조정을 위한 공유 상태 관리, 의존성 인식 작업 스케줄링(DAG 기반), 로드 밸런싱을 위한 작업 스틸링을 포함합니다.\n- 사람 감독 통합: 위험한 작업에 대한 승인 게이트, 중앙 집중식 모니터링 대시보드, 팀 알림 채널(Slack, 이메일)을 제공합니다."
   },
   "ascii_diagram": "┌────────────────────┐\n│   Coordinator      │\n└─────────┬──────────┘\n    ┌─────┼─────┐\n    ▼     ▼     ▼\n┌─────┐┌─────┐┌─────┐\n│W1   ││W2   ││W3   │\n│+tree││+tree││+tree│\n└──┬──┘└──┬──┘└──┬──┘\n   │      │      │\n   └──────┼──────┘\n          ▼\n     ┌─────────┐\n     │  Merge  │\n     └─────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Coordinator] --> B[Worker 1 + worktree]\n    A --> C[Worker 2 + worktree]\n    A --> D[Worker N + worktree]\n    B --> E[Branch 1]\n    C --> F[Branch 2]\n    D --> G[Branch N]\n    E & F & G --> H[Merge to Main]",
   "code_example": "# Create isolated worktrees for each worker\nfor i in range(num_workers):\n    worktree_path = f'/tmp/worktree-{i}'\n    git.worktree.add(worktree_path, f'worker-branch-{i}')\n    \n    # Spawn cloud worker with isolated environment\n    worker = cloud.spawn(\n        image='claude-agent',\n        mount=worktree_path\n    )\n    workers.append(worker)",
   "when_to_use": {
-    "en": ["Team-scale migrations", "Parallel feature development", "Large-scale refactoring"],
-    "ko": ["팀 규모 마이그레이션", "병렬 기능 개발", "대규모 리팩토링"]
+    "en": [
+      "Team-wide code migrations or refactoring",
+      "Parallel feature development across multiple services",
+      "Large-scale testing infrastructure changes",
+      "Framework upgrades affecting many files",
+      "Organizations with high AI agent adoption"
+    ],
+    "ko": [
+      "팀 전체 코드 마이그레이션 또는 리팩토링",
+      "여러 서비스에 걸친 병렬 기능 개발",
+      "대규모 테스트 인프라 변경",
+      "많은 파일에 영향을 미치는 프레임워크 업그레이드",
+      "AI 에이전트 도입이 활발한 조직"
+    ]
   },
   "pros": {
-    "en": ["Massive parallelization", "Team scalability", "Centralized management"],
-    "ko": ["대규모 병렬화", "팀 확장성", "중앙 집중 관리"]
+    "en": [
+      "Massive parallelization (10x-100x speedup for suitable tasks)",
+      "Scales to enterprise team needs",
+      "Centralizes agent management and monitoring",
+      "Enables team-wide AI adoption",
+      "Reduces bottlenecks in large migrations"
+    ],
+    "ko": [
+      "대규모 병렬화 (적합한 작업에 10x-100x 속도 향상)",
+      "기업 팀 요구에 맞게 확장",
+      "에이전트 관리 및 모니터링 중앙 집중화",
+      "팀 전체 AI 도입 가능",
+      "대규모 마이그레이션 병목 감소"
+    ]
   },
   "cons": {
-    "en": ["Infrastructure complexity", "Merge conflicts", "Higher costs"],
-    "ko": ["인프라 복잡성", "병합 충돌", "비용 증가"]
+    "en": [
+      "Significant infrastructure complexity",
+      "Merge conflict management overhead",
+      "Coordination logic development required",
+      "Higher cost from parallel model usage",
+      "Requires sophisticated orchestration system",
+      "Network latency for cloud workers"
+    ],
+    "ko": [
+      "상당한 인프라 복잡성",
+      "병합 충돌 관리 오버헤드",
+      "조정 로직 개발 필요",
+      "병렬 모델 사용으로 인한 높은 비용",
+      "정교한 오케스트레이션 시스템 필요",
+      "클라우드 워커의 네트워크 지연"
+    ]
   },
   "tags": ["distributed-systems", "parallelization", "cloud", "worktrees", "git"]
 }

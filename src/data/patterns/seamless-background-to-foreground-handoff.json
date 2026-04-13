@@ -6,27 +6,51 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "Background agents achieve 90% correctness but the remaining 10% requires human finesse; clunky handoffs negate automation benefits.",
-    "ko": "백그라운드 에이전트가 90% 정확도를 달성하지만 나머지 10%는 인간의 손길이 필요합니다. 어색한 핸드오프가 자동화 이점을 무효화합니다."
+    "en": "While background agents can handle long-running, complex tasks autonomously, they might not achieve 100% correctness or perfectly match the user's nuanced intent. If an agent completes 90% of a task in the background but the remaining 10% requires human finesse, a clunky handoff process can negate the benefits of automation.",
+    "ko": "백그라운드 에이전트가 장기 실행되는 복잡한 작업을 자율적으로 처리할 수 있지만, 100% 정확성을 달성하거나 사용자의 세밀한 의도를 완벽하게 반영하지 못할 수 있습니다. 에이전트가 백그라운드에서 작업의 90%를 완료하더라도 나머지 10%에 인간의 세밀한 조정이 필요한 경우, 어색한 핸드오프 프로세스가 자동화의 이점을 무효화할 수 있습니다."
   },
   "solution": {
-    "en": "Design seamless transitions from background agent work to foreground human control, preserving context and enabling easy refinement.",
-    "ko": "백그라운드 에이전트 작업에서 포그라운드 인간 제어로의 원활한 전환을 설계하여 컨텍스트를 보존하고 쉬운 개선을 가능하게 합니다."
+    "en": "Design the agent system to allow for a seamless transition from background (autonomous) agent work to foreground (human-in-the-loop or direct human control) work. This means:\n\n1. The background agent performs its task (e.g., generating a PR).\n2. The user reviews the agent's work.\n3. If the work is not entirely satisfactory (e.g., 90% correct), the user can easily \"take control\" or bring the task into their active foreground environment.\n4. The user can then utilize the same (or related) interactive AI tools and direct editing capabilities used in the foreground to refine, correct, or complete the remaining parts of the task.\n5. The context from the background agent's work should ideally be available to inform the foreground interaction.\n\n**Core mechanisms for seamless handoff:**\n\n- **Context preservation**: Background agents generate distilled summaries and artifacts (PRs, branches, decision logs) rather than transferring full conversation history, achieving 10:1 to 100:1 context compression.\n- **Real-time progress visibility**: WebSocket streaming of agent progress enables users to identify optimal handoff moments and maintain trust during autonomous execution.\n- **Artifact-based coordination**: Git-based workflows with branch-per-task and draft PRs provide durable handoff points that survive process boundaries.\n- **Tool parity**: Background agents use the same tools as developers (IDE terminals, codebase annotations), ensuring workspace-native execution and eliminating context translation.",
+    "ko": "백그라운드(자율) 에이전트 작업에서 포그라운드(인간 참여 또는 직접 인간 제어) 작업으로의 원활한 전환을 허용하도록 에이전트 시스템을 설계합니다. 이는 다음을 의미합니다:\n\n1. 백그라운드 에이전트가 작업을 수행합니다 (예: PR 생성).\n2. 사용자가 에이전트의 작업을 검토합니다.\n3. 작업이 완전히 만족스럽지 않은 경우 (예: 90% 정확), 사용자가 쉽게 '제어권을 가져오거나' 작업을 활성 포그라운드 환경으로 가져올 수 있습니다.\n4. 사용자가 포그라운드에서 사용하는 동일한(또는 관련된) 대화형 AI 도구와 직접 편집 기능을 활용하여 작업의 나머지 부분을 개선, 수정 또는 완료할 수 있습니다.\n5. 백그라운드 에이전트 작업의 컨텍스트가 이상적으로 포그라운드 상호작용에 활용 가능해야 합니다.\n\n**원활한 핸드오프를 위한 핵심 메커니즘:**\n\n- **컨텍스트 보존**: 백그라운드 에이전트가 전체 대화 이력 대신 요약된 산출물(PR, 브랜치, 결정 로그)을 생성하여 10:1~100:1 컨텍스트 압축을 달성합니다.\n- **실시간 진행 상황 가시성**: WebSocket 스트리밍으로 에이전트 진행 상황을 확인하여 최적의 핸드오프 시점을 식별하고 자율 실행 중 신뢰를 유지합니다.\n- **산출물 기반 조정**: 작업별 브랜치와 드래프트 PR을 활용한 Git 기반 워크플로우가 프로세스 경계를 넘어 지속되는 핸드오프 포인트를 제공합니다.\n- **도구 동등성**: 백그라운드 에이전트가 개발자와 동일한 도구(IDE 터미널, 코드베이스 어노테이션)를 사용하여 워크스페이스 네이티브 실행을 보장하고 컨텍스트 변환을 제거합니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│ Background Agent│\n│   Works on X    │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│  Agent PR: 90%  │\n│    Correct      │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ User Reviews    │\n│ Takes Control   │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│Use Foreground   │\n│Tools to Refine  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│   Finalized PR  │\n└─────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User: Refactor X in background] --> B[Background Agent Works]\n    B --> C[Agent Proposes PR]\n    C --> D{User Reviews}\n    D -->|90% Correct| E[User Takes Over]\n    E --> F[Use Foreground Tools to Refine]\n    F --> G[Finalized PR]\n    D -->|100% Correct| G",
   "code_example": "# Background agent produces PR\npr = background_agent.create_pr(task)\n\n# User reviews and takes control\nif pr.needs_refinement:\n    # Seamlessly switch to interactive mode\n    # Context from background work is available\n    foreground_session = open_with_context(pr.context)\n    foreground_agent.refine(pr, foreground_session)",
   "when_to_use": {
-    "en": ["Complex code generation", "PR workflows", "Near-complete automation"],
-    "ko": ["복잡한 코드 생성", "PR 워크플로우", "거의 완전한 자동화"]
+    "en": [
+      "When humans and agents share ownership of work across handoffs",
+      "Start with clear interaction contracts for approvals, overrides, and escalation",
+      "Capture user feedback in structured form so prompts and workflows can improve"
+    ],
+    "ko": [
+      "인간과 에이전트가 핸드오프를 통해 작업 소유권을 공유하는 경우",
+      "승인, 오버라이드, 에스컬레이션에 대한 명확한 상호작용 계약으로 시작",
+      "프롬프트와 워크플로우 개선을 위해 구조화된 형태로 사용자 피드백 수집"
+    ]
   },
   "pros": {
-    "en": ["Best of both worlds", "No lost context", "Efficient human time"],
-    "ko": ["두 세계의 장점", "컨텍스트 손실 없음", "효율적인 인간 시간"]
+    "en": [
+      "Creates clearer human-agent handoffs and better operational trust",
+      "Enables 90% automation while preserving 10% human expertise",
+      "Better than pure autonomy when tasks require nuanced judgment"
+    ],
+    "ko": [
+      "더 명확한 인간-에이전트 핸드오프와 더 나은 운영 신뢰 생성",
+      "10% 인간 전문성을 보존하면서 90% 자동화 가능",
+      "세밀한 판단이 필요한 작업에서 순수 자율성보다 우수"
+    ]
   },
   "cons": {
-    "en": ["Context transfer complexity", "UI design challenges"],
-    "ko": ["컨텍스트 전송 복잡성", "UI 설계 도전"]
+    "en": [
+      "Needs explicit process design and coordination",
+      "Context preservation at handoff boundaries adds implementation complexity",
+      "Requires real-time progress visibility infrastructure"
+    ],
+    "ko": [
+      "명시적인 프로세스 설계와 조정 필요",
+      "핸드오프 경계에서의 컨텍스트 보존이 구현 복잡성을 추가",
+      "실시간 진행 상황 가시성 인프라 필요"
+    ]
   },
-  "tags": ["background-agent", "human-in-the-loop", "task-handoff", "workflow"]
+  "tags": ["background-agent", "human-in-the-loop", "task-handoff", "interactive-refinement", "agent-collaboration", "developer-workflow"]
 }

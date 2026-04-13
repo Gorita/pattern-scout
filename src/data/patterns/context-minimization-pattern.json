@@ -6,27 +6,47 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2506.08837",
   "problem": {
-    "en": "User-supplied or tainted text lingers in context, enabling later prompt injection attacks.",
-    "ko": "사용자 제공 또는 오염된 텍스트가 컨텍스트에 남아 이후 프롬프트 인젝션 공격을 가능하게 합니다."
+    "en": "In long agent sessions, raw user text and tool outputs often remain in-context long after they are needed. If those tokens include adversarial instructions, they can silently bias later reasoning steps, even when the current step is unrelated. This creates delayed prompt-injection risk and unnecessary context bloat.",
+    "ko": "장시간 에이전트 세션에서 원시 사용자 텍스트와 도구 출력이 필요한 시점이 지난 후에도 종종 컨텍스트에 남아 있습니다. 해당 토큰에 적대적 지시사항이 포함되어 있으면, 현재 단계와 무관하더라도 이후 추론 단계에 은밀하게 편향을 줄 수 있습니다. 이는 지연된 프롬프트 인젝션 위험과 불필요한 컨텍스트 비대를 초래합니다."
   },
   "solution": {
-    "en": "Purge or redact untrusted segments once they've served their purpose, keeping context clean.",
-    "ko": "신뢰할 수 없는 세그먼트가 목적을 달성하면 제거하거나 수정하여 컨텍스트를 깨끗하게 유지합니다."
+    "en": "Purge or redact untrusted segments once they've served their purpose:\n\n- After transforming input into a safe intermediate (query, structured object), strip the original prompt from context.\n- Subsequent reasoning sees only trusted data, eliminating latent injections.\n- A strong variant also removes intermediate LLM outputs that may have been tainted.\n\nTreat context as a staged pipeline: ingest untrusted text, transform it, then aggressively discard the original tainted material. Keep only signed-off structured artifacts that downstream steps are allowed to consume.",
+    "ko": "신뢰할 수 없는 세그먼트가 목적을 달성하면 제거하거나 수정합니다:\n\n- 입력을 안전한 중간 형태(쿼리, 구조화된 객체)로 변환한 후, 원본 프롬프트를 컨텍스트에서 제거합니다.\n- 이후 추론은 신뢰할 수 있는 데이터만 보게 되어 잠재적 인젝션을 제거합니다.\n- 강력한 변형은 오염되었을 수 있는 중간 LLM 출력도 제거합니다.\n\n컨텍스트를 단계별 파이프라인으로 취급합니다: 신뢰할 수 없는 텍스트를 수집하고, 변환한 후, 원본 오염 자료를 적극적으로 폐기합니다. 다운스트림 단계가 소비할 수 있는 승인된 구조화된 아티팩트만 유지합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│User Prompt  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Transform  │\n│  to SQL     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│REMOVE tainted│\n│   tokens    │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Safe context │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Input] --> B[Process/Transform]\n    B --> C[Remove Untrusted Tokens]\n    C --> D[Clean Context]\n    D --> E[Continue Safely]",
   "code_example": "# Transform user input to safe intermediate form\nsql = LLM('Convert to SQL', user_prompt)\n\n# Remove the untrusted input from context\ncontext.remove(user_prompt)\n\n# Execute with clean context\nrows = db.query(sql)",
   "when_to_use": {
-    "en": ["Customer service chatbots", "Medical Q&A systems", "Multi-turn flows with sensitive data"],
-    "ko": ["고객 서비스 챗봇", "의료 Q&A 시스템", "민감한 데이터가 있는 다중 턴 흐름"]
+    "en": [
+      "Customer-service chat, medical Q&A, database query generation, any multi-turn flow where initial text shouldn't steer later steps"
+    ],
+    "ko": [
+      "고객 서비스 채팅, 의료 Q&A, 데이터베이스 쿼리 생성 등 초기 텍스트가 이후 단계에 영향을 주지 않아야 하는 다중 턴 흐름"
+    ]
   },
   "pros": {
-    "en": ["Simple implementation", "No additional models needed", "Alleviates context anxiety"],
-    "ko": ["간단한 구현", "추가 모델 불필요", "컨텍스트 불안 완화"]
+    "en": [
+      "Simple; no extra models needed",
+      "Helps prevent context window anxiety by reducing overall context usage",
+      "Provides compliance benefits (HIPAA/GDPR data minimization)"
+    ],
+    "ko": [
+      "간단하며 추가 모델 불필요",
+      "전체 컨텍스트 사용량을 줄여 컨텍스트 윈도우 불안 방지에 도움",
+      "규정 준수 이점 제공 (HIPAA/GDPR 데이터 최소화)"
+    ]
   },
   "cons": {
-    "en": ["May lose conversational nuance", "Potential UX degradation"],
-    "ko": ["대화 뉘앙스 손실", "UX 저하 가능"]
+    "en": [
+      "Later turns lose conversational nuance; may hurt UX",
+      "Overly aggressive minimization can remove useful context",
+      "Risks broken referential coherence when earlier turns are referenced (\"the function I mentioned before\")"
+    ],
+    "ko": [
+      "이후 턴에서 대화 뉘앙스 손실; UX 저하 가능",
+      "과도한 최소화는 유용한 컨텍스트를 제거할 수 있음",
+      "이전 턴을 참조할 때 참조 일관성 깨질 위험 (\"앞서 언급한 함수\")"
+    ]
   },
   "tags": ["context-hygiene", "taint-removal", "prompt-injection", "security"]
 }

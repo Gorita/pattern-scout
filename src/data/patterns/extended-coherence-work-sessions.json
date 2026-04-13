@@ -6,27 +6,47 @@
   "status": "rapidly-improving",
   "original_url": "https://www.nibzard.com/silent-revolution",
   "problem": {
-    "en": "Early AI agents suffered from short coherence windows, only maintaining focus and context for a few minutes before performance degraded. This limited utility for complex, multi-stage tasks requiring sustained effort over hours.",
-    "ko": "초기 AI 에이전트는 짧은 일관성 창으로 고통받아 몇 분만 집중과 컨텍스트를 유지한 후 성능이 저하되었습니다. 이로 인해 몇 시간에 걸친 지속적인 노력이 필요한 복잡한 다단계 작업의 활용이 제한되었습니다."
+    "en": "Early AI agents and models often suffered from a short \"coherence window,\" meaning they could only maintain focus and context for a few minutes before their performance degraded significantly (e.g., losing track of instructions, generating irrelevant output). This limited their utility for complex, multi-stage tasks that require sustained effort over hours.",
+    "ko": "초기 AI 에이전트와 모델은 짧은 \"일관성 윈도우\"로 어려움을 겪었습니다. 이는 몇 분만 집중과 컨텍스트를 유지한 후 성능이 크게 저하되는 것을 의미합니다(예: 지시사항 추적 실패, 관련 없는 출력 생성). 이로 인해 수 시간에 걸친 지속적인 노력이 필요한 복잡한 다단계 작업에서의 활용이 제한되었습니다."
   },
   "solution": {
-    "en": "Utilize AI models and agent architectures designed to maintain coherence over extended periods (hours). Leverage newer models with larger context windows, implement state management, and enable agents to work on substantial projects without quality degradation.",
-    "ko": "장시간(시간 단위)에 걸쳐 일관성을 유지하도록 설계된 AI 모델과 에이전트 아키텍처를 활용합니다. 더 큰 컨텍스트 창을 가진 최신 모델을 활용하고, 상태 관리를 구현하며, 에이전트가 품질 저하 없이 상당한 프로젝트에서 작업할 수 있게 합니다."
+    "en": "Utilize AI models and agent architectures that maintain coherence over extended periods (hours rather than minutes). This involves:\n\n- Model Selection: Newer foundation models demonstrate approximately 2x coherence improvement every 7 months.\n- Context Management: Larger context windows alone don't guarantee coherence - combine with auto-compaction, prompt caching, and curated context to mitigate the \"lost in the middle\" effect where models struggle with information in middle positions (Liu et al., 2023).\n- Complementary Patterns: Works synergistically with context auto-compaction, episodic memory, filesystem-based state, and planner-worker separation.\n\nThe goal is enabling agents to work on multi-hour tasks without degradation in output quality or relevance.",
+    "ko": "장시간(분이 아닌 시간 단위)에 걸쳐 일관성을 유지하는 AI 모델과 에이전트 아키텍처를 활용합니다. 이는 다음을 포함합니다:\n\n- 모델 선택: 최신 파운데이션 모델은 약 7개월마다 2배의 일관성 향상을 보입니다.\n- 컨텍스트 관리: 더 큰 컨텍스트 윈도우만으로는 일관성을 보장하지 못합니다. 모델이 중간 위치의 정보에 어려움을 겪는 \"중간에서 길을 잃는\" 효과(Liu et al., 2023)를 완화하기 위해 자동 압축, 프롬프트 캐싱, 큐레이션된 컨텍스트와 결합해야 합니다.\n- 보완 패턴: 컨텍스트 자동 압축, 에피소딕 메모리, 파일시스템 기반 상태, 플래너-워커 분리와 시너지 효과를 냅니다.\n\n목표는 에이전트가 출력 품질이나 관련성의 저하 없이 다시간 작업을 수행할 수 있도록 하는 것입니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│    Agent Coherence Over Time    │\n├─────────────────────────────────┤\n│                                 │\n│ Early Models:                   │\n│ ████░░░░░░░░░ (5-10 minutes)    │\n│                                 │\n│ Current Models:                 │\n│ █████████████████ (2-4 hours)   │\n│                                 │\n│ Future Trend:                   │\n│ █████████████████████████████   │\n│ (All-day coherence)             │\n│                                 │\n└─────────────────────────────────┘\n\n\"Every 7 months, we double the\n minutes AI can stay coherent\"",
   "mermaid_diagram": "gantt\n    title Agent Coherence Capabilities Over Time\n    dateFormat X\n    axisFormat %s\n    section Early Models\n    Short coherence (minutes) :done, early, 0, 300\n    section Current Models\n    Extended coherence (hours) :active, current, 300, 10800\n    section Future Trend\n    All-day coherence :future, 10800, 86400",
   "code_example": "# Extended coherence enables complex multi-hour tasks\nclass LongRunningAgent:\n    def __init__(self, model):\n        self.model = model  # Model with large context window\n        self.state_manager = StateManager()\n    \n    async def work_session(self, project):\n        # Agent can maintain coherence for hours\n        session_start = time.now()\n        \n        while not project.complete:\n            # Retrieve relevant context\n            context = self.state_manager.get_context()\n            \n            # Execute next step with full awareness\n            result = await self.model.execute(\n                task=project.next_task,\n                context=context\n            )\n            \n            # Update state for continuity\n            self.state_manager.update(result)\n            \n            # Can work for hours without degradation\n            elapsed = time.now() - session_start\n            print(f'Working for {elapsed.hours}h, still coherent')",
   "when_to_use": {
-    "en": ["Complex multi-stage projects", "Tasks requiring sustained reasoning", "Long-form content creation", "Extended debugging sessions"],
-    "ko": ["복잡한 다단계 프로젝트", "지속적인 추론이 필요한 작업", "장문 콘텐츠 생성", "장시간 디버깅 세션"]
+    "en": [
+      "Complex, multi-stage tasks requiring sustained attention (multi-hour coding sessions, long-running research, autonomous workflows)",
+      "Implement supporting patterns first: context auto-compaction, prompt caching, and filesystem-based state",
+      "Monitor for coherence degradation indicators - contradictory statements, goal drift, or repetitive loops after 10-15 conversation turns"
+    ],
+    "ko": [
+      "지속적인 주의가 필요한 복잡한 다단계 작업 (다시간 코딩 세션, 장기 연구, 자율 워크플로우)",
+      "지원 패턴을 먼저 구현: 컨텍스트 자동 압축, 프롬프트 캐싱, 파일시스템 기반 상태",
+      "일관성 저하 지표 모니터링 - 모순된 진술, 목표 이탈, 10-15 대화 턴 후 반복 루프"
+    ]
   },
   "pros": {
-    "en": ["Enables substantial project work", "Maintains quality over time", "Qualitative shift in agent capabilities", "Can match human work session lengths"],
-    "ko": ["상당한 프로젝트 작업 가능", "시간이 지나도 품질 유지", "에이전트 능력의 질적 변화", "인간 작업 세션 길이와 매칭 가능"]
+    "en": [
+      "Enables agents to complete complex, multi-hour tasks previously infeasible",
+      "Foundational capability for autonomous workflows and planner-worker architectures"
+    ],
+    "ko": [
+      "이전에 불가능했던 복잡한 다시간 작업 완료 가능",
+      "자율 워크플로우와 플래너-워커 아키텍처의 기반 역량"
+    ]
   },
   "cons": {
-    "en": ["Higher computational costs for long sessions", "Requires careful state management", "Still improving (not perfect)", "May need architectural support"],
-    "ko": ["긴 세션의 높은 계산 비용", "신중한 상태 관리 필요", "여전히 개선 중 (완벽하지 않음)", "아키텍처 지원 필요할 수 있음"]
+    "en": [
+      "Requires supporting infrastructure (context management, state persistence, memory systems)",
+      "Extended sessions without prompt caching become prohibitively expensive"
+    ],
+    "ko": [
+      "지원 인프라 필요 (컨텍스트 관리, 상태 영속성, 메모리 시스템)",
+      "프롬프트 캐싱 없는 장시간 세션은 비용이 과도하게 높아짐"
+    ]
   },
   "tags": ["coherence", "long-running-tasks", "agent-capability", "complex-projects", "context-window"]
 }

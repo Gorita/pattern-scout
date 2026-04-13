@@ -6,27 +6,63 @@
   "status": "established",
   "original_url": "https://www.anthropic.com/engineering/code-execution-with-mcp",
   "problem": {
-    "en": "AI agents processing workflows involving PII create privacy risks when raw personal data enters model context.",
-    "ko": "PII가 포함된 워크플로우를 처리하는 AI 에이전트가 원시 개인 데이터가 모델 컨텍스트에 들어갈 때 프라이버시 위험을 생성합니다."
+    "en": "AI agents often need to process workflows involving personally identifiable information (PII) such as emails, phone numbers, addresses, or financial data. However, sending raw PII through the model's context creates privacy risks and compliance concerns. Organizations need agents to orchestrate data workflows without exposing sensitive information to the LLM.",
+    "ko": "AI 에이전트는 이메일, 전화번호, 주소, 금융 데이터 등 개인 식별 정보(PII)가 포함된 워크플로우를 처리해야 하는 경우가 많습니다. 그러나 원시 PII를 모델의 컨텍스트를 통해 전송하면 프라이버시 위험과 규정 준수 문제가 발생합니다. 조직은 민감한 정보를 LLM에 노출하지 않으면서 에이전트가 데이터 워크플로우를 오케스트레이션할 수 있어야 합니다."
   },
   "solution": {
-    "en": "Implement an MCP interception layer that tokenizes PII before it reaches the model and untokenizes when making tool calls.",
-    "ko": "PII가 모델에 도달하기 전에 토큰화하고 도구 호출 시 토큰 해제하는 MCP 인터셉션 레이어를 구현합니다."
+    "en": "Implement an interception layer in the Model Context Protocol (MCP) client that automatically tokenizes PII before it reaches the model, and untokenizes it when making subsequent tool calls.\n\n**Flow:**\n\n1. **Interception**: When tools return data, MCP client intercepts responses\n2. **Detection**: Identify PII using pattern matching or classification models\n3. **Tokenization**: Replace real values with placeholders\n   - `john.doe@company.com` → `[EMAIL_1]`\n   - `(555) 123-4567` → `[PHONE_1]`\n   - `123-45-6789` → `[SSN_1]`\n4. **Model reasoning**: Agent works with tokenized placeholders\n5. **Untokenization**: When agent makes tool calls with placeholders, MCP client substitutes real values back",
+    "ko": "MCP(Model Context Protocol) 클라이언트에 PII가 모델에 도달하기 전에 자동으로 토큰화하고, 후속 도구 호출 시 토큰을 해제하는 인터셉션 레이어를 구현합니다.\n\n**흐름:**\n\n1. **인터셉션**: 도구가 데이터를 반환할 때 MCP 클라이언트가 응답을 가로챕니다\n2. **감지**: 패턴 매칭 또는 분류 모델을 사용하여 PII를 식별합니다\n3. **토큰화**: 실제 값을 플레이스홀더로 대체합니다\n   - `john.doe@company.com` → `[EMAIL_1]`\n   - `(555) 123-4567` → `[PHONE_1]`\n   - `123-45-6789` → `[SSN_1]`\n4. **모델 추론**: 에이전트가 토큰화된 플레이스홀더로 작업합니다\n5. **토큰 해제**: 에이전트가 플레이스홀더로 도구를 호출하면 MCP 클라이언트가 실제 값을 대체합니다"
   },
   "ascii_diagram": "┌─────────────┐\n│Tool Response│\n│john@ex.com │\n└──────┬──────┘\n       │ intercept\n┌──────▼──────┐\n│  Tokenize   │\n│ [EMAIL_1]   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Model reasons│\n│with tokens  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Untokenize  │\n│john@ex.com │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Execute   │\n└─────────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Tool Response] --> B[MCP Client]\n    B --> C{PII Detection}\n    C --> D[Tokenization]\n    D --> E[Model Context]\n    E --> F[Model Reasoning]\n    F --> G[Tool Call with Tokens]\n    G --> H[Untokenization]\n    H --> I[Actual Tool Call]",
   "code_example": "# Tool returns customer data\ncustomer = get_customer(id='C123')\n# Raw: {'email': 'john@example.com', 'phone': '555-1234'}\n\n# MCP client tokenizes before sending to model\n# Context sees: {'email': '[EMAIL_1]', 'phone': '[PHONE_1]'}\n\n# Agent reasons with tokens\n# \"Send welcome email to [EMAIL_1]\"\n\n# MCP client untokenizes for tool execution\nsend_email(\n    to='john@example.com',  # Real value substituted\n    body='Welcome...'\n)",
   "when_to_use": {
-    "en": ["Customer data processing", "Healthcare workflows", "GDPR/HIPAA compliance"],
-    "ko": ["고객 데이터 처리", "의료 워크플로우", "GDPR/HIPAA 준수"]
+    "en": [
+      "Workflows processing customer data, HR records, medical information",
+      "Multi-step automation involving PII",
+      "Compliance-sensitive environments (GDPR, HIPAA, CCPA)",
+      "Agents that coordinate data flows without needing to \"see\" raw PII"
+    ],
+    "ko": [
+      "고객 데이터, HR 기록, 의료 정보를 처리하는 워크플로우",
+      "PII가 포함된 다단계 자동화",
+      "규정 준수가 중요한 환경 (GDPR, HIPAA, CCPA)",
+      "원시 PII를 '보지' 않고 데이터 흐름을 조정하는 에이전트"
+    ]
   },
   "pros": {
-    "en": ["Prevents raw PII in context", "Enables audit trails without PII", "Transparent to agent"],
-    "ko": ["컨텍스트에 원시 PII 방지", "PII 없는 감사 추적 가능", "에이전트에 투명"]
+    "en": [
+      "Prevents raw PII from entering model context",
+      "Agents can orchestrate sensitive workflows without seeing data",
+      "Enables audit trails that don't contain PII",
+      "Reduces compliance risk and regulatory burden",
+      "Transparent to agent reasoning (works with placeholders)"
+    ],
+    "ko": [
+      "원시 PII가 모델 컨텍스트에 진입하는 것을 방지",
+      "에이전트가 데이터를 보지 않고 민감한 워크플로우를 오케스트레이션 가능",
+      "PII가 포함되지 않은 감사 추적 가능",
+      "규정 준수 위험 및 규제 부담 감소",
+      "에이전트 추론에 투명함 (플레이스홀더로 작동)"
+    ]
   },
   "cons": {
-    "en": ["PII detection must be accurate", "Secure token mapping storage needed", "May complicate debugging"],
-    "ko": ["PII 감지가 정확해야 함", "안전한 토큰 매핑 저장 필요", "디버깅 복잡해질 수 있음"]
+    "en": [
+      "Adds complexity to MCP client implementation",
+      "PII detection must be accurate (false positives/negatives)",
+      "Doesn't protect against PII inference (model might deduce sensitive info)",
+      "Requires secure token mapping storage",
+      "May complicate debugging (need to map tokens back for troubleshooting)",
+      "Pattern matching can miss novel PII formats"
+    ],
+    "ko": [
+      "MCP 클라이언트 구현에 복잡성 추가",
+      "PII 감지가 정확해야 함 (거짓 양성/음성)",
+      "PII 추론을 방어하지 못함 (모델이 민감한 정보를 추론할 수 있음)",
+      "안전한 토큰 매핑 저장소 필요",
+      "디버깅이 복잡해질 수 있음 (문제 해결 시 토큰을 역매핑해야 함)",
+      "패턴 매칭이 새로운 PII 형식을 놓칠 수 있음"
+    ]
   },
   "tags": ["privacy", "pii", "security", "mcp", "data-protection"]
 }
