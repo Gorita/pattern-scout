@@ -6,27 +6,27 @@
   "status": "validated-in-production",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "Understanding a large or unfamiliar codebase is a significant challenge, especially when onboarding or debugging complex systems. Manually searching and tracing code paths is time-consuming and error-prone.",
-    "ko": "크거나 익숙하지 않은 코드베이스를 이해하는 것은 특히 온보딩하거나 복잡한 시스템을 디버깅할 때 상당한 도전입니다. 수동으로 코드 경로를 검색하고 추적하는 것은 시간이 많이 걸리고 오류가 발생하기 쉽습니다."
+    "en": "Understanding a large or unfamiliar codebase can be a significant challenge for developers, especially when onboarding to a new project or trying to debug a complex system. Manually searching and tracing code paths is time-consuming.",
+    "ko": "크거나 익숙하지 않은 코드베이스를 이해하는 것은 개발자에게 상당한 도전입니다. 특히 새 프로젝트에 온보딩하거나 복잡한 시스템을 디버깅할 때 수동으로 코드 경로를 검색하고 추적하는 것은 시간이 많이 걸립니다."
   },
   "solution": {
-    "en": "Leverage AI agents with retrieval, search, and Q&A capabilities to assist codebase understanding. Agent indexes the codebase, responds to natural language queries about code behavior, identifies function calls and component interactions, and summarizes modules.",
-    "ko": "검색, 탐색, Q&A 기능을 갖춘 AI 에이전트를 활용하여 코드베이스 이해를 지원합니다. 에이전트는 코드베이스를 인덱싱하고, 코드 동작에 대한 자연어 쿼리에 응답하고, 함수 호출과 컴포넌트 상호작용을 식별하고, 모듈을 요약합니다."
+    "en": "Leverage an AI agent with retrieval, search, and question-answering capabilities to assist developers in understanding a codebase. The agent can:\n\n- **Index the codebase** using semantic embeddings, AST parsing (e.g., Tree-sitter), and code graphs that capture symbol relationships\n- **Respond to natural language queries** about code behavior, location of features, and component interactions\n- **Support multiple query types**: location (\"Where is X implemented?\"), behavioral (\"What happens when Y?\"), impact (\"What modules are affected?\"), and relationship queries\n- **Generate documentation** and summaries automatically from code analysis\n\nEffective systems combine semantic search (embeddings) with structural understanding (code graphs) for repository-scale context, not just file-level analysis.",
+    "ko": "검색, 탐색, 질의응답 기능을 갖춘 AI 에이전트를 활용하여 개발자의 코드베이스 이해를 지원합니다. 에이전트는 다음을 수행할 수 있습니다:\n\n- 시맨틱 임베딩, AST 파싱(예: Tree-sitter), 심볼 관계를 캡처하는 코드 그래프를 사용하여 **코드베이스를 인덱싱**합니다\n- 코드 동작, 기능 위치, 컴포넌트 상호작용에 대한 **자연어 쿼리에 응답**합니다\n- 위치(\"X는 어디에 구현되어 있나요?\"), 동작(\"Y가 발생하면 어떻게 되나요?\"), 영향(\"어떤 모듈이 영향을 받나요?\"), 관계 쿼리 등 **다양한 쿼리 유형을 지원**합니다\n- 코드 분석에서 자동으로 **문서와 요약을 생성**합니다\n\n효과적인 시스템은 파일 수준 분석이 아닌 저장소 규모의 컨텍스트를 위해 시맨틱 검색(임베딩)과 구조적 이해(코드 그래프)를 결합합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│         Developer               │\n│  \"Where is database config?\"    │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│           AI Agent              │\n│   • Index codebase              │\n│   • Search & Analyze            │\n│   • Answer questions            │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│          Codebase               │\n│   config/database.js            │\n│   services/UserService.js       │\n│   ...                           │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   \"It's in config/database.js   │\n│    and used by UserService\"     │\n└─────────────────────────────────┘",
   "mermaid_diagram": "sequenceDiagram\n    Developer->>Agent: \"Where is the database connection configured?\"\n    Agent->>Codebase: Search/Analyze\n    Agent-->>Developer: \"It's configured in config/database.js and used by the UserService.\"",
   "code_example": "# Agent-Powered Codebase Q&A Examples\n\n# Query: Understanding authentication flow\nquery = \"How does user authentication work in this module?\"\nresponse = agent.ask_codebase(query)\n# Response: \"Authentication is handled in auth/middleware.ts...\n#           It uses JWT tokens validated against the user service...\"\n\n# Query: Finding function usage\nquery = \"Where is the processPayment function called from?\"\nresponse = agent.ask_codebase(query)\n# Response: \"processPayment is called from:\n#           - checkout/PaymentController.ts:45\n#           - subscriptions/RenewalService.ts:112\"\n\n# Query: Component interaction\nquery = \"How do the Cart and Inventory components interact?\"\nresponse = agent.ask_codebase(query)\n# Response: \"Cart calls InventoryService.checkStock() before...\"\n",
   "when_to_use": {
-    "en": ["Onboarding to new codebases", "Debugging complex systems", "Understanding legacy code", "Finding function callers and dependencies"],
-    "ko": ["새 코드베이스 온보딩", "복잡한 시스템 디버깅", "레거시 코드 이해", "함수 호출자와 의존성 찾기"]
+    "en": ["Use for onboarding to new codebases, exploring legacy systems, and answering repository-wide questions", "Provide configuration files (e.g., CLAUDE.md) with project-specific instructions to guide agent behavior", "Consider MCP (Model Context Protocol) integration for standardized tool and data source connectivity", "Combine single-agent approaches (simpler, lower cost) with multi-agent systems for specialized roles (navigation, QA, documentation)"],
+    "ko": ["새 코드베이스 온보딩, 레거시 시스템 탐색, 저장소 전체 질문 답변에 활용", "프로젝트별 지침이 포함된 설정 파일(예: CLAUDE.md)을 제공하여 에이전트 동작을 가이드", "표준화된 도구 및 데이터 소스 연결을 위한 MCP(Model Context Protocol) 통합 고려", "단일 에이전트 접근법(단순, 저비용)과 전문 역할(내비게이션, QA, 문서화)을 위한 멀티 에이전트 시스템 결합"]
   },
   "pros": {
-    "en": ["Massive step function for unfamiliar code", "Accelerates developer onboarding", "Natural language interface to code", "Finds interactions manual search would miss"],
-    "ko": ["익숙하지 않은 코드에 대한 큰 도약", "개발자 온보딩 가속화", "코드에 대한 자연어 인터페이스", "수동 검색이 놓칠 상호작용 발견"]
+    "en": ["Accelerates onboarding and codebase understanding", "Enables natural language exploration of complex systems", "Scales from single-file to repository-wide context"],
+    "ko": ["온보딩 및 코드베이스 이해 가속화", "복잡한 시스템의 자연어 탐색 가능", "단일 파일에서 저장소 전체 컨텍스트까지 확장"]
   },
   "cons": {
-    "en": ["May miss dynamic/runtime behavior", "Index quality affects answers", "Large codebases need good retrieval", "Answers need verification"],
-    "ko": ["동적/런타임 동작을 놓칠 수 있음", "인덱스 품질이 답변에 영향", "대규모 코드베이스는 좋은 검색 필요", "답변 검증 필요"]
+    "en": ["Indexing quality directly impacts answer accuracy", "Requires ongoing maintenance of code graphs and embeddings as codebases evolve"],
+    "ko": ["인덱싱 품질이 답변 정확도에 직접 영향", "코드베이스 발전에 따른 코드 그래프 및 임베딩의 지속적 유지보수 필요"]
   },
   "tags": ["code-understanding", "onboarding", "q-and-a", "retrieval", "search", "context-awareness", "knowledge-base"]
 }

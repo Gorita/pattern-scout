@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2402.03620",
   "problem": {
-    "en": "Different reasoning tasks require different thinking strategies. Fixed reasoning patterns may be suboptimal for diverse problems.",
-    "ko": "다른 추론 작업에는 다른 사고 전략이 필요합니다. 고정된 추론 패턴은 다양한 문제에 최적이 아닐 수 있습니다."
+    "en": "Different reasoning tasks require different thinking strategies. While techniques like Chain-of-Thought (CoT) work well for some problems, they may be suboptimal for others. Current approaches typically use fixed reasoning patterns regardless of the specific problem at hand, leading to inefficient problem-solving and suboptimal performance on diverse tasks.",
+    "ko": "다른 추론 작업에는 다른 사고 전략이 필요합니다. Chain-of-Thought(CoT)와 같은 기법이 일부 문제에 잘 작동하지만 다른 문제에는 최적이 아닐 수 있습니다. 현재 접근 방식은 일반적으로 특정 문제와 관계없이 고정된 추론 패턴을 사용하여 비효율적인 문제 해결과 다양한 작업에서의 차선 성능을 초래합니다."
   },
   "solution": {
-    "en": "LLM automatically discovers and composes task-specific reasoning structures by selecting and adapting atomic reasoning modules.",
-    "ko": "LLM이 원자적 추론 모듈을 선택하고 적응시켜 작업별 추론 구조를 자동으로 발견하고 구성합니다."
+    "en": "Self-Discover enables LLMs to automatically discover and compose task-specific reasoning structures. The process involves:\n\n1. **SELECT**: Choose 3-5 relevant reasoning modules from a predefined library of atomic reasoning primitives\n2. **ADAPT**: Transform generic modules into task-specific reasoning steps tailored to the exact problem\n3. **COMPOSE**: Organize adapted modules into a coherent reasoning structure with defined order of operations\n4. **EXECUTE**: Solve the problem using the self-discovered structure\n\nThis approach allows the model to adapt its reasoning strategy to match the problem's unique characteristics, leading to significant performance improvements.",
+    "ko": "Self-Discover는 LLM이 작업별 추론 구조를 자동으로 발견하고 구성할 수 있게 합니다. 프로세스는 다음과 같습니다:\n\n1. **SELECT**: 원자적 추론 프리미티브의 사전 정의된 라이브러리에서 3-5개의 관련 추론 모듈을 선택합니다\n2. **ADAPT**: 일반 모듈을 정확한 문제에 맞춤화된 작업별 추론 단계로 변환합니다\n3. **COMPOSE**: 적응된 모듈을 정의된 연산 순서를 가진 일관된 추론 구조로 구성합니다\n4. **EXECUTE**: 자체 발견된 구조를 사용하여 문제를 해결합니다\n\n이 접근 방식은 모델이 문제의 고유한 특성에 맞게 추론 전략을 적응시킬 수 있게 하여 상당한 성능 향상을 이끌어냅니다."
   },
   "ascii_diagram": "┌─────────────┐\n│    Task     │\n└──────┬──────┘\n       │ analyze\n┌──────▼──────┐\n│Select Modules│\n│ from Library │\n└──────┬──────┘\n       │ adapt\n┌──────▼──────┐\n│   Compose   │\n│  Structure  │\n└──────┬──────┘\n       │ solve\n┌──────▼──────┐\n│  Solution   │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Input Task] --> B[Analyze Task]\n    B --> C[Select Reasoning Modules]\n    C --> D[Adapt to Task]\n    D --> E[Compose Structure]\n    E --> F[Execute]\n    F --> G[Solution]\n    H[Module Library] --> C",
   "code_example": "modules = ['Break into steps', 'Think critically', 'Use examples']\nselected = llm.select_modules(task, modules)\nadapted = llm.adapt_modules(task, selected)\nstructure = llm.compose_structure(adapted)\nsolution = llm.solve_with_structure(task, structure)",
   "when_to_use": {
-    "en": ["Complex reasoning tasks", "Diverse problem types", "Performance optimization"],
-    "ko": ["복잡한 추론 작업", "다양한 문제 유형", "성능 최적화"]
+    "en": ["Use this for complex reasoning tasks where different problems require different reasoning strategies (mathematical problem solving, strategic planning, multi-step code generation)", "Best suited for applications where performance gains justify the additional computational overhead", "Consider when interpretability of reasoning approach is valuable", "Start with a diverse module library covering decomposition, verification, improvement, knowledge retrieval, and strategic reasoning"],
+    "ko": ["다양한 문제에 서로 다른 추론 전략이 필요한 복잡한 추론 작업에 활용 (수학 문제 풀이, 전략 계획, 다단계 코드 생성)", "성능 향상이 추가 계산 오버헤드를 정당화하는 애플리케이션에 가장 적합", "추론 접근 방식의 해석 가능성이 가치 있을 때 고려", "분해, 검증, 개선, 지식 검색, 전략적 추론을 포함하는 다양한 모듈 라이브러리로 시작"]
   },
   "pros": {
-    "en": ["Task-specific optimization", "Up to 32% improvement over CoT", "Creates reusable templates"],
-    "ko": ["작업별 최적화", "CoT 대비 최대 32% 개선", "재사용 가능한 템플릿 생성"]
+    "en": ["Significant performance improvements on diverse reasoning tasks", "More efficient than trying all reasoning strategies", "Creates reusable reasoning templates", "Adapts to novel problem types"],
+    "ko": ["다양한 추론 작업에서 상당한 성능 향상", "모든 추론 전략을 시도하는 것보다 효율적", "재사용 가능한 추론 템플릿 생성", "새로운 문제 유형에 적응"]
   },
   "cons": {
-    "en": ["Additional overhead for structure discovery", "May over-engineer simple problems"],
-    "ko": ["구조 발견을 위한 추가 오버헤드", "간단한 문제를 과도하게 엔지니어링할 수 있음"]
+    "en": ["Computational overhead: approximately 2-3x the cost of single-pass Chain-of-Thought due to multiple LLM calls", "Requires a diverse set of reasoning modules (typically 20-30 for good coverage)", "May over-engineer simple problems", "Structure quality depends on task analysis accuracy"],
+    "ko": ["계산 오버헤드: 다중 LLM 호출로 인해 단일 패스 Chain-of-Thought 대비 약 2-3배 비용", "다양한 추론 모듈 세트 필요 (일반적으로 좋은 커버리지를 위해 20-30개)", "간단한 문제를 과도하게 엔지니어링할 수 있음", "구조 품질이 작업 분석 정확도에 의존"]
   },
   "tags": ["reasoning", "self-improvement", "meta-learning", "problem-solving"]
 }

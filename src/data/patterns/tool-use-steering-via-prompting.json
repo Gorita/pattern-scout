@@ -6,27 +6,27 @@
   "status": "best-practice",
   "original_url": "https://www.nibzard.com/claude-code",
   "problem": {
-    "en": "Agents with multiple tools need clear guidance on when, why, and how to use them. Simply having tools available doesn't guarantee appropriate use, especially for custom or team-specific tools.",
-    "ko": "여러 도구를 가진 에이전트는 언제, 왜, 어떻게 사용해야 하는지에 대한 명확한 지침이 필요합니다. 도구가 있다고 해서 특히 사용자 정의 또는 팀 특화 도구에 대해 적절한 사용이 보장되지 않습니다."
+    "en": "AI agents equipped with multiple tools (e.g., shell access, file system operations, web search, custom CLIs) need clear guidance on when, why, and how to use these tools effectively. Simply having tools available doesn't guarantee they will be used appropriately for the task at hand, especially for tools unfamiliar to the base model or specific to a team's workflow.",
+    "ko": "여러 도구(예: 셸 접근, 파일 시스템 작업, 웹 검색, 사용자 정의 CLI)를 갖춘 AI 에이전트는 이러한 도구를 언제, 왜, 어떻게 효과적으로 사용해야 하는지에 대한 명확한 지침이 필요합니다. 도구가 단순히 사용 가능하다고 해서 당면한 작업에 적절하게 사용된다는 보장이 없으며, 특히 기본 모델에 익숙하지 않거나 팀의 워크플로우에 특화된 도구의 경우 더욱 그렇습니다."
   },
   "solution": {
-    "en": "Guide tool selection through explicit natural language instructions: direct tool invocation, teaching tool usage with -h flags, implicit tool suggestions via shorthands, and 'think hard' prompts for careful consideration.",
-    "ko": "명시적 자연어 지시를 통해 도구 선택 안내: 직접 도구 호출, -h 플래그로 도구 사용법 교육, 축약어를 통한 암시적 도구 제안, 신중한 고려를 위한 'think hard' 프롬프트."
+    "en": "Guide the agent's tool selection and execution through explicit natural language instructions within the prompt. This includes:\n\n- **Direct Tool Invocation:** Telling the agent which tool to use for a specific part of a task (e.g., \"Use the file search tool to find...\", \"Run a bash command to...\").\n- **Teaching Tool Usage:** Instructing the agent on how to learn about or use a new or custom tool, including how to discover its options (e.g., \"Use our `barley` CLI to check logs. You can use `-h` to see how to use it.\").\n- **Implicit Tool Suggestion:** Using phrases or shorthands that the agent learns to associate with specific tool sequences (e.g., \"commit, push, pr\" for a Git workflow).\n- **Encouraging Deeper Reasoning for Tool Use:** Adding phrases like \"*think hard*\" to prompt more careful consideration before acting, potentially leading to better tool choices or sequences.\n\nThis pattern emphasizes the user's role in actively shaping the agent's behavior with respect to its available tools, rather than relying solely on autonomous tool selection.\n\nThe technique is grounded in research showing that interleaving reasoning traces with action execution—where the model explicitly thinks about which tool to use before acting—significantly improves outcomes (Yao et al., 2022, ReAct).",
+    "ko": "프롬프트 내 명시적 자연어 지시를 통해 에이전트의 도구 선택과 실행을 안내합니다. 이에는 다음이 포함됩니다:\n\n- **직접 도구 호출:** 작업의 특정 부분에 사용할 도구를 에이전트에게 지시 (예: \"파일 검색 도구를 사용하여 찾으세요...\", \"bash 명령을 실행하세요...\").\n- **도구 사용법 교육:** 에이전트에게 새로운 또는 사용자 정의 도구의 사용법과 옵션 발견 방법을 지시 (예: \"`barley` CLI로 로그를 확인하세요. `-h`로 사용법을 볼 수 있습니다.\").\n- **암시적 도구 제안:** 에이전트가 특정 도구 시퀀스와 연관하도록 학습하는 구문이나 축약어 사용 (예: Git 워크플로우를 위한 \"commit, push, pr\").\n- **도구 사용을 위한 심층 추론 유도:** 행동 전 신중한 고려를 촉진하기 위해 \"*think hard*\" 같은 구문 추가로 더 나은 도구 선택이나 시퀀스 유도.\n\n이 패턴은 자율적 도구 선택에만 의존하지 않고, 사용 가능한 도구에 대한 에이전트의 행동을 적극적으로 형성하는 사용자의 역할을 강조합니다.\n\n이 기법은 추론 트레이스와 행동 실행을 인터리빙하여 모델이 행동 전에 어떤 도구를 사용할지 명시적으로 생각하면 결과가 크게 개선된다는 연구에 기반합니다(Yao et al., 2022, ReAct)."
   },
   "ascii_diagram": "┌─────────────────┐\n│   User Task     │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Explicit        │\n│ Guidance        │\n├─────────────────┤\n│• Direct invoke  │\n│• Teach usage    │\n│• Shorthands     │\n│• 'Think hard'   │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Available Tools │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Agent Selection │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Tool Execution  │\n└─────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Task] --> B[Available Tools]\n    A --> C[Explicit Guidance]\n    C --> D[Direct Tool Invocation]\n    C --> E[Teaching Tool Usage]\n    C --> F[Implicit Suggestion]\n    C --> G[Deeper Reasoning Prompts]\n    B --> H[Agent Tool Selection]\n    D --> H\n    E --> H\n    F --> H\n    G --> H\n    H --> I[Tool Execution]",
   "code_example": "# Direct tool invocation\n\"Use the file search tool to find all Python files\"\n\n# Teaching tool usage\n\"Use our `barley` CLI to check logs. Use -h to see options.\"\n\n# Implicit tool suggestion (learned shorthand)\n\"commit, push, pr\"  # Agent knows this means git workflow\n\n# Deeper reasoning\n\"*think hard* about which search strategy to use\"",
   "when_to_use": {
-    "en": ["Custom/team-specific tools", "Complex tool selection scenarios", "Teaching agents new tools"],
-    "ko": ["사용자 정의/팀 특화 도구", "복잡한 도구 선택 시나리오", "에이전트에게 새 도구 교육"]
+    "en": ["Use when agent success depends on reliable tool invocation, especially with custom tools or smaller models (<7B parameters).", "Structure guidance hierarchically: task categorization first, then tool selection rules.", "Include decision frameworks (e.g., \"if modifying existing code, use Edit; if creating new file, use Write\").", "Add verification gates: always run build/test after code changes to prevent error cascades."],
+    "ko": ["에이전트 성공이 안정적 도구 호출에 의존할 때, 특히 사용자 정의 도구나 소규모 모델(<7B 파라미터)에서 사용", "지침을 계층적으로 구성: 작업 분류 먼저, 그 다음 도구 선택 규칙", "의사결정 프레임워크 포함 (예: \"기존 코드 수정 시 Edit 사용; 새 파일 생성 시 Write 사용\")", "검증 게이트 추가: 에러 연쇄를 방지하기 위해 코드 변경 후 항상 빌드/테스트 실행"]
   },
   "pros": {
-    "en": ["Improves tool usage accuracy", "Works with custom tools", "Natural language control"],
-    "ko": ["도구 사용 정확도 향상", "사용자 정의 도구와 호환", "자연어 제어"]
+    "en": ["Improves execution success, reduces tool-call failures, enables context-preserving operations (Edit over Write = ~66% token reduction)"],
+    "ko": ["실행 성공률 향상, 도구 호출 실패 감소, 컨텍스트 보존 작업 지원 (Write 대신 Edit = ~66% 토큰 절감)"]
   },
   "cons": {
-    "en": ["Requires user knowledge of tools", "May add prompt overhead"],
-    "ko": ["사용자의 도구 지식 필요", "프롬프트 오버헤드 추가 가능"]
+    "en": ["Introduces integration coupling, requires prompt maintenance as tool interfaces evolve, adds ~400-700 tokens per session overhead"],
+    "ko": ["통합 결합도 발생, 도구 인터페이스 변화에 따른 프롬프트 유지보수 필요, 세션당 ~400-700 토큰 오버헤드 추가"]
   },
   "tags": ["tool-use", "prompting", "agent-guidance", "custom-tools", "natural-language-control"]
 }

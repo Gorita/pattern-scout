@@ -6,27 +6,27 @@
   "status": "proposed",
   "original_url": "http://jorypestorious.com/blog/ai-engineer-spec/",
   "problem": {
-    "en": "Web chat UIs are awkward for repeat runs, local file edits, or scripting inside CI pipelines.",
-    "ko": "웹 채팅 UI는 반복 실행, 로컬 파일 편집, CI 파이프라인 내 스크립팅에 어색합니다."
+    "en": "Most agent workflows start in chat UIs that are optimized for one-off conversations, not repeatable engineering operations. Teams struggle to automate runs, compose agent steps with existing shell tools, and enforce the same behavior in local development and CI. Without a CLI surface, orchestration logic becomes manual and hard to reproduce.\n\nThe CLI-Native approach applies 50+ years of Unix design principles—modularity, composition, and explicit execution—to agent orchestration.",
+    "ko": "대부분의 에이전트 워크플로우는 반복 가능한 엔지니어링 작업이 아닌 일회성 대화에 최적화된 채팅 UI에서 시작됩니다. 팀은 실행을 자동화하고, 에이전트 단계를 기존 셸 도구와 구성하고, 로컬 개발과 CI에서 동일한 동작을 적용하는 데 어려움을 겪습니다. CLI 표면 없이 오케스트레이션 로직은 수동이 되고 재현이 어려워집니다.\n\nCLI 네이티브 접근법은 50년 이상의 Unix 설계 원칙(모듈성, 구성, 명시적 실행)을 에이전트 오케스트레이션에 적용합니다."
   },
   "solution": {
-    "en": "Expose agent capabilities through a first-class CLI: spec run for code generation, spec test for validation, repl for interactive sessions. Integrate in Makefiles, Git hooks, or cron jobs.",
-    "ko": "일급 CLI를 통해 에이전트 기능 노출: 코드 생성용 spec run, 검증용 spec test, 대화형 세션용 repl. Makefile, Git 훅, cron 작업에 통합."
+    "en": "Expose agent capabilities through a **first-class command-line interface** (here: *Claude CLI*).\n\n- `claude spec run` — generate/update code from a spec file.\n- `claude spec test` — run the Spec-As-Test suite.\n- `claude repl` — drop into an interactive shell with all project context pre-loaded.\n\n**Key mechanisms:**\n- **Structured output**: JSON for scripts (`--json` flag), human-readable for terminals\n- **Exit code semantics**: `0` for success, non-zero for failure\n- **TTY detection**: Auto-switch output format based on execution context\n\nDevelopers can integrate these commands into Makefiles, Git hooks, cron jobs, and CI workflows. The CLI becomes the stable contract between humans, scripts, and automation systems, enabling headless operation with auditable command history.",
+    "ko": "**일급 명령줄 인터페이스**(*Claude CLI*)를 통해 에이전트 기능을 노출합니다.\n\n- `claude spec run` — 스펙 파일에서 코드 생성/업데이트.\n- `claude spec test` — Spec-As-Test 스위트 실행.\n- `claude repl` — 모든 프로젝트 컨텍스트가 미리 로드된 대화형 셸 진입.\n\n**핵심 메커니즘:**\n- **구조화된 출력**: 스크립트용 JSON (`--json` 플래그), 터미널용 사람이 읽을 수 있는 형식\n- **종료 코드 의미론**: 성공 시 `0`, 실패 시 0이 아닌 값\n- **TTY 감지**: 실행 컨텍스트에 따라 출력 형식 자동 전환\n\n개발자는 이러한 명령을 Makefile, Git 훅, cron 작업 및 CI 워크플로우에 통합할 수 있습니다. CLI는 사람, 스크립트, 자동화 시스템 간의 안정적인 계약이 되어 감사 가능한 명령 기록과 함께 헤드리스 운영을 가능하게 합니다."
   },
   "ascii_diagram": "┌─────────────────────────────┐\n│        Development         │\n│         Workflow           │\n└────────────┬────────────────┘\n             │\n     ┌───────┼───────┐\n     ▼       ▼       ▼\n┌─────────┐┌─────────┐┌─────────┐\n│Makefile ││Git Hook ││ Cron   │\n└────┬────┘└────┬────┘└────┬────┘\n     │          │          │\n     └──────────┼──────────┘\n                │\n┌───────────────▼──────────────┐\n│       Claude CLI             │\n├──────────────────────────────┤\n│ • claude spec run            │\n│ • claude spec test           │\n│ • claude repl                │\n└──────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Development Workflow] --> B[Makefile]\n    A --> C[Git Hooks]\n    A --> D[Cron Jobs]\n    B --> E[claude spec run]\n    C --> F[claude spec test]\n    D --> G[claude repl]\n    E --> H[Generated Code]\n    F --> I[Test Results]\n    G --> J[Interactive Session]",
   "code_example": "# Makefile integration\ngenerate-from-spec:\n\tclaude spec run --input api.yaml --output src/\n\ntest-spec-compliance:\n\tclaude spec test --spec api.yaml --codebase src/\n\n# Git pre-commit hook\n#!/bin/bash\nclaude spec test || exit 1\n\n# Headless automation\nclaude -p \"summarize changes\" --output-format json",
   "when_to_use": {
-    "en": ["CI/CD integration", "Local development automation", "Headless scripting"],
-    "ko": ["CI/CD 통합", "로컬 개발 자동화", "헤드리스 스크립팅"]
+    "en": ["Start by wrapping one high-friction workflow (for example, spec-to-code generation) in a single CLI command.", "Standardize flags and output formats so scripts can parse outcomes deterministically.", "Add CLI commands to `make` targets and CI jobs before expanding scope.", "Log command invocations and artifact paths for replay and debugging."],
+    "ko": ["하나의 고마찰 워크플로우(예: 스펙-투-코드 생성)를 단일 CLI 명령으로 래핑하는 것부터 시작", "스크립트가 결과를 결정적으로 파싱할 수 있도록 플래그와 출력 형식 표준화", "범위를 확장하기 전에 CLI 명령을 `make` 타겟과 CI 작업에 추가", "리플레이 및 디버깅을 위해 명령 호출과 아티팩트 경로 기록"]
   },
   "pros": {
-    "en": ["Scriptable", "Works with local context", "Easy to embed in other tools"],
-    "ko": ["스크립트 가능", "로컬 컨텍스트와 작동", "다른 도구에 쉽게 임베드"]
+    "en": ["Scriptable, works offline with local context, easy to embed in other tools"],
+    "ko": ["스크립트 가능, 로컬 컨텍스트로 오프라인 작동, 다른 도구에 쉽게 임베드"]
   },
   "cons": {
-    "en": ["Initial install/auth setup", "Learning curve for CLI flags"],
-    "ko": ["초기 설치/인증 설정", "CLI 플래그 학습 곡선"]
+    "en": ["Initial install & auth; learning curve for CLI flags"],
+    "ko": ["초기 설치 및 인증; CLI 플래그 학습 곡선"]
   },
   "tags": ["cli", "automation", "local-dev", "headless"]
 }

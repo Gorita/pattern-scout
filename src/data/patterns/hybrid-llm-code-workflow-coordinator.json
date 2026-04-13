@@ -6,27 +6,27 @@
   "status": "proposed",
   "original_url": "https://lethain.com/agents-coordinators/",
   "problem": {
-    "en": "LLM-driven workflows are non-deterministic. For some tasks, occasional errors are unacceptable. You need both flexibility for prototyping and determinism when it matters.",
-    "ko": "LLM 기반 워크플로우는 비결정적입니다. 일부 작업에서는 간헐적인 오류도 허용할 수 없습니다. 프로토타이핑을 위한 유연성과 중요한 경우 결정론 모두 필요합니다."
+    "en": "LLM-driven workflows are non-deterministic—even well-crafted prompts can produce unpredictable results. For some tasks (e.g., adding emoji to Slack messages based on PR status), occasional errors are unacceptable. But LLM workflows are fast to prototype and work well for many cases. You need both: flexibility when experimenting and determinism when it matters.",
+    "ko": "LLM 기반 워크플로우는 비결정적입니다. 잘 작성된 프롬프트조차 예측 불가능한 결과를 생성할 수 있습니다. 일부 작업(예: PR 상태에 따라 Slack 메시지에 이모지 추가)에서는 간헐적인 오류도 허용할 수 없습니다. 그러나 LLM 워크플로우는 프로토타이핑이 빠르고 많은 경우에 잘 작동합니다. 실험 시 유연성과 중요한 경우 결정론 모두 필요합니다."
   },
   "solution": {
-    "en": "Support both LLM-driven and code-driven workflows via configurable coordinator parameter. Start with LLM for rapid prototyping, migrate to code when determinism is needed.",
-    "ko": "구성 가능한 코디네이터 매개변수를 통해 LLM 기반과 코드 기반 워크플로우를 모두 지원합니다. 빠른 프로토타이핑을 위해 LLM으로 시작하고, 결정론이 필요할 때 코드로 마이그레이션합니다."
+    "en": "Support both LLM-driven and code-driven workflows via a **configurable coordinator** parameter. Start with LLM for rapid prototyping, then migrate to code when you need determinism.\n\nThis pattern builds on the neuro-symbolic AI principle that combining neural reasoning (LLMs) with symbolic computation (code) produces more reliable systems than either approach alone.\n\n**Coordinator configuration:**\n\n```yaml\n# LLM-driven (default, fastest to iterate)\ncoordinator: llm\n\n# Code-driven (deterministic, goes through code review)\ncoordinator: script\ncoordinator_script: scripts/pr_merged.py\n```\n\n**When `coordinator: llm`:**\n- Handler selects configuration based on trigger\n- Loads prompt, tools, virtual files\n- LLM decides which tools to call\n- Handler coordinates tool calls based on LLM responses\n\n**When `coordinator: script`:**\n- Custom Python script controls workflow\n- Same access to tools, trigger data, virtual files as LLM\n- Can invoke LLM via subagent tool when explicitly needed\n- Goes through code review like any other software\n\n**Progressive enhancement approach:**\n\n1. **Start with LLM** - Fast to prototype, works for many cases\n2. **Observe failures** - Track where non-determinism causes problems\n3. **Rewrite to script** - Use Claude Code to one-shot rewrite prompt → code\n4. **Ship with confidence** - Code goes through review, deterministic behavior",
+    "ko": "**구성 가능한 코디네이터** 매개변수를 통해 LLM 기반과 코드 기반 워크플로우를 모두 지원합니다. 빠른 프로토타이핑을 위해 LLM으로 시작하고, 결정론이 필요할 때 코드로 마이그레이션합니다.\n\n이 패턴은 신경 추론(LLM)과 기호 연산(코드)을 결합하면 어느 한쪽 단독보다 더 신뢰할 수 있는 시스템을 생산한다는 신경-기호 AI 원칙에 기반합니다.\n\n**코디네이터 설정:**\n\n```yaml\n# LLM 기반 (기본값, 가장 빠른 반복)\ncoordinator: llm\n\n# 코드 기반 (결정적, 코드 리뷰 통과)\ncoordinator: script\ncoordinator_script: scripts/pr_merged.py\n```\n\n**`coordinator: llm`일 때:**\n- 핸들러가 트리거에 따라 설정 선택\n- 프롬프트, 도구, 가상 파일 로드\n- LLM이 호출할 도구 결정\n- 핸들러가 LLM 응답에 따라 도구 호출 조정\n\n**`coordinator: script`일 때:**\n- 커스텀 Python 스크립트가 워크플로우 제어\n- LLM과 동일한 도구, 트리거 데이터, 가상 파일 접근\n- 필요 시 서브에이전트 도구를 통해 LLM 호출 가능\n- 다른 소프트웨어처럼 코드 리뷰 통과\n\n**점진적 향상 접근법:**\n\n1. **LLM으로 시작** - 프로토타이핑이 빠르고 많은 경우에 작동\n2. **실패 관찰** - 비결정성이 문제를 일으키는 부분 추적\n3. **스크립트로 재작성** - Claude Code로 프롬프트 → 코드 원샷 재작성\n4. **자신있게 배포** - 코드가 리뷰를 거치고 결정적 동작"
   },
   "ascii_diagram": "┌─────────────┐\n│   Trigger   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ coordinator │\n│   config    │\n└──────┬──────┘\n   ┌───┴───┐\n   ▼       ▼\n [llm]  [script]\n   │       │\n┌──▼──┐ ┌──▼──┐\n│ LLM │ │Code │\n│Orch │ │Orch │\n└──┬──┘ └──┬──┘\n   └───┬───┘\n       │\n┌──────▼──────┐\n│   Result    │\n└─────────────┘",
   "mermaid_diagram": "graph LR\n    A[Trigger] --> B{Coordinator Type}\n    B -->|llm| C[LLM Orchestrates]\n    B -->|script| D[Script Orchestrates]\n    C --> E[Tool Calls]\n    D --> E\n    D -.optional.-> F[Subagent LLM]\n    E --> G[Result]",
   "code_example": "# Configuration\n# coordinator: llm   # Fast iteration\n# coordinator: script # Deterministic\n\ndef execute_workflow(trigger, config):\n    if config.get('coordinator') == 'script':\n        # Code-driven: deterministic, goes through review\n        script = config['coordinator_script']\n        return run_python_script(script, trigger)\n    else:\n        # LLM-driven: flexible, fast iteration\n        prompt = load_prompt(config['prompt'])\n        tools = load_tools(config['tools'])\n        return llm_orchestrate(trigger, prompt, tools)",
   "when_to_use": {
-    "en": ["Workflows needing both flexibility and determinism", "Production systems with prototyping phase", "Critical workflows requiring code review"],
-    "ko": ["유연성과 결정론 모두 필요한 워크플로우", "프로토타이핑 단계가 있는 프로덕션 시스템", "코드 리뷰가 필요한 중요 워크플로우"]
+    "en": ["Prototype with `coordinator: llm`, deploy and observe failure modes.", "When failures are problematic, ask Claude Code: \"Rewrite this workflow as a script\".", "Update config to `coordinator: script`, PR goes through review, merge with confidence.", "Use LLM-driven when prototyping, logic changes frequently, or fast iteration matters.", "Use code-driven when errors are unacceptable, determinism required, or workflow is stable."],
+    "ko": ["`coordinator: llm`으로 프로토타이핑하고 배포 후 실패 모드 관찰", "실패가 문제될 때 Claude Code에 \"이 워크플로우를 스크립트로 재작성\"하도록 요청", "`coordinator: script`로 설정 업데이트, PR이 리뷰를 거쳐 자신있게 머지", "프로토타이핑, 로직이 자주 변경되거나 빠른 반복이 중요할 때 LLM 기반 사용", "오류 허용 불가, 결정론 필요 또는 워크플로우가 안정적일 때 코드 기반 사용"]
   },
   "pros": {
-    "en": ["Best of both worlds", "Easy migration path", "Same tool capabilities for both"],
-    "ko": ["양쪽의 장점", "쉬운 마이그레이션 경로", "양쪽에 동일한 도구 기능"]
+    "en": ["Best of both worlds: LLM flexibility when prototyping, code determinism when mature", "Token efficiency: Code-first processing reduces token usage by 75-99% for data-heavy tasks", "Easy migration: One-shot rewrite from prompt to script", "Same capabilities: Scripts have access to all tools, can still use LLM via subagent", "Code review: Critical workflows go through standard review process", "Progressive enhancement: Don't over-engineer from the start"],
+    "ko": ["양쪽의 장점: 프로토타이핑 시 LLM 유연성, 성숙 시 코드 결정론", "토큰 효율성: 코드 우선 처리로 데이터 집약적 작업에서 토큰 사용 75-99% 감소", "쉬운 마이그레이션: 프롬프트에서 스크립트로 원샷 재작성", "동일한 기능: 스크립트가 모든 도구에 접근 가능, 서브에이전트를 통해 LLM 사용 가능", "코드 리뷰: 중요 워크플로우가 표준 리뷰 프로세스를 거침", "점진적 향상: 처음부터 과도한 엔지니어링 불필요"]
   },
   "cons": {
-    "en": ["Two code paths to maintain", "Rewrite cost when migrating", "Scripts harder to change"],
-    "ko": ["유지할 두 개의 코드 경로", "마이그레이션 시 재작성 비용", "스크립트 변경 어려움"]
+    "en": ["Two code paths: Need to maintain both LLM and script handlers", "Rewrite cost: Time investment to migrate from LLM to script", "Less dynamic: Scripts are harder to change than prompts"],
+    "ko": ["두 코드 경로: LLM과 스크립트 핸들러 모두 유지 필요", "재작성 비용: LLM에서 스크립트로 마이그레이션에 시간 투자 필요", "낮은 동적 특성: 스크립트는 프롬프트보다 변경이 어려움"]
   },
   "tags": ["hybrid", "llm-driven", "code-driven", "coordinator", "determinism", "workflow-orchestration"]
 }
