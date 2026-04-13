@@ -6,27 +6,55 @@
   "status": "emerging",
   "original_url": "https://cognition.ai/blog/devin-sonnet-4-5-lessons-and-challenges",
   "problem": {
-    "en": "Models like Sonnet 4.5 proactively write notes to files, but self-generated notes are often incomplete or miss crucial context.",
-    "ko": "Sonnet 4.5 같은 모델이 능동적으로 파일에 노트를 작성하지만, 자체 생성된 노트는 종종 불완전하거나 중요한 맥락을 놓칩니다."
+    "en": "Modern models like Claude Sonnet 4.5 proactively attempt to externalize their state by writing summaries and notes (e.g., CHANGELOG.md, SUMMARY.md) to the file system without explicit prompting. However, self-generated notes are often incomplete or miss crucial context, models may spend more tokens on documentation than actual problem-solving, performance can degrade when agents rely exclusively on their own summaries, knowledge gaps emerge from inadequate self-documentation, and the behavior intensifies near context window limits as a coping mechanism.",
+    "ko": "Claude Sonnet 4.5와 같은 최신 모델은 명시적 지시 없이도 파일 시스템에 요약과 노트(예: CHANGELOG.md, SUMMARY.md)를 작성하여 능동적으로 상태를 외부화하려 합니다. 그러나 자체 생성된 노트는 종종 불완전하거나 중요한 컨텍스트를 놓치고, 모델이 실제 문제 해결보다 문서화에 더 많은 토큰을 소비할 수 있으며, 에이전트가 자체 요약에만 의존하면 성능이 저하될 수 있습니다. 또한 부적절한 자체 문서화로 지식 격차가 발생하고, 컨텍스트 윈도우 한계 근처에서 대응 메커니즘으로 이 행동이 강화됩니다."
   },
   "solution": {
-    "en": "Implement structured approaches to guide and validate the model's natural tendency toward state externalization.",
-    "ko": "모델의 상태 외부화에 대한 자연스러운 경향을 안내하고 검증하는 구조화된 접근 방식을 구현합니다."
+    "en": "Implement structured approaches to leverage and enhance the model's natural tendency toward state externalization:\n\n1. Guided Self-Documentation Framework: Provide templates and schemas for agent-generated notes, define minimum information requirements for state preservation, and establish validation checkpoints for self-generated summaries.\n\n2. Hybrid Memory Architecture: Combine agent self-documentation with external memory management, use agent notes as supplementary (not primary) state storage, implement fallback mechanisms when self-generated context is insufficient, and account for increased summary token generation with shorter context windows.\n\n3. Progressive State Building: Encourage incremental note-taking throughout long sessions, structure documentation to capture decision rationale (not just actions), and include explicit uncertainty markers and knowledge gaps.",
+    "ko": "모델의 상태 외부화에 대한 자연스러운 경향을 활용하고 강화하는 구조화된 접근 방식을 구현합니다:\n\n1. 가이드 자체 문서화 프레임워크: 에이전트 생성 노트를 위한 템플릿과 스키마를 제공하고, 상태 보존을 위한 최소 정보 요구사항을 정의하며, 자체 생성된 요약에 대한 검증 체크포인트를 수립합니다.\n\n2. 하이브리드 메모리 아키텍처: 에이전트 자체 문서화와 외부 메모리 관리를 결합하고, 에이전트 노트를 보조적(주요가 아닌) 상태 저장소로 사용하며, 자체 생성 컨텍스트가 부족할 때 대체 메커니즘을 구현하고, 짧은 컨텍스트 윈도우에서 증가하는 요약 토큰 생성을 고려합니다.\n\n3. 점진적 상태 구축: 장기 세션 전체에 걸쳐 점진적 노트 작성을 장려하고, 행동뿐만 아니라 결정 근거를 포착하도록 문서화를 구조화하며, 명시적 불확실성 표시와 지식 격차를 포함합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Agent     │\n│  Working    │\n└──────┬──────┘\n       │ writes\n┌──────▼──────┐\n│  NOTES.md   │\n│ (template)  │\n├─────────────┤\n│ ## Objective│\n│ ## Progress │\n│ ## Gaps     │\n└──────┬──────┘\n       │ validate\n┌──────▼──────┐\n│ Completeness│\n│   Check     │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent Working] --> B[Guided Note Template]\n    B --> C[Write Progress Notes]\n    C --> D{Notes Complete?}\n    D -->|No| E[Prompt for Missing Info]\n    E --> C\n    D -->|Yes| F[Continue Work]",
   "code_example": "# Provide template for agent notes\nnote_template = '''\n## Current Objective\n{objective}\n\n## Progress Summary\n- Completed: ...\n- In Progress: ...\n- Next: ...\n\n## Knowledge Gaps\n- Unknown: ...\n- Need Clarification: ...\n'''\n\n# Validate completeness\ndef validate_notes(notes):\n    required = ['Objective', 'Progress', 'Gaps']\n    return all(section in notes for section in required)",
   "when_to_use": {
-    "en": ["Long-running development sessions", "Research and analysis", "Subagent coordination"],
-    "ko": ["장기 개발 세션", "연구 및 분석", "서브에이전트 조정"]
+    "en": [
+      "Long-running development sessions: Multi-hour coding projects requiring state continuity",
+      "Research and analysis: Complex investigations spanning multiple sessions",
+      "Subagent coordination: When main agents need to communicate state to spawned subagents; this behavior may represent a natural pattern for agent-to-agent communication"
+    ],
+    "ko": [
+      "장기 개발 세션: 상태 연속성이 필요한 다시간 코딩 프로젝트",
+      "연구 및 분석: 여러 세션에 걸친 복잡한 조사",
+      "서브에이전트 조정: 메인 에이전트가 생성된 서브에이전트에 상태를 전달해야 할 때; 에이전트 간 통신의 자연스러운 패턴"
+    ]
   },
   "pros": {
-    "en": ["Leverages natural model behavior", "Better session continuity", "Creates audit trails"],
-    "ko": ["자연스러운 모델 동작 활용", "더 나은 세션 연속성", "감사 추적 생성"]
+    "en": [
+      "Leverages natural model behavior",
+      "Enables better session continuity",
+      "Facilitates subagent communication",
+      "Creates audit trails"
+    ],
+    "ko": [
+      "자연스러운 모델 동작 활용",
+      "더 나은 세션 연속성 지원",
+      "서브에이전트 통신 촉진",
+      "감사 추적 생성"
+    ]
   },
   "cons": {
-    "en": ["May consume tokens on documentation", "Requires validation overhead"],
-    "ko": ["문서화에 토큰 소비 가능", "검증 오버헤드 필요"]
+    "en": [
+      "May consume tokens on documentation over progress",
+      "Requires validation overhead",
+      "Risk of incomplete self-assessment",
+      "Potential for \"documentation theater\""
+    ],
+    "ko": [
+      "진행보다 문서화에 토큰 소비 가능",
+      "검증 오버헤드 필요",
+      "불완전한 자기 평가 위험",
+      "\"문서화 극장\" 가능성"
+    ]
   },
   "tags": ["state-externalization", "memory-management", "self-documentation", "note-taking"]
 }

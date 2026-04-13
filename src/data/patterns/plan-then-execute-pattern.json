@@ -6,27 +6,45 @@
   "status": "established",
   "original_url": "https://arxiv.org/abs/2506.08837",
   "problem": {
-    "en": "Agents that plan and execute simultaneously are vulnerable to prompt injection mid-execution.",
-    "ko": "계획과 실행을 동시에 수행하는 에이전트는 실행 중 프롬프트 인젝션에 취약합니다."
+    "en": "When planning and execution are interleaved in one loop, untrusted tool outputs can influence which action is selected next. That makes the control flow itself attackable: a malicious intermediate result can redirect the agent into unsafe tools or unauthorized operations.",
+    "ko": "계획과 실행이 하나의 루프에서 인터리브되면, 신뢰할 수 없는 도구 출력이 다음에 선택되는 행동에 영향을 줄 수 있습니다. 이로 인해 제어 흐름 자체가 공격 가능해지며, 악의적인 중간 결과가 에이전트를 안전하지 않은 도구나 비인가 작업으로 리다이렉트할 수 있습니다."
   },
   "solution": {
-    "en": "Separate planning phase from execution, locking the plan before any untrusted data processing begins.",
-    "ko": "계획 단계를 실행과 분리하고, 신뢰할 수 없는 데이터 처리 시작 전에 계획을 잠급니다."
+    "en": "Split reasoning into two phases:\n\n1. Plan phase - LLM generates a fixed sequence of tool calls before it sees any untrusted data.\n2. Execution phase - Controller runs that exact sequence. Tool outputs may shape parameters, but cannot change which tools run.\n\nThis separates strategic decisions from data-dependent execution. The planner commits to a bounded action graph up front, and the executor enforces that graph deterministically, which preserves flexibility on arguments while protecting control-flow integrity.\n\nPlanning before execution improves task completion rates by 40-70% and reduces hallucinations by ~60% (Parisien et al., 2024).\n\nClaude Code implements this through \"plan mode\" which shifts the agent into planning-only mode, where the agent generates a detailed plan, the human reviews and approves, then the agent follows the approved plan. This can 2-3x success rates for complex tasks. The threshold of what requires planning changes with each model generation as newer models push the boundary of what can be one-shot.",
+    "ko": "추론을 두 단계로 분리합니다:\n\n1. 계획 단계 - LLM이 신뢰할 수 없는 데이터를 보기 전에 고정된 도구 호출 시퀀스를 생성합니다.\n2. 실행 단계 - 컨트롤러가 정확히 해당 시퀀스를 실행합니다. 도구 출력은 매개변수에 영향을 줄 수 있지만, 실행되는 도구를 변경할 수 없습니다.\n\n이를 통해 전략적 결정을 데이터 의존적 실행과 분리합니다. 플래너가 사전에 한정된 행동 그래프를 확정하고, 실행자가 해당 그래프를 결정론적으로 적용하여 인자의 유연성을 유지하면서 제어 흐름 무결성을 보호합니다.\n\n실행 전 계획은 작업 완료율을 40-70% 향상시키고 환각을 약 60% 감소시킵니다(Parisien et al., 2024).\n\nClaude Code는 에이전트를 계획 전용 모드로 전환하는 \"plan mode\"를 통해 이를 구현합니다. 에이전트가 상세 계획을 생성하고, 사람이 검토 및 승인한 후 에이전트가 승인된 계획을 따릅니다. 이를 통해 복잡한 작업의 성공률을 2-3배 높일 수 있습니다. 계획이 필요한 임계값은 각 모델 세대마다 변화하며, 더 새로운 모델은 원샷으로 처리할 수 있는 경계를 확장합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Task      │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   PLAN      │\n│  (locked)   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  EXECUTE    │\n│ (no modify) │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│   Result    │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Task] --> B[Planning Phase]\n    B -->|Lock Plan| C[Execution Phase]\n    C --> D[Result]\n    E[Untrusted Data] -->|Cannot modify| B",
   "code_example": "plan = agent.create_plan(task)  # No untrusted data\nplan.lock()  # Freeze the plan\nfor step in plan.steps:\n    result = agent.execute(step, untrusted_data)\n# Plan cannot be modified during execution",
   "when_to_use": {
-    "en": ["Security-sensitive agents", "Multi-step tasks", "External input processing"],
-    "ko": ["보안 민감 에이전트", "다단계 작업", "외부 입력 처리"]
+    "en": [
+      "Email-and-calendar bots, SQL assistants, code-review helpers - any task where the action set is known but parameters vary",
+      "Claude Code plan mode: Shift to planning-only mode for complex tasks, then execute the approved plan",
+      "LangChain Plan-and-Execute: Separate planner and executor agents for step-by-step plan generation and sequential execution"
+    ],
+    "ko": [
+      "이메일-캘린더 봇, SQL 어시스턴트, 코드 리뷰 헬퍼 등 행동 집합은 알려져 있지만 매개변수가 달라지는 작업",
+      "Claude Code plan mode: 복잡한 작업을 위해 계획 전용 모드로 전환 후 승인된 계획을 실행",
+      "LangChain Plan-and-Execute: 단계별 계획 생성과 순차 실행을 위한 별도의 플래너와 실행자 에이전트"
+    ]
   },
   "pros": {
-    "en": ["Prompt injection defense", "Predictable execution", "Auditable"],
-    "ko": ["프롬프트 인젝션 방어", "예측 가능한 실행", "감사 가능"]
+    "en": [
+      "Strong control-flow integrity",
+      "Moderate flexibility"
+    ],
+    "ko": [
+      "강력한 제어 흐름 무결성",
+      "적절한 유연성"
+    ]
   },
   "cons": {
-    "en": ["Reduced flexibility", "Harder dynamic adaptation"],
-    "ko": ["유연성 감소", "동적 적응 어려움"]
+    "en": [
+      "Content of outputs can still be poisoned (e.g., bad email body)"
+    ],
+    "ko": [
+      "출력 내용은 여전히 오염될 수 있음 (예: 잘못된 이메일 본문)"
+    ]
   },
   "tags": ["planning", "control-flow-integrity", "prompt-injection", "security"]
 }

@@ -6,27 +6,59 @@
   "status": "emerging",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "Traditional software engineering has diminishing returns: each feature increases complexity. With AI agents, this is amplified as agents repeat the same mistakes because learnings aren't captured.",
-    "ko": "전통적인 소프트웨어 엔지니어링은 수확 체감이 있습니다: 각 기능이 복잡성을 증가시킵니다. AI 에이전트에서는 학습이 캡처되지 않아 에이전트가 같은 실수를 반복하므로 이 문제가 증폭됩니다."
+    "en": "Traditional software engineering has diminishing returns: each feature added increases complexity, making subsequent features harder to build. Technical debt accumulates, onboarding takes longer, and new team members struggle to be productive.\n\nWith AI coding agents, this problem is amplified—agents make the same mistakes repeatedly because learnings aren't systematically captured and codified.",
+    "ko": "전통적인 소프트웨어 엔지니어링은 수확 체감의 법칙을 따릅니다: 추가되는 각 기능이 복잡성을 증가시켜 후속 기능 개발을 더 어렵게 만듭니다. 기술 부채가 누적되고, 온보딩 기간이 길어지며, 새 팀원이 생산적으로 되기 어렵습니다.\n\nAI 코딩 에이전트에서는 이 문제가 증폭됩니다. 학습 내용이 체계적으로 캡처되고 코드화되지 않으므로 에이전트가 동일한 실수를 반복합니다."
   },
   "solution": {
-    "en": "Make each feature compound by codifying all learnings into reusable agent instructions: system prompts, slash commands, subagents, and hooks.",
-    "ko": "모든 학습 내용을 재사용 가능한 에이전트 지침(시스템 프롬프트, 슬래시 명령, 서브에이전트, 훅)으로 코드화하여 각 기능을 복합적으로 만듭니다."
+    "en": "Flip the equation: make each feature compound by codifying all learnings into reusable agent instructions. When you complete a feature, document:\n\n1. **What worked in the plan** and what needed adjustment\n2. **Issues discovered during testing** that weren't caught earlier\n3. **Common mistakes** the agent made\n4. **Patterns and best practices** that should be reused\n\nThen embed these insights into:\n\n- **Claude MD / system prompts**: Global coding standards\n- **Slash commands**: Repeatable workflows (e.g., `/test-with-validation`)\n- **Subagents**: Specialized validators (e.g., security review agent)\n- **Hooks**: Automated checks that prevent regressions\n\n**Result**: Each feature makes the next easier because the codebase becomes increasingly \"self-teaching.\"",
+    "ko": "방정식을 뒤집습니다: 모든 학습 내용을 재사용 가능한 에이전트 지침으로 코드화하여 각 기능을 복합적으로 만듭니다. 기능을 완료하면 다음을 문서화합니다:\n\n1. **계획에서 효과가 있었던 것**과 조정이 필요했던 것\n2. **테스트 중 발견된 문제**로 이전에 포착되지 않은 것\n3. **에이전트가 저지른 일반적인 실수**\n4. **재사용해야 할 패턴과 모범 사례**\n\n그런 다음 이러한 인사이트를 다음에 내장합니다:\n\n- **Claude MD / 시스템 프롬프트**: 글로벌 코딩 표준\n- **슬래시 명령**: 반복 가능한 워크플로우 (예: `/test-with-validation`)\n- **서브에이전트**: 전문화된 검증기 (예: 보안 리뷰 에이전트)\n- **훅**: 회귀를 방지하는 자동화된 검사\n\n**결과**: 코드베이스가 점점 '자기 학습' 능력을 갖추게 되어 각 기능이 다음 기능을 더 쉽게 만듭니다."
   },
   "ascii_diagram": "┌─────────────┐\n│Build Feature│\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Document   │\n│  Learnings  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Codify into: │\n├─────────────┤\n│• Prompts    │\n│• Commands   │\n│• Subagents  │\n│• Hooks      │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Next Build  │\n│  (Easier!)  │\n└─────────────┘",
   "mermaid_diagram": "graph LR\n    A[Build Feature] --> B[Document Learnings]\n    B --> C[Codify into Prompts/Commands]\n    C --> D[Next Feature Uses Knowledge]\n    D --> E[Easier & Faster Build]\n    E --> A",
   "code_example": "# After completing a feature, codify learnings:\n\n# 1. Update CLAUDE.md with patterns\nwith open('CLAUDE.md', 'a') as f:\n    f.write('## API Error Handling\\n')\n    f.write('Always wrap external calls in retry logic...\\n')\n\n# 2. Create slash command for repeated workflow\n# .claude/commands/test-with-validation.md\ncommand = '''\nRun tests with extra validation:\n1. Run unit tests\n2. Check for type errors\n3. Validate API contracts\n'''\n\n# 3. Add hook to prevent regressions\n# .claude/hooks/pre-commit.sh\nhook = 'npm run typecheck && npm test'\n\n# Result: Next features get this knowledge for free",
   "when_to_use": {
-    "en": ["Multi-feature development", "Team onboarding", "Long-running AI agent projects"],
-    "ko": ["다기능 개발", "팀 온보딩", "장기 AI 에이전트 프로젝트"]
+    "en": [
+      "During feature development: track what the agent got wrong, note plan revisions, document edge cases, identify repeated questions",
+      "After completion: update CLAUDE.md, create slash commands, build subagents for validation, add hooks, write tests that encode requirements",
+      "Works synergistically with Memory Synthesis from Execution Logs, Coding Agent CI Feedback Loop, and Skill Library Evolution"
+    ],
+    "ko": [
+      "기능 개발 중: 에이전트의 실수 추적, 계획 수정 기록, 엣지 케이스 문서화, 반복 질문 식별",
+      "완료 후: CLAUDE.md 업데이트, 슬래시 명령 생성, 검증용 서브에이전트 구축, 훅 추가, 요구사항을 인코딩하는 테스트 작성",
+      "Memory Synthesis from Execution Logs, Coding Agent CI Feedback Loop, Skill Library Evolution과 시너지 효과"
+    ]
   },
   "pros": {
-    "en": ["Accelerating productivity", "Knowledge preservation", "Better onboarding"],
-    "ko": ["생산성 가속화", "지식 보존", "더 나은 온보딩"]
+    "en": [
+      "Accelerating productivity: Each feature genuinely makes the next faster",
+      "Knowledge preservation: Learnings don't depend on individual memory",
+      "Better onboarding: New team members (human or AI) leverage accumulated knowledge",
+      "Reduced repetition: Agent stops making the same mistakes",
+      "Living documentation: Instructions stay current because they're used daily"
+    ],
+    "ko": [
+      "생산성 가속화: 각 기능이 진정으로 다음 기능을 더 빠르게 만듦",
+      "지식 보존: 학습 내용이 개인의 기억에 의존하지 않음",
+      "더 나은 온보딩: 새 팀원(인간 또는 AI)이 축적된 지식을 활용",
+      "반복 감소: 에이전트가 동일한 실수를 멈춤",
+      "살아있는 문서화: 매일 사용되므로 지침이 최신 상태 유지"
+    ]
   },
   "cons": {
-    "en": ["Upfront time investment", "Maintenance overhead", "Risk of over-specification"],
-    "ko": ["초기 시간 투자", "유지보수 오버헤드", "과도한 명세화 위험"]
+    "en": [
+      "Upfront time investment: Requires discipline to document after each feature",
+      "Maintenance overhead: Prompts and commands need updates as patterns change",
+      "Over-specification risk: Too many rules can make agents inflexible",
+      "Requires tooling: Needs extensible agent system (slash commands, hooks, etc.)",
+      "Prompt bloat: System prompts can grow large over time"
+    ],
+    "ko": [
+      "초기 시간 투자: 각 기능 완료 후 문서화하는 규율 필요",
+      "유지보수 오버헤드: 패턴 변경 시 프롬프트와 명령 업데이트 필요",
+      "과도한 명세화 위험: 너무 많은 규칙이 에이전트를 유연하지 못하게 만들 수 있음",
+      "도구 의존성: 확장 가능한 에이전트 시스템 필요 (슬래시 명령, 훅 등)",
+      "프롬프트 비대화: 시스템 프롬프트가 시간이 지남에 따라 커질 수 있음"
+    ]
   },
   "tags": ["learning", "feedback-loops", "codification", "prompts", "slash-commands"]
 }
