@@ -555,6 +555,43 @@
     "related": []
   },
   {
+    "id": "tool-search-lazy-loading",
+    "title": "Tool Search Lazy Loading",
+    "title_ko": "도구 검색 지연 로딩",
+    "category": "Context & Memory",
+    "description": "As MCP has grown, MCP servers may expose 50+ tools that consume significant context space Implement a lazy-loading mechanism where tools are dynamically loaded into context via search only when needed",
+    "problem": "As MCP has grown, MCP servers may expose 50+ tools that consume significant context space. Documented setups with 7+ servers have been consuming 67k+ tokens just for tool descriptions. This creates context bloat, latency from processing overhead, discovery challenges scanning through irrelevant tools, and memory pressure exceeding practical context limits.",
+    "solution": "Implement a lazy-loading mechanism where tools are dynamically loaded into context via search only when needed, rather than preloaded on initialization. The pattern works by: 1) Threshold detection — monitor when tool descriptions would exceed a context threshold (e.g., 10%). 2) Search interface — provide a ToolSearchTool for agents to search tool metadata and selectively load tools. 3) Server instructions — leverage MCP server instruction fields to guide the agent. 4) Agentic search — use intelligent search rather than basic RAG to find relevant tools.",
+    "when_to_use": [
+      "Development environments with many specialized tools",
+      "Multi-server setups with domain-specific capabilities",
+      "Agents that only need a subset of available tools per task"
+    ],
+    "pros": [
+      "Dramatically reduces baseline context usage (67k+ tokens to metadata)",
+      "Enables scaling to 100+ tools without context issues",
+      "Faster cold-start times",
+      "Better tool discovery through intentional search",
+      "Allows more MCP servers to be enabled simultaneously"
+    ],
+    "cons": [
+      "Adds latency when tools need dynamic loading",
+      "Requires search infrastructure and metadata management",
+      "May miss serendipitous tool discovery from browsing full catalogs",
+      "Server instructions become more critical",
+      "Additional client implementation complexity"
+    ],
+    "tags": [
+      "mcp",
+      "tool-discovery",
+      "context-optimization",
+      "lazy-loading",
+      "search",
+      "dynamic-loading"
+    ],
+    "related": []
+  },
+  {
     "id": "working-memory-via-todos",
     "title": "Working Memory via TodoWrite",
     "title_ko": "TodoWrite를 통한 작업 기억 관리",
@@ -786,6 +823,36 @@
       "graph-based",
       "problem-solving",
       "aggregation"
+    ],
+    "related": []
+  },
+  {
+    "id": "incident-to-eval-synthesis",
+    "title": "Incident-to-Eval Synthesis",
+    "title_ko": "인시던트-평가 합성",
+    "category": "Feedback Loops",
+    "description": "Many teams run agent evaluations, but the eval suite drifts away from real failures seen in production Convert every production incident into one or more executable eval cases, then gate future change",
+    "problem": "Many teams run agent evaluations, but the eval suite drifts away from real failures seen in production. Incidents get resolved operationally, yet the exact failure mode is rarely converted into a durable regression test. This creates repeat incidents and false confidence from stale benchmark sets.",
+    "solution": "Convert every production incident into one or more executable eval cases, then gate future changes on those cases. Pattern mechanics: capture incident artifacts (inputs, context, tool traces, outputs, impact), normalize sensitive data and derive a minimal reproducible scenario, encode expected behavior as objective pass/fail criteria, add the case to the evaluation corpus with severity and owner metadata, run incident-derived evals in CI and release gates.",
+    "when_to_use": [
+      "Teams with recurring production incidents",
+      "Need to align evals with real risk",
+      "Organizations wanting to compound operational learning"
+    ],
+    "pros": [
+      "Aligns evals with real risk",
+      "Compounds operational learning over time"
+    ],
+    "cons": [
+      "Adds triage overhead",
+      "Requires discipline in incident data capture"
+    ],
+    "tags": [
+      "evals",
+      "incidents",
+      "reliability",
+      "feedback",
+      "continuous-improvement"
     ],
     "related": []
   },
@@ -1368,6 +1435,41 @@
     "related": []
   },
   {
+    "id": "multi-step-analysis-pipeline-orchestration",
+    "title": "Artifact-Driven Analysis Pipeline Orchestration",
+    "title_ko": "아티팩트 기반 분석 파이프라인 오케스트레이션",
+    "category": "Orchestration & Control",
+    "description": "Complex data analysis tasks often require running many sequential or parallel processing steps, each producing intermediate artifacts that feed into subsequent stages Use an LLM agent as the orchestra",
+    "problem": "Complex data analysis tasks often require running many sequential or parallel processing steps, each producing intermediate artifacts that feed into subsequent stages. Manually coordinating these steps — ensuring correct ordering, aggregating outputs, and producing a final unified result — is tedious and error-prone. Traditional scripting approaches hardcode the pipeline, making it inflexible when steps need to be added, reordered, or debugged.",
+    "solution": "Use an LLM agent as the orchestration layer for an artifact-driven analysis pipeline. Each step emits a structured intermediate artifact that the agent can inspect semantically. The agent manages independent analysis scripts, coordinates execution order, aggregates intermediate outputs by reading all generated reports, and produces final visualization. Unlike general workflow automation, this pattern centers on semantic aggregation of structured intermediate reports.",
+    "when_to_use": [
+      "Collection of analysis scripts processing same input from different angles",
+      "Intermediate outputs are structured text (markdown, JSON, CSV)",
+      "Final deliverable is a unified report or visualization"
+    ],
+    "pros": [
+      "Flexible orchestration — no code changes needed to add/remove steps",
+      "Content-aware aggregation across steps",
+      "Low setup cost — no dedicated workflow engines needed",
+      "Interactive debugging — agent can inspect failures and re-run steps"
+    ],
+    "cons": [
+      "Cost scales with output volume — tokens proportional to total output size",
+      "Reproducibility concerns — LLM outputs may vary between runs",
+      "Not suited for massive scale — works best with tens of steps",
+      "Requires structured intermediates that agent can parse"
+    ],
+    "tags": [
+      "pipeline",
+      "multi-step",
+      "orchestration",
+      "report-generation",
+      "data-analysis",
+      "claude-code"
+    ],
+    "related": []
+  },
+  {
     "id": "autonomous-workflow-agent-architecture",
     "title": "Autonomous Workflow Agent Architecture",
     "title_ko": "자율 워크플로우 에이전트 아키텍처",
@@ -1396,6 +1498,37 @@
       "multi-agent",
       "engineering-tasks",
       "tmux"
+    ],
+    "related": []
+  },
+  {
+    "id": "budget-aware-model-routing-with-hard-cost-caps",
+    "title": "Budget-Aware Model Routing with Hard Cost Caps",
+    "title_ko": "하드 비용 상한이 있는 예산 인식 모델 라우팅",
+    "category": "Orchestration & Control",
+    "description": "Agent systems often route every request to the strongest model by default, which quietly inflates cost and reduces throughput under load Introduce a routing layer with explicit budget contracts and ha",
+    "problem": "Agent systems often route every request to the strongest model by default, which quietly inflates cost and reduces throughput under load. Soft budget guidance in prompts is not enough because model selection happens in control code, not language outputs. Teams need deterministic guardrails that preserve quality for hard tasks while preventing runaway token spend for routine work.",
+    "solution": "Introduce a routing layer with explicit budget contracts and hard caps per request, user, and workflow lane. Key elements: a tiered model catalog (small, medium, frontier) with capability metadata, a policy engine that computes maximum allowable spend before each call, deterministic fallback rules when the selected model would exceed budget, and quality override paths for safety-critical workflows. Cascade routing: try the cheapest adequate model first; if quality gates fail, escalate to stronger models.",
+    "when_to_use": [
+      "Model bills growing faster than product value",
+      "High-volume workflows with measurable quality targets",
+      "Need for routing telemetry and escalation policy"
+    ],
+    "pros": [
+      "Predictable spending",
+      "Better capacity planning",
+      "Clear escalation policy"
+    ],
+    "cons": [
+      "More control-plane complexity",
+      "Risk of under-powering hard requests if classification is weak"
+    ],
+    "tags": [
+      "routing",
+      "cost-control",
+      "multi-model",
+      "orchestration",
+      "reliability"
     ],
     "related": []
   },
@@ -1496,6 +1629,43 @@
       "rate-limiting",
       "git-automation",
       "cli-driven"
+    ],
+    "related": []
+  },
+  {
+    "id": "cross-cycle-consensus-relay",
+    "title": "Cross-Cycle Consensus Relay",
+    "title_ko": "크로스 사이클 합의 릴레이",
+    "category": "Orchestration & Control",
+    "description": "Autonomous multi-agent loops that run across many cycles (minutes, hours, or days) need a way to reliably transfer context, decisions, and next actions between cycles Each agent cycle reads a consensu",
+    "problem": "Autonomous multi-agent loops that run across many cycles (minutes, hours, or days) need a way to reliably transfer context, decisions, and next actions between cycles. In-memory state is lost on crash or restart. Generic checkpoint files don't encode the structured reasoning — what was decided, why, and what comes next — that agents need to make good decisions in subsequent cycles. Without a structured relay mechanism, autonomous loops suffer from drift, repetition, and stalls.",
+    "solution": "Each agent cycle reads a consensus relay document at the start, executes its work, then writes an updated consensus document at the end. The document is a structured handoff that encodes current phase, completed actions, active decisions, open questions, and the single most important next action. The relay document is written to a temp file and atomically renamed to prevent partial-write corruption. Convergence detection triggers when the same next action appears for N consecutive cycles.",
+    "when_to_use": [
+      "Long-running autonomous agent loops (multi-cycle, multi-day execution)",
+      "Multi-agent systems where context must survive restarts",
+      "Teams of agents needing shared understanding of decisions",
+      "Systems wanting convergence toward shipping rather than endless discussion"
+    ],
+    "pros": [
+      "Agents resume with full context after crash or restart",
+      "Structured relay prevents context drift across cycles",
+      "Open questions create forward pressure",
+      "Human-readable and git-friendly"
+    ],
+    "cons": [
+      "Schema discipline required for relay document quality",
+      "Relay grows over time; needs periodic summarization",
+      "Single-file relay is bottleneck for high-frequency loops",
+      "Context window limits constrain relay size",
+      "Sensitive state must never be written to relay file"
+    ],
+    "tags": [
+      "multi-agent",
+      "state-management",
+      "persistence",
+      "long-running-tasks",
+      "orchestration",
+      "autonomous-loops"
     ],
     "related": []
   },
@@ -1657,6 +1827,40 @@
       "privilege-separation",
       "quarantined-llm",
       "security"
+    ],
+    "related": []
+  },
+  {
+    "id": "economic-value-signaling-multi-agent",
+    "title": "Economic Value Signaling in Multi-Agent Networks",
+    "title_ko": "멀티 에이전트 네트워크의 경제적 가치 신호",
+    "category": "Orchestration & Control",
+    "description": "In multi-agent systems with many autonomous agents running concurrently, task prioritization becomes difficult Attach an economic signal (token value) to inter-agent ping messages, creating a natural ",
+    "problem": "In multi-agent systems with many autonomous agents running concurrently, task prioritization becomes difficult. Agents have no natural mechanism to signal urgency, quality, or importance of work requests. Standard message queues treat all inter-agent messages as equal, leading to priority inversion, no natural incentive for agents to accept tasks from unknown peers, coordination overhead increasing linearly with agent count, and difficulty discovering peers with complementary capabilities.",
+    "solution": "Attach an economic signal (token value) to inter-agent ping messages, creating a natural priority queue and incentive layer without requiring central coordination. Core components: 1) Value-bearing ping with optional economic value for priority signaling. 2) Peer registry (Atlas) for auto-registration and capability broadcasting. 3) Transport layer with UDP broadcast for low-latency pings and HTTP for reliable task assignment. 4) Decentralized settlement on an external ledger so agents need not trust each other for payment.",
+    "when_to_use": [
+      "Multi-agent systems needing natural priority ordering",
+      "Cross-organizational agent collaboration",
+      "Systems without central scheduler"
+    ],
+    "pros": [
+      "Natural priority ordering without central scheduler",
+      "Incentive-compatible: agents self-select matching work",
+      "Decentralized with no single point of failure",
+      "Works across organizational boundaries"
+    ],
+    "cons": [
+      "Requires shared value token or settlement layer",
+      "Value calibration is application-specific",
+      "Discovery registry is a soft dependency"
+    ],
+    "tags": [
+      "multi-agent",
+      "coordination",
+      "incentives",
+      "economic-signaling",
+      "peer-discovery",
+      "value-transfer"
     ],
     "related": []
   },
@@ -2632,6 +2836,44 @@
     "related": []
   },
   {
+    "id": "workspace-native-multi-agent-orchestration",
+    "title": "Workspace-Native Multi-Agent Orchestration",
+    "title_ko": "워크스페이스 네이티브 멀티 에이전트 오케스트레이션",
+    "category": "Orchestration & Control",
+    "description": "Many teams struggle to run agentic workflows because their agent tooling is separate from their day-to-day collaboration environment Make agents native participants in the workspace platform itself, s",
+    "problem": "Many teams struggle to run agentic workflows because their agent tooling is separate from their day-to-day collaboration environment. The result is fragmented context, brittle integrations, and high setup overhead. Agents are difficult to create and version for non-engineering users, context and memory are spread across ad hoc systems, multi-agent workflows require custom glue, and integrating with operational tools is expensive.",
+    "solution": "Make agents native participants in the workspace platform itself, so they share the same context, memory, and lifecycle as human collaborators. Built on blackboard architecture and tuple spaces. Core components: 1) Agent definitions as shared, versioned artifacts. 2) Shared workspace memory (episodic, semantic, procedural). 3) Workflow orchestration via event-driven triggers (direct, conditional, composite, temporal). 4) Standardized integration surface (MCP-compatible). 5) Cross-platform accessibility.",
+    "when_to_use": [
+      "Teams without heavy automation infrastructure",
+      "Multi-agent workflows needing shared persistent memory",
+      "Need for standardized integration surface across platforms"
+    ],
+    "pros": [
+      "Lowers onboarding friction",
+      "Preserves context across sessions via shared memory",
+      "Improves handoff quality between agents and humans",
+      "Reduces integration effort through standardized action surfaces"
+    ],
+    "cons": [
+      "Strong coupling to chosen workspace platform",
+      "Advanced behaviors may still require custom agent code",
+      "Workflow chains can become difficult to debug",
+      "Operational dependency on platform settings"
+    ],
+    "tags": [
+      "multi-agent",
+      "orchestration",
+      "workflow-automation",
+      "workspace",
+      "mcp",
+      "knowledge-base",
+      "persistent-memory",
+      "integrations",
+      "collaboration"
+    ],
+    "related": []
+  },
+  {
     "id": "action-caching-replay",
     "title": "Action Caching & Replay Pattern",
     "title_ko": "액션 캐싱 및 리플레이 패턴",
@@ -2768,6 +3010,36 @@
       "code-agent",
       "parallelism",
       "rl-training"
+    ],
+    "related": []
+  },
+  {
+    "id": "canary-rollout-and-automatic-rollback-for-agent-policy-changes",
+    "title": "Canary Rollout and Automatic Rollback for Agent Policy Changes",
+    "title_ko": "에이전트 정책 변경을 위한 카나리 롤아웃 및 자동 롤백",
+    "category": "Reliability & Eval",
+    "description": "Agent behavior changes frequently through prompt updates, tool policies, routing rules, and evaluator thresholds Treat agent policy changes like production releases: ship to a small traffic slice firs",
+    "problem": "Agent behavior changes frequently through prompt updates, tool policies, routing rules, and evaluator thresholds. Even small policy edits can produce broad regressions in cost, latency, safety, or task quality. Full rollouts without staged exposure make rollback slow and user impact large.",
+    "solution": "Treat agent policy changes like production releases: ship to a small traffic slice first, monitor leading indicators, and auto-rollback when guardrails are breached. Core components: a traffic splitter routing a fixed percentage to the new policy, a policy version registry with immutable identifiers, real-time monitors for quality/latency/failure rate/safety/spend, and rollback automation. Recommended stages: 1% canary for fast anomaly detection, 5-10% validation with stricter thresholds, 25-50% soak period, 100% rollout only if all conditions hold.",
+    "when_to_use": [
+      "Any change that can alter external behavior: prompts, tools, evaluator logic, memory policies, routing",
+      "Need for defined rollback triggers before rollout"
+    ],
+    "pros": [
+      "Limits blast radius",
+      "Shortens time-to-recovery"
+    ],
+    "cons": [
+      "Requires release orchestration",
+      "Richer telemetry needed",
+      "Clear version hygiene required"
+    ],
+    "tags": [
+      "canary",
+      "rollback",
+      "reliability",
+      "policy",
+      "evaluation"
     ],
     "related": []
   },
@@ -3011,6 +3283,41 @@
     "related": []
   },
   {
+    "id": "wfgy-reliability-problem-map",
+    "title": "Reliability Problem Map Checklist for RAG and Agents",
+    "title_ko": "RAG 및 에이전트를 위한 신뢰성 문제 지도 체크리스트",
+    "category": "Reliability & Eval",
+    "description": "RAG pipelines and agent systems often fail in ways that are hard to diagnose: missing context, unstable retrieval, brittle tool contracts, and flaky behavior after data updates Use a fixed reliability",
+    "problem": "RAG pipelines and agent systems often fail in ways that are hard to diagnose: missing context, unstable retrieval, brittle tool contracts, and flaky behavior after data updates. Teams frequently address these failures by iterating on prompts or tuning model settings first, which makes incidents feel random and expensive to fix.",
+    "solution": "Use a fixed reliability checklist (the Problem Map) as the first step in every incident response. The checklist groups recurring failure classes across four areas: retrieval behavior, vector/index behavior, prompt and tool contracts, deployment and operational state. For each failing case, the team classifies the incident by answering checklist items. Confirmed failures are mapped to repair actions and re-tested against the same reproduction case. This creates a consistent vocabulary for incidents and keeps responses structured.",
+    "when_to_use": [
+      "RAG pipeline debugging and incident response",
+      "Agent system reliability triage",
+      "Teams needing shared language for common failures"
+    ],
+    "pros": [
+      "Shared language for common agent/RAG failures",
+      "Works across LLM providers and vector stores",
+      "Encourages targeted fixes instead of blind prompt changes",
+      "Produces repeatable incident history"
+    ],
+    "cons": [
+      "Requires discipline to run full triage sequence first",
+      "Not a replacement for automated evaluations or metrics",
+      "Repair actions still need maintenance per tech stack"
+    ],
+    "tags": [
+      "reliability",
+      "evaluation",
+      "rag",
+      "agents",
+      "debugging",
+      "failure-modes",
+      "checklist"
+    ],
+    "related": []
+  },
+  {
     "id": "rlaif-reinforcement-learning-from-ai-feedback",
     "title": "RLAIF (Reinforcement Learning from AI Feedback)",
     "title_ko": "RLAIF (AI 피드백으로부터의 강화 학습)",
@@ -3244,6 +3551,43 @@
     "related": []
   },
   {
+    "id": "hook-based-safety-guard-rails",
+    "title": "Hook-Based Safety Guard Rails for Autonomous Code Agents",
+    "title_ko": "자율 코드 에이전트를 위한 훅 기반 안전 가드레일",
+    "category": "Security & Safety",
+    "description": "Autonomous code agents running unattended can execute destructive commands (rm -rf, git reset --hard), exhaust their context window without saving state, leak secrets via git push, or silently produce",
+    "problem": "Autonomous code agents running unattended can execute destructive commands (rm -rf, git reset --hard), exhaust their context window without saving state, leak secrets via git push, or silently produce syntax errors that cascade into later failures. The agent itself can't reliably self-police because it operates within the same context that produces the mistakes.",
+    "solution": "Use the agent framework's hook system (PreToolUse / PostToolUse events) to inject safety checks that run outside the agent's reasoning loop. Four guard rails: 1) Dangerous command blocker (PreToolUse: Bash) - pattern-matches commands for rm -rf, git reset --hard, DROP TABLE, etc. and blocks before execution. 2) Syntax checker (PostToolUse: Edit/Write) - runs appropriate linter after every file edit. 3) Context window monitor (PostToolUse: all) - counts tool calls as proxy for context consumption, issues graduated warnings. 4) Autonomous decision enforcer (PreToolUse: AskUserQuestion) - blocks the agent from asking questions during unattended sessions.",
+    "when_to_use": [
+      "Autonomous code agents running unattended",
+      "Environments with destructive command risk",
+      "Long-running agent sessions with context exhaustion risk"
+    ],
+    "pros": [
+      "Runs outside agent's context - immune to prompt injection",
+      "Language-agnostic shell scripts",
+      "Independently deployable hooks",
+      "Zero performance overhead for the agent"
+    ],
+    "cons": [
+      "Pattern matching is inherently incomplete",
+      "Context monitoring via tool-call counting is a proxy",
+      "Can't prevent reasoning about dangerous actions, only executing them",
+      "Requires framework to support PreToolUse/PostToolUse events"
+    ],
+    "tags": [
+      "hooks",
+      "guard-rails",
+      "safety",
+      "autonomous-operation",
+      "destructive-command-blocking",
+      "context-monitoring",
+      "pre-tool-use",
+      "post-tool-use"
+    ],
+    "related": []
+  },
+  {
     "id": "isolated-vm-per-rl-rollout",
     "title": "Isolated VM per RL Rollout",
     "title_ko": "RL 롤아웃당 격리된 VM",
@@ -3272,6 +3616,40 @@
       "reinforcement-learning",
       "infrastructure",
       "agent-rft"
+    ],
+    "related": []
+  },
+  {
+    "id": "non-custodial-spending-controls",
+    "title": "Non-Custodial Spending Controls",
+    "title_ko": "비수탁형 지출 통제",
+    "category": "Security & Safety",
+    "description": "AI agents that can initiate wallet actions may issue unsafe transactions under prompt drift, buggy loops, or compromised prompts Insert an explicit policy enforcement layer between the agent and trans",
+    "problem": "AI agents that can initiate wallet actions may issue unsafe transactions under prompt drift, buggy loops, or compromised prompts. If spending approvals are handled directly inside agent prompts or application logic, safety constraints are easy to bypass. This is a specific instance of the lethal trifecta threat model: combining wallet access with untrusted inputs and external communication creates exploitation paths.",
+    "solution": "Insert an explicit policy enforcement layer between the agent and transaction signing. The agent submits transaction intent, the policy layer validates it against rules, and only approved intents are forwarded to a signer. Core mechanics: intent-first workflow (agent never signs directly), non-custodial boundary (policy service never stores keys), fail-closed behavior (deny when unavailable), two-gate control (policy evaluation + authorization check), tool-layer integration (transparent to agent).",
+    "when_to_use": [
+      "AI agents with wallet/transaction capabilities",
+      "Environments with untrusted inputs and wallet access",
+      "Need for auditable transaction governance"
+    ],
+    "pros": [
+      "Prevents direct misuse of signing credentials",
+      "Supports policy changes without touching prompt logic",
+      "Clear audit trail for governance and incident review"
+    ],
+    "cons": [
+      "Adds latency for each transaction",
+      "Requires high availability of policy service",
+      "Misconfigured policies can block legitimate work",
+      "More operational complexity than embedded prompt checks"
+    ],
+    "tags": [
+      "wallet-controls",
+      "spend-limits",
+      "policy-enforcement",
+      "non-custodial",
+      "AI-agents",
+      "safety"
     ],
     "related": []
   },
@@ -3340,6 +3718,112 @@
       "deny-by-default",
       "pattern-matching",
       "subagent-security"
+    ],
+    "related": []
+  },
+  {
+    "id": "soulbound-identity-verification",
+    "title": "Soulbound Identity Verification",
+    "title_ko": "소울바운드 신원 검증",
+    "category": "Security & Safety",
+    "description": "As autonomous agents interact across networks, verifying identity and detecting prompt/operator drift becomes difficult Bind agent identity and mutable metadata to a non-transferable credential and re",
+    "problem": "As autonomous agents interact across networks, verifying identity and detecting prompt/operator drift becomes difficult. Without durable identity and an immutable change history, agents can impersonate others or silently diverge from authorized configurations.",
+    "solution": "Bind agent identity and mutable metadata to a non-transferable credential and record identity-bearing state transitions in a tamper-resistant log. Pattern flow: 1) Compute a stable hash of the normalized system prompt/state and commit it at registration. 2) Issue a non-transferable identity credential (SBT-style token). 3) Record meaningful changes (prompt updates, operator changes, policy updates) as signed events. 4) Require verifiers to check both credential validity and state continuity before trusting outputs.",
+    "when_to_use": [
+      "Before delegating work to another agent",
+      "Agent marketplaces or multi-org delegations",
+      "Compliance workflows requiring auditable agent-state continuity"
+    ],
+    "pros": [
+      "Non-transferability prevents credential delegation and theft",
+      "Tamper-resistant logging provides auditable state history",
+      "Enables verification without identity disclosure"
+    ],
+    "cons": [
+      "Requires external registry and append-only log infrastructure",
+      "Hash commitments verify state integrity but not semantic correctness",
+      "Operational overhead for issuing/rotating credentials"
+    ],
+    "tags": [
+      "identity",
+      "verification",
+      "trust",
+      "soulbound-token",
+      "blockchain",
+      "agent-identity"
+    ],
+    "related": []
+  },
+  {
+    "id": "transitive-vouch-chain-trust",
+    "title": "Transitive Vouch-Chain Trust",
+    "title_ko": "전이적 보증 체인 신뢰",
+    "category": "Security & Safety",
+    "description": "When autonomous agents interact without a central authority, trust decisions are binary: either you trust an agent completely or not at all Implement a directed, signed vouch graph where each edge is ",
+    "problem": "When autonomous agents interact without a central authority, trust decisions are binary: either you trust an agent completely or not at all. There is no mechanism to derive partial, evidence-based trust from indirect relationships. Central registries create single points of failure, self-asserted identity provides no verification, and binary web-of-trust (PGP model) only answers key validity but not competence or intent.",
+    "solution": "Implement a directed, signed vouch graph where each edge is a cryptographically signed attestation from one agent about another. Trust propagates transitively along chains, with configurable decay at each hop. Core components: 1) Agent identity via keypair (Ed25519). 2) Vouch — a signed statement asserting trust, optionally scoped. 3) Chain verification — trace trust chains and assign derived scores with decay. 4) Revocation — signed revocation statements to sever trust edges. The key difference from PGP: vouch chains carry semantic weight, support scoped trust categories, and are designed for automated agent verification.",
+    "when_to_use": [
+      "Multi-agent systems where agents from different organizations collaborate",
+      "Marketplaces where agents offer services to other agents",
+      "Systems where agents must make trust decisions about unknown agents"
+    ],
+    "pros": [
+      "No central authority required — trust emerges from network",
+      "Auditable — every trust decision traceable through chain",
+      "Graceful degradation — losing one node only affects dependent chains",
+      "Composable with other trust signals (reputation, behavioral history)"
+    ],
+    "cons": [
+      "Cold-start problem — new agents have zero derived trust",
+      "Sybil vulnerability — attacker can create many identities",
+      "Graph traversal cost grows with network size",
+      "Trust decay parameters are subjective and application-dependent"
+    ],
+    "tags": [
+      "trust",
+      "identity",
+      "vouch",
+      "trust-chain",
+      "agent-identity",
+      "decentralized-trust",
+      "ed25519",
+      "reputation"
+    ],
+    "related": []
+  },
+  {
+    "id": "zero-trust-agent-mesh",
+    "title": "Zero-Trust Agent Mesh",
+    "title_ko": "제로 트러스트 에이전트 메시",
+    "category": "Security & Safety",
+    "description": "In multi-agent systems, trust boundaries are often implicit: agents communicate by convention without verifiable identity, and delegation chains are hard to audit Apply zero-trust principles to inter-",
+    "problem": "In multi-agent systems, trust boundaries are often implicit: agents communicate by convention without verifiable identity, and delegation chains are hard to audit. This enables impersonation, privilege confusion, and unverifiable task delegation.",
+    "solution": "Apply zero-trust principles to inter-agent communication. Agent identities are cryptographically asserted (Ed25519 key pairs per agent for fast signatures). Mutual trust handshakes confirm identity before requests are accepted. Delegation tokens carry signed scope, TTL, and parent authority. Bounded delegation limits chain depth and blast radius. Every request is evaluated as an untrusted call until identity, authorization, and delegation lineage are verified. Policies are enforced per hop, not just at the edge.",
+    "when_to_use": [
+      "Multi-agent systems with untrusted communication",
+      "Systems needing auditable delegation chains",
+      "Cross-organizational agent collaboration requiring verifiable identity"
+    ],
+    "pros": [
+      "Prevents impersonation and privilege confusion",
+      "Traceable authorization graph",
+      "Modest verification overhead (~0.05-0.15ms per request)",
+      "Production-scale precedent with SPIFFE/SPIRE"
+    ],
+    "cons": [
+      "Adds latency and key management components",
+      "Security operations discipline for key rotation needed",
+      "Trust scoring adds governance overhead",
+      "Existing agent frameworks need adapter glue"
+    ],
+    "tags": [
+      "zero-trust",
+      "identity",
+      "delegation",
+      "multi-agent",
+      "cryptography",
+      "ed25519",
+      "governance"
     ],
     "related": []
   },
@@ -3917,6 +4401,43 @@
     "related": []
   },
   {
+    "id": "static-service-manifest-for-agents",
+    "title": "Static Service Manifest for Agents",
+    "title_ko": "에이전트를 위한 정적 서비스 매니페스트",
+    "category": "Tool Use & Environment",
+    "description": "Before an agent can use an API, it needs to know what the API offers Serve a static, machine-readable manifest at a well-known URL that describes the platform's capabilities, available services, authe",
+    "problem": "Before an agent can use an API, it needs to know what the API offers. Today, agents learn about services through hardcoded tool lists, runtime exploration, or human-written documentation. None of these scale well when agents need to interact with unfamiliar platforms exposing many services. The agent either wastes context window on a full catalog it may not need, or has no way to learn about the platform without human intervention.",
+    "solution": "Serve a static, machine-readable manifest at a well-known URL that describes the platform's capabilities, available services, authentication requirements, and usage constraints. Two complementary formats: 1) llms.txt — a plain-text/markdown file at /llms.txt providing human-and-machine-readable summary (analogous to robots.txt). 2) agent.json — a structured JSON manifest declaring service endpoints, auth schemes, rate limits, and capability metadata. The agent fetches once, parses cheaply, and decides which services to invoke without runtime overhead.",
+    "when_to_use": [
+      "API platforms exposing multiple services behind a single base URL",
+      "Infrastructure providers where agents need capability discovery before planning",
+      "Multi-tenant platforms with different service subsets per API key"
+    ],
+    "pros": [
+      "Zero runtime overhead for capability discovery",
+      "Works across any transport — not tied to specific framework",
+      "Agents can plan before acting, reducing wasted tool calls",
+      "Analogous to well-understood web conventions (robots.txt, sitemap.xml)",
+      "Easy to implement — just a static file"
+    ],
+    "cons": [
+      "No established universal standard yet",
+      "Static manifests can drift from actual API state",
+      "Only describes what is available, not how to use in detail",
+      "May expose surface area to adversarial agents without proper auth"
+    ],
+    "tags": [
+      "service-discovery",
+      "agent-infrastructure",
+      "llms-txt",
+      "machine-readable",
+      "api-design",
+      "well-known",
+      "tool-discovery"
+    ],
+    "related": []
+  },
+  {
     "id": "subagent-compilation-checker",
     "title": "Subagent Compilation Checker",
     "title_ko": "서브에이전트 컴파일 검사기",
@@ -4396,6 +4917,39 @@
       "hackable-products",
       "power-users",
       "latent-demand"
+    ],
+    "related": []
+  },
+  {
+    "id": "agentfund-crowdfunding",
+    "title": "Milestone Escrow for Agent Resource Funding",
+    "title_ko": "에이전트 리소스 펀딩을 위한 마일스톤 에스크로",
+    "category": "UX & Collaboration",
+    "description": "Autonomous agent teams can need ongoing resources (compute, API spend, tools) over many steps Use milestone-based escrow with verifiable release conditions",
+    "problem": "Autonomous agent teams can need ongoing resources (compute, API spend, tools) over many steps. Without a funding model that enforces guardrails, they either require heavy human intervention or risk budget runaway.",
+    "solution": "Use milestone-based escrow with verifiable release conditions. 1) Define measurable milestones tied to expected outputs and acceptance criteria. 2) Hold committed funds in an escrow mechanism. 3) Collect proof artifacts for each milestone. 4) Release payment only after independent verification of each milestone. 5) Keep remaining funds locked until the next milestone threshold is met.",
+    "when_to_use": [
+      "Work that can be partitioned into auditable milestones",
+      "Small and objective milestone definitions needed",
+      "Clear proof formats required in advance"
+    ],
+    "pros": [
+      "Prevents budget runaway",
+      "Auditable milestone tracking",
+      "Independent verification ensures accountability"
+    ],
+    "cons": [
+      "Requires governance design for milestone verification",
+      "Verification burden can become bottleneck",
+      "Disputes need explicit handling and timeout rules",
+      "Smart contract / payment rails add operational complexity"
+    ],
+    "tags": [
+      "resource-funding",
+      "escrow",
+      "milestones",
+      "agent-governance",
+      "budget-controls"
     ],
     "related": []
   },
