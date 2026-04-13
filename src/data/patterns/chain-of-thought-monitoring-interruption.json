@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://claude.com/blog/building-companies-with-claude-code",
   "problem": {
-    "en": "AI agents can pursue misguided reasoning paths for extended periods before producing outputs. By the time developers realize the approach is wrong, significant time and tokens have been wasted. Traditional 'fire and forget' execution provides no opportunity for early correction.",
-    "ko": "AI 에이전트는 출력을 생성하기 전에 오랜 기간 동안 잘못된 추론 경로를 추구할 수 있습니다. 개발자가 접근 방식이 잘못되었음을 깨달을 때쯤이면 상당한 시간과 토큰이 낭비됩니다. 전통적인 '실행 후 잊기' 방식은 조기 수정 기회를 제공하지 않습니다."
+    "en": "AI agents can pursue misguided reasoning paths for extended periods before producing final outputs. By the time developers realize the approach is wrong, significant time and tokens have been wasted on a fundamentally flawed direction. Traditional \"fire and forget\" agent execution provides no opportunity for early course correction.",
+    "ko": "AI 에이전트는 최종 출력을 생성하기 전에 오랜 기간 동안 잘못된 추론 경로를 추구할 수 있습니다. 개발자가 접근 방식이 잘못되었음을 깨달을 때쯤이면 근본적으로 결함이 있는 방향에 상당한 시간과 토큰이 낭비됩니다. 전통적인 \"실행 후 잊기\" 에이전트 실행 방식은 조기 궤도 수정 기회를 제공하지 않습니다."
   },
   "solution": {
-    "en": "Implement active surveillance of agent's intermediate reasoning with capability to interrupt and redirect. Monitor chain-of-thought outputs, tool calls, and intermediate results in real-time, maintaining a 'finger on the trigger' to catch wrong directions early.",
-    "ko": "에이전트의 중간 추론에 대한 적극적인 감시를 구현하고 중단 및 재지향 기능을 제공합니다. 사고 사슬 출력, 도구 호출, 중간 결과를 실시간으로 모니터링하며, 잘못된 방향을 조기에 잡기 위해 '방아쇠에 손가락'을 유지합니다."
+    "en": "Implement active surveillance of the agent's intermediate reasoning steps with the capability to interrupt and redirect before completing full execution sequences. Monitor chain-of-thought outputs, tool calls, and intermediate results in real-time, maintaining a \"finger on the trigger\" to catch wrong directions early.\n\n**Key mechanisms**: Real-time reasoning visibility (expose agent's thinking process as it unfolds, display tool use decisions and intermediate results). Low-friction interruption (quick halt capability via keyboard shortcuts/UI controls, preserve partial work with KV cache checkpointing, allow mid-execution context injection). Interruption triggers (manual intervention, confidence thresholds for early exit, budget limits, safety violations). Early detection signals (wrong file selections, flawed assumptions in initial tool calls, misunderstanding of requirements in first reasoning steps).",
+    "ko": "에이전트의 중간 추론 단계에 대한 적극적인 감시를 구현하고, 전체 실행 시퀀스가 완료되기 전에 중단하고 재지향하는 기능을 제공합니다. 사고 사슬 출력, 도구 호출, 중간 결과를 실시간으로 모니터링하며, 잘못된 방향을 조기에 잡기 위해 \"방아쇠에 손가락\"을 유지합니다.\n\n**핵심 메커니즘**: 실시간 추론 가시성(에이전트의 사고 과정을 전개되는 대로 노출, 도구 사용 결정 및 중간 결과 표시). 낮은 마찰의 중단(키보드 단축키/UI 제어를 통한 빠른 중지 기능, KV 캐시 체크포인팅으로 부분 작업 보존, 실행 중 컨텍스트 주입 허용). 중단 트리거(수동 개입, 조기 종료를 위한 신뢰도 임계값, 예산 제한, 안전 위반). 조기 감지 신호(잘못된 파일 선택, 초기 도구 호출에서의 결함 있는 가정, 첫 추론 단계에서 요구사항 오해)."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│         Developer               │\n│   Watching Agent Reasoning      │\n└───────────────┬─────────────────┘\n                │ Monitor\n┌───────────────▼─────────────────┐\n│   Agent: \"I'll modify auth.ts\"  │\n│   Agent: Start file read...     │\n└───────────────┬─────────────────┘\n                │\n        ┌───────▼───────┐\n        │ INTERRUPT!    │\n        │ (Wrong file)  │\n        └───────┬───────┘\n                │\n┌───────────────▼─────────────────┐\n│   Dev: \"Use oauth.ts instead\"   │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Agent: Read oauth.ts          │\n│   Agent: Updated reasoning...   │\n└─────────────────────────────────┘\n\n  Correction caught in first tool call!",
   "mermaid_diagram": "sequenceDiagram\n    participant Dev as Developer\n    participant Agent as AI Agent\n    participant Tools as Tool Execution\n    Agent->>Dev: Display reasoning: \"I'll modify auth.ts...\"\n    Agent->>Tools: Start file read\n    Dev->>Agent: INTERRUPT! (Wrong file)\n    Dev->>Agent: \"Use oauth.ts instead\"\n    Agent->>Tools: Read oauth.ts\n    Agent->>Dev: Display updated reasoning\n    Note over Dev,Agent: Correction caught within<br/>first tool call",
   "code_example": "# Real-time reasoning visibility\nclass MonitoredAgent:\n    async def execute_with_monitoring(self, task):\n        async for step in self.stream_reasoning(task):\n            # Show each step to user in real-time\n            display_to_user(step)\n            \n            # Check for interrupt signal\n            if user_interrupted():\n                correction = get_user_input()\n                # Inject correction into context\n                self.inject_context(correction)\n                continue\n            \n            # Execute step\n            await self.execute_step(step)\n\n# UI implementation: Ctrl+C to interrupt with context preservation\n# CLI: Stream verbose output, allow redirect with additional context",
   "when_to_use": {
-    "en": ["Complex refactoring tasks", "High-stakes operations (migrations, API changes)", "Ambiguous requirements", "Tasks requiring deep codebase understanding"],
-    "ko": ["복잡한 리팩토링 작업", "고위험 작업 (마이그레이션, API 변경)", "모호한 요구사항", "깊은 코드베이스 이해가 필요한 작업"]
+    "en": ["Complex refactoring where wrong file choices are costly", "Tasks requiring deep codebase understanding", "High-stakes operations (database migrations, API changes)", "When agent might misinterpret ambiguous requirements", "Development workflows where iteration speed matters"],
+    "ko": ["잘못된 파일 선택이 비용이 큰 복잡한 리팩토링", "깊은 코드베이스 이해가 필요한 작업", "고위험 작업 (데이터베이스 마이그레이션, API 변경)", "에이전트가 모호한 요구사항을 오해할 수 있는 경우", "반복 속도가 중요한 개발 워크플로우"]
   },
   "pros": {
-    "en": ["Prevents wasted time on wrong approaches", "Maximizes value from expensive model calls", "Enables collaborative human-AI problem solving", "Catches misunderstandings early"],
-    "ko": ["잘못된 접근에 대한 시간 낭비 방지", "비싼 모델 호출에서 가치 극대화", "협력적 인간-AI 문제 해결 가능", "오해를 조기에 포착"]
+    "en": ["Prevents wasted time on fundamentally wrong approaches", "Maximizes value from expensive model calls", "Enables collaborative human-AI problem solving", "Reduces frustration from watching preventable mistakes", "Catches misunderstandings within initial tool calls"],
+    "ko": ["근본적으로 잘못된 접근에 대한 시간 낭비 방지", "비싼 모델 호출에서 가치 극대화", "협력적 인간-AI 문제 해결 가능", "예방 가능한 실수를 지켜보는 좌절감 감소", "초기 도구 호출 내에서 오해 포착"]
   },
   "cons": {
-    "en": ["Requires active human attention", "May interrupt productive exploration", "Adds cognitive load to monitor", "Risk of over-correcting valid approaches"],
-    "ko": ["적극적인 인간 주의 필요", "생산적인 탐색을 중단할 수 있음", "모니터링에 인지 부하 추가", "유효한 접근을 과도하게 수정할 위험"]
+    "en": ["Requires active human attention (not fully autonomous)", "Can interrupt productive exploration if triggered prematurely", "May create dependency on human oversight for routine tasks", "Adds cognitive load to monitor agent reasoning", "Risk of over-correcting and preventing valid creative approaches", "Low faithfulness: Current models' CoT frequently doesn't reflect true reasoning (Claude 3.7: ~25%, DeepSeek R1: ~39%)"],
+    "ko": ["적극적인 인간 주의 필요 (완전 자율이 아님)", "조기에 트리거되면 생산적인 탐색을 중단할 수 있음", "일상적 작업에 인간 감독 의존성 생성 가능", "에이전트 추론 모니터링에 인지 부하 추가", "유효한 창의적 접근을 과도하게 수정할 위험", "낮은 충실도: 현재 모델의 CoT가 실제 추론을 반영하지 않는 경우가 빈번 (Claude 3.7: ~25%, DeepSeek R1: ~39%)"]
   },
   "tags": ["monitoring", "intervention", "debugging", "reasoning", "ux", "human-in-loop"]
 }

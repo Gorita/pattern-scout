@@ -6,27 +6,27 @@
   "status": "validated-in-production",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "Starting a new feature, module, or codebase involves writing significant boilerplate or foundational code. This is time-consuming, repetitive, and pulls developers away from the core logic they need to implement.",
-    "ko": "새 기능, 모듈 또는 코드베이스를 시작하면 상당한 보일러플레이트나 기초 코드 작성이 필요합니다. 이는 시간이 많이 걸리고, 반복적이며, 개발자를 구현해야 하는 핵심 로직에서 멀어지게 합니다."
+    "en": "Starting a new feature, module, or codebase often involves writing a significant amount of boilerplate or foundational code. This can be time-consuming and repetitive for developers.",
+    "ko": "새 기능, 모듈 또는 코드베이스를 시작할 때 상당한 양의 보일러플레이트나 기초 코드 작성이 필요한 경우가 많습니다. 이는 개발자에게 시간이 많이 걸리고 반복적인 작업이 될 수 있습니다."
   },
   "solution": {
-    "en": "Use AI agents to generate initial structure, boilerplate, and directory layouts for new components. Developer provides high-level description, agent scaffolds files/functions/classes. This scaffolded structure also becomes crucial context for subsequent AI agent interactions.",
-    "ko": "AI 에이전트를 사용하여 새 구성 요소의 초기 구조, 보일러플레이트, 디렉토리 레이아웃을 생성합니다. 개발자가 높은 수준의 설명을 제공하면 에이전트가 파일/함수/클래스를 스캐폴딩합니다. 이 스캐폴딩된 구조는 후속 AI 에이전트 상호작용을 위한 중요한 컨텍스트가 됩니다."
+    "en": "Utilize an AI agent to generate the initial structure, boilerplate code, or layout for new software components. The developer provides a high-level description of the desired feature or component, and the agent \"scaffolds\" out the basic files, functions, classes, and directory structures.\n\nThis allows developers to:\n\n- Quickly get a new part of the system started.\n- Focus on the core logic rather than repetitive setup tasks.\n- Ensure consistency in initial project structure.\n\n**Scaffolding Modes:**\n\n- **Text-to-code:** Natural language descriptions generate code structure\n- **Design-to-code:** Figma, PSD, or design sketches convert to layouts (tools achieve ~92% layout accuracy)\n- **Repository-aware:** Agents read existing codebases to scaffold compatible structures\n\n**Critical for Future AI Agent Work**: The scaffolded structure becomes crucial context for subsequent AI agent interactions. Well-structured scaffolding with clear file organization, naming conventions, and architectural patterns helps future agents understand the codebase layout and make more informed decisions when implementing features or making modifications.\n\nThe agent acts as a \"kickstarter\" for new development efforts while simultaneously enriching the repository's structural context for future AI-assisted development.",
+    "ko": "AI 에이전트를 활용하여 새 소프트웨어 구성 요소의 초기 구조, 보일러플레이트 코드 또는 레이아웃을 생성합니다. 개발자가 원하는 기능이나 구성 요소에 대한 높은 수준의 설명을 제공하면 에이전트가 기본 파일, 함수, 클래스, 디렉토리 구조를 \"스캐폴딩\"합니다.\n\n이를 통해 개발자는:\n\n- 시스템의 새로운 부분을 빠르게 시작할 수 있습니다.\n- 반복적인 설정 작업보다 핵심 로직에 집중할 수 있습니다.\n- 초기 프로젝트 구조의 일관성을 보장할 수 있습니다.\n\n**스캐폴딩 모드:**\n\n- **텍스트-to-코드:** 자연어 설명으로 코드 구조 생성\n- **디자인-to-코드:** Figma, PSD 또는 디자인 스케치를 레이아웃으로 변환 (도구가 ~92% 레이아웃 정확도 달성)\n- **저장소 인식:** 에이전트가 기존 코드베이스를 읽어 호환 가능한 구조를 스캐폴딩\n\n**향후 AI 에이전트 작업에 핵심적**: 스캐폴딩된 구조는 후속 AI 에이전트 상호작용을 위한 중요한 컨텍스트가 됩니다. 명확한 파일 구성, 네이밍 규칙, 아키텍처 패턴을 갖춘 잘 구조화된 스캐폴딩은 향후 에이전트가 코드베이스 레이아웃을 이해하고 기능 구현 시 더 나은 결정을 내리는 데 도움이 됩니다.\n\n에이전트는 새로운 개발 노력의 \"킥스타터\"로 작용하면서 동시에 향후 AI 지원 개발을 위한 저장소의 구조적 컨텍스트를 강화합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│  Developer Request:             │\n│  \"Create API for user profiles\" │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│         AI Agent                │\n│   Generate Scaffolding          │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Generated Structure:          │\n├─────────────────────────────────┤\n│ src/                            │\n│   api/                          │\n│     users/                      │\n│       routes.ts                 │\n│       controller.ts             │\n│       service.ts                │\n│       types.ts                  │\n│   tests/                        │\n│     users.test.ts               │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│  Developer Implements Core      │\n│  Logic in Scaffolded Files      │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│  Future Agents Understand       │\n│  Codebase Structure             │\n└─────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Developer: Create new API endpoint for user profiles] --> B[Agent: Generate Scaffolding]\n    B --> C[Generated Files]\n    C --> D[Routes]\n    C --> E[Controllers]\n    C --> F[Models]\n    C --> G[Tests]\n    D --> H[Developer: Implement Core Logic]\n    E --> H\n    F --> H\n    G --> H\n    H --> I[Well-Structured Codebase]\n    I --> J[Future AI Agents Have Better Context]",
   "code_example": "# Developer request:\n# \"Create a new API endpoint for user profiles with CRUD operations\"\n\n# Agent generates scaffolding:\n\n# src/api/users/routes.ts\nfrom fastapi import APIRouter\nrouter = APIRouter(prefix=\"/users\")\n\n@router.get(\"/{user_id}\")\nasync def get_user(user_id: str):\n    # TODO: Implement\n    pass\n\n@router.post(\"/\")\nasync def create_user(user: UserCreate):\n    # TODO: Implement\n    pass\n\n# src/api/users/types.ts\nclass UserCreate(BaseModel):\n    name: str\n    email: str\n\nclass UserResponse(BaseModel):\n    id: str\n    name: str\n    email: str\n\n# tests/test_users.py\ndef test_create_user():\n    # TODO: Implement test\n    pass\n\n# Developer fills in the TODOs with core business logic",
   "when_to_use": {
-    "en": ["Starting new features or modules", "Creating consistent project structure", "Reducing boilerplate writing time", "Establishing patterns for future AI work"],
-    "ko": ["새 기능 또는 모듈 시작", "일관된 프로젝트 구조 생성", "보일러플레이트 작성 시간 단축", "향후 AI 작업을 위한 패턴 수립"]
+    "en": ["New feature or module development", "Greenfield projects and prototyping", "Standardized frameworks (React, Express, etc.)", "Repetitive boilerplate generation"],
+    "ko": ["새 기능 또는 모듈 개발", "그린필드 프로젝트 및 프로토타이핑", "표준화된 프레임워크(React, Express 등)", "반복적인 보일러플레이트 생성"]
   },
   "pros": {
-    "en": ["Quick start on new components", "Focus on core logic not setup", "Consistent project structure", "Better context for future AI agents"],
-    "ko": ["새 구성 요소의 빠른 시작", "설정이 아닌 핵심 로직에 집중", "일관된 프로젝트 구조", "향후 AI 에이전트를 위한 더 나은 컨텍스트"]
+    "en": ["Faster time to first code", "Consistent project structure", "Reduced boilerplate"],
+    "ko": ["첫 코드까지의 시간 단축", "일관된 프로젝트 구조", "보일러플레이트 감소"]
   },
   "cons": {
-    "en": ["May generate unnecessary files", "Scaffolding style may not match preferences", "Still requires human implementation", "Can create technical debt if not reviewed"],
-    "ko": ["불필요한 파일 생성 가능", "스캐폴딩 스타일이 선호도와 맞지 않을 수 있음", "여전히 인간 구현 필요", "검토하지 않으면 기술 부채 생성 가능"]
+    "en": ["Code reliability issues (36% of developers report problems)", "Requires human review", "Struggles with legacy integration", "Without scaffolding, configurations lead to \"massive overengineering\" (SANER 2026)"],
+    "ko": ["코드 신뢰성 문제 (개발자의 36%가 문제 보고)", "인간 검토 필요", "레거시 통합에 어려움", "스캐폴딩 없이는 설정이 \"대규모 과잉 엔지니어링\"으로 이어짐 (SANER 2026)"]
   },
   "tags": ["code-generation", "bootstrapping", "scaffolding", "feature-development", "ide", "initial-setup"]
 }

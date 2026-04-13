@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
   "problem": {
-    "en": "Long-running agents exhibit failure modes: premature victory declaration, scope creep via test deletion, hallucinated completeness, and progress amnesia across sessions.",
-    "ko": "장기 실행 에이전트는 실패 모드를 보입니다: 조기 완료 선언, 테스트 삭제를 통한 범위 확장, 환각적 완료, 세션 간 진행 상황 망각."
+    "en": "Long-running agents exhibit several failure modes when tasked with building complete applications: premature victory declaration (agent declares \"done\" after implementing a fraction of requirements), scope creep via test deletion (agent \"passes\" tests by deleting or weakening them rather than fixing code), hallucinated completeness (agent loses track of what was actually implemented versus planned), feature drift (without a fixed specification, agents may substitute easier features for harder ones), and progress amnesia (across sessions, agents forget what's done vs. pending).",
+    "ko": "장기 실행 에이전트는 완전한 애플리케이션을 구축할 때 여러 실패 모드를 보입니다: 조기 완료 선언(요구사항의 일부만 구현하고 \"완료\"를 선언함), 테스트 삭제를 통한 범위 확장(코드를 수정하지 않고 테스트를 삭제하거나 약화시켜 \"통과\"함), 환각적 완전성(실제 구현된 것과 계획된 것을 추적하지 못함), 기능 드리프트(고정된 명세 없이 더 어려운 기능을 더 쉬운 기능으로 대체함), 진행 상황 망각(세션 간에 완료된 것과 보류 중인 것을 잊음)."
   },
   "solution": {
-    "en": "Define all features upfront in a structured JSON format that agents can read but cannot modify. Agent may only set passes:true after verification, never delete or modify features.",
-    "ko": "에이전트가 읽을 수 있지만 수정할 수 없는 구조화된 JSON 형식으로 모든 기능을 사전에 정의합니다. 에이전트는 검증 후에만 passes:true로 설정할 수 있으며, 기능을 삭제하거나 수정할 수 없습니다."
+    "en": "Define all features upfront in a structured, immutable format that agents can read but cannot meaningfully game.\n\n**1. Comprehensive Feature Specification**: Create a JSON file with ALL required features before any implementation begins, each with an id, category, description, verification steps, and a `passes: false` flag.\n\n**2. Immutability Constraints**: Agent MAY set `passes: true` after verification. Agent MAY NOT delete features, modify acceptance criteria/steps, or mark features as \"not applicable\". Two variations: static list (hardcoded at compile time) or dynamic-but-immutable (loaded at startup then frozen).\n\n**3. Verification Requirements**: Features are only marked passing after implementation is complete, manual or automated testing confirms all steps pass, and agent has actually exercised the feature (not just written code).",
+    "ko": "에이전트가 읽을 수 있지만 의미 있게 조작할 수 없는 구조화된 불변 형식으로 모든 기능을 사전에 정의합니다.\n\n**1. 포괄적 기능 명세**: 구현을 시작하기 전에 모든 필수 기능을 JSON 파일로 생성하며, 각각 id, 카테고리, 설명, 검증 단계, `passes: false` 플래그를 포함합니다.\n\n**2. 불변성 제약**: 에이전트는 검증 후 `passes: true`로 설정할 수 있습니다. 기능을 삭제하거나, 수락 기준/단계를 수정하거나, \"해당 없음\"으로 표시할 수 없습니다. 정적 목록(컴파일 타임에 하드코딩) 또는 동적-불변(시작 시 로드 후 동결) 두 가지 변형이 있습니다.\n\n**3. 검증 요구사항**: 구현이 완료되고, 수동 또는 자동 테스트가 모든 단계의 통과를 확인하고, 에이전트가 실제로 기능을 실행한(코드만 작성한 것이 아닌) 후에만 기능이 통과로 표시됩니다."
   },
   "ascii_diagram": "┌─────────────────────┐\n│feature-list.json    │\n│(100-200+ features)  │\n│all passes: false    │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│Select Next Feature  │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│    Implement        │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│    Test Feature     │\n└──────────┬──────────┘\n      ┌────┴────┐\n      ▼         ▼\n  [Pass]    [Fail]\n      │         │\n┌─────▼─────┐   │\n│passes:true│   │\n└─────┬─────┘   │\n      └────┬────┘\n           │\n      More Features?",
   "mermaid_diagram": "graph TD\n    A[Feature List Created] --> B[All Features: passes=false]\n    B --> C{Select Next Feature}\n    C --> D[Implement Feature]\n    D --> E[Test Feature]\n    E --> F{All Steps Pass?}\n    F -->|No| D\n    F -->|Yes| G[Set passes=true]\n    G --> H{More Features?}\n    H -->|Yes| C\n    H -->|No| I[Project Complete]",
   "code_example": "// feature-list.json (immutable contract)\n{\n  \"features\": [\n    {\n      \"id\": \"auth-001\",\n      \"category\": \"functional\",\n      \"description\": \"New chat creates fresh conversation\",\n      \"steps\": [\n        \"Click 'New Chat' button\",\n        \"Verify URL changes to new conversation ID\",\n        \"Verify message input is empty\"\n      ],\n      \"passes\": false  // Agent can ONLY change this to true\n    }\n  ]\n}\n\n// CRITICAL RULES:\n// 1. MAY NOT delete features\n// 2. MAY NOT modify steps/description\n// 3. MAY ONLY change passes: false -> true",
   "when_to_use": {
-    "en": ["Multi-session projects", "Complex applications with known requirements", "Agent accountability needed"],
-    "ko": ["다중 세션 프로젝트", "알려진 요구사항이 있는 복잡한 애플리케이션", "에이전트 책임이 필요한 경우"]
+    "en": ["Include 100-200+ features for complex applications with specific acceptance criteria (observable behaviors, not implementation details)", "Group features by category (functional, UI, performance, security) with edge cases and error handling as separate features", "Use prompt enforcement with critical rules preventing deletion or modification of features", "Use browser automation (Puppeteer, Playwright) for E2E verification, capturing evidence when marking features passing"],
+    "ko": ["100-200개 이상의 기능을 구체적인 수락 기준(구현 세부사항이 아닌 관찰 가능한 동작)으로 포함", "기능을 카테고리별(기능, UI, 성능, 보안)로 그룹화하고 엣지 케이스와 오류 처리를 별도 기능으로 분리", "기능 삭제 또는 수정을 방지하는 중요 규칙으로 프롬프트 강제 적용", "E2E 검증에 브라우저 자동화(Puppeteer, Playwright) 사용, 기능 통과 표시 시 증거 캡처"]
   },
   "pros": {
-    "en": ["Prevents premature victory declaration", "Measurable progress (X of Y)", "Eliminates pass-by-deletion"],
-    "ko": ["조기 완료 선언 방지", "측정 가능한 진행 (X/Y)", "삭제로 통과 방지"]
+    "en": ["Prevents premature victory declaration with clear completion criteria", "Creates immutable record of requirements that survives session boundaries", "Makes agent progress measurable (X of Y features passing)", "Eliminates \"pass by deletion\" attack vector", "Provides natural work queue for incremental sessions"],
+    "ko": ["명확한 완료 기준으로 조기 완료 선언 방지", "세션 경계를 넘어 유지되는 불변 요구사항 기록 생성", "에이전트 진행 상황을 측정 가능하게 함 (Y개 중 X개 통과)", "\"삭제로 통과\" 공격 벡터 제거", "증분 세션을 위한 자연스러운 작업 대기열 제공"]
   },
   "cons": {
-    "en": ["Requires upfront specification investment", "Not for exploratory work", "Rigid format"],
-    "ko": ["사전 명세 투자 필요", "탐색적 작업에 부적합", "경직된 형식"]
+    "en": ["Requires significant upfront investment in feature specification", "Not suitable for exploratory or research-oriented work", "May miss emergent requirements discovered during implementation", "Rigid format doesn't accommodate changing requirements", "Large feature lists can overwhelm agent context"],
+    "ko": ["기능 명세에 상당한 사전 투자 필요", "탐색적이거나 연구 지향적 작업에 부적합", "구현 중 발견되는 새로운 요구사항을 놓칠 수 있음", "경직된 형식이 변경되는 요구사항을 수용하지 못함", "대규모 기능 목록이 에이전트 컨텍스트를 압도할 수 있음"]
   },
-  "tags": ["scope-control", "acceptance-criteria", "anti-scope-creep", "long-running-agents"]
+  "tags": ["scope-control", "acceptance-criteria", "anti-scope-creep", "long-running-agents", "task-management"]
 }
