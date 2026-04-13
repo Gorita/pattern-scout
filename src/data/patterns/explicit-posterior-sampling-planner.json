@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2504.20997",
   "problem": {
-    "en": "Agents relying on ad-hoc heuristics explore poorly, wasting tokens and API calls on dead ends.",
-    "ko": "임시 휴리스틱에 의존하는 에이전트는 탐색을 제대로 수행하지 못해 막다른 길에서 토큰과 API 호출을 낭비합니다."
+    "en": "Heuristic planning loops often over-exploit the first plausible strategy and under-explore alternatives. In uncertain environments, this drives repeated dead ends, unstable learning, and high token/API spend with little information gain.",
+    "ko": "휴리스틱 기반 계획 루프는 첫 번째 그럴듯한 전략을 과도하게 활용하고 대안 탐색을 소홀히 합니다. 불확실한 환경에서 이는 반복적인 막다른 길, 불안정한 학습, 그리고 정보 이득이 적은 높은 토큰/API 비용을 초래합니다."
   },
   "solution": {
-    "en": "Embed PSRL (Posterior Sampling for RL) inside the LLM's reasoning: maintain Bayesian posterior over task models, sample, compute optimal plan, execute, observe reward, update posterior.",
-    "ko": "LLM의 추론 내부에 PSRL(강화 학습을 위한 사후 샘플링)을 내장합니다: 작업 모델에 대한 베이지안 사후 분포 유지, 샘플링, 최적 계획 계산, 실행, 보상 관찰, 사후 분포 업데이트."
+    "en": "Embed a *fully specified* RL algorithm—Posterior Sampling for Reinforcement Learning (PSRL)—inside the LLM's reasoning:\n\n- Maintain a Bayesian posterior over task models.\n- Sample a model, compute an optimal plan/policy, execute, observe reward, update posterior.\n- Express each step in natural language so the core LLM can carry it out with tool calls.\n\nThe planner becomes an explicit exploration policy instead of an improvised chain of thoughts. By repeatedly sampling from the posterior, the agent balances exploration and exploitation with a principled uncertainty model rather than ad-hoc retries. This is Thompson sampling generalized to multi-state MDPs, with near-optimal regret bounds of O(√T).",
+    "ko": "완전히 명세된 RL 알고리즘인 PSRL(강화 학습을 위한 사후 샘플링)을 LLM의 추론 내부에 내장합니다:\n\n- 작업 모델에 대한 베이지안 사후 분포를 유지합니다.\n- 모델을 샘플링하고, 최적 계획/정책을 계산하고, 실행하고, 보상을 관찰하고, 사후 분포를 업데이트합니다.\n- 각 단계를 자연어로 표현하여 핵심 LLM이 도구 호출로 수행할 수 있게 합니다.\n\n플래너는 즉흥적인 사고 체인 대신 명시적 탐색 정책이 됩니다. 사후 분포에서 반복적으로 샘플링함으로써, 에이전트는 임시 재시도 대신 원칙적인 불확실성 모델로 탐색과 활용의 균형을 맞춥니다. 이는 톰슨 샘플링을 다중 상태 MDP로 일반화한 것으로, O(√T)의 근최적 후회 경계를 갖습니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│ Bayesian Prior  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Sample Model    │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Compute Optimal │\n│     Plan        │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│    Execute      │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Observe Reward  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│Update Posterior │\n└────────┬────────┘\n         │\n         └──→ (repeat)",
   "mermaid_diagram": "flowchart TD\n    A[Maintain Bayesian Posterior] --> B[Sample Task Model]\n    B --> C[Compute Optimal Plan]\n    C --> D[Execute with Tool Calls]\n    D --> E[Observe Reward]\n    E --> F[Update Posterior]\n    F --> A",
   "code_example": "# PSRL-style exploration in prompt\nprompt = '''\nMaintain a posterior over task models.\n\n1. Sample a model from current posterior\n2. Compute optimal plan for sampled model\n3. Execute plan step using tool calls\n4. Observe reward/outcome\n5. Update posterior with observation\n6. Repeat until task complete\n\nCurrent posterior: {posterior}\nTask: {task}\n'''",
   "when_to_use": {
-    "en": ["Exploration-heavy tasks", "Unknown environments", "Multi-step decision making"],
-    "ko": ["탐색 중심 작업", "미지의 환경", "다단계 의사 결정"]
+    "en": ["Wrap PSRL in a reusable prompt template or controller skeleton with explicit state variables (posterior, reward, horizon).", "Start in bounded environments with measurable reward signals and instrument posterior updates for debugging.", "For text-based environments, design a state abstraction (e.g., semantic hashing or embedding-based clustering) to map unstructured context to discrete MDP states."],
+    "ko": ["명시적 상태 변수(사후 분포, 보상, 호라이즌)를 갖는 재사용 가능한 프롬프트 템플릿 또는 컨트롤러 스켈레톤으로 PSRL을 래핑", "측정 가능한 보상 신호가 있는 한정된 환경에서 시작하고 디버깅을 위해 사후 분포 업데이트를 계측", "텍스트 기반 환경에서는 비구조적 컨텍스트를 이산 MDP 상태로 매핑하기 위한 상태 추상화(예: 시맨틱 해싱 또는 임베딩 기반 클러스터링) 설계"]
   },
   "pros": {
-    "en": ["Principled exploration", "Theoretically grounded", "Efficient token usage"],
-    "ko": ["원칙적인 탐색", "이론적 기반", "효율적인 토큰 사용"]
+    "en": ["More sample-efficient exploration", "Better decision consistency under uncertainty"],
+    "ko": ["더 효율적인 샘플 탐색", "불확실성 하에서 더 나은 의사 결정 일관성"]
   },
   "cons": {
-    "en": ["Complex to implement", "Requires RL understanding", "May be overkill for simple tasks"],
-    "ko": ["구현 복잡", "RL 이해 필요", "단순 작업에는 과도할 수 있음"]
+    "en": ["Higher implementation complexity", "Sensitive reward design", "Additional compute overhead", "Requires careful state abstraction for text environments"],
+    "ko": ["높은 구현 복잡도", "민감한 보상 설계", "추가 컴퓨팅 오버헤드", "텍스트 환경에 대한 신중한 상태 추상화 필요"]
   },
   "tags": ["RL", "PSRL", "exploration", "planning", "decision-making"]
 }

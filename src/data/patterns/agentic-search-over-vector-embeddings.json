@@ -6,27 +6,27 @@
   "status": "best-practice",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "Vector embeddings for code search require continuous re-indexing, handling local changes, additional security surface area, and infrastructure overhead. Traditional RAG adds complexity that may not be necessary.",
-    "ko": "코드 검색을 위한 벡터 임베딩은 지속적인 재인덱싱, 로컬 변경 처리, 추가 보안 표면, 인프라 오버헤드가 필요합니다. 전통적인 RAG는 필요하지 않을 수 있는 복잡성을 추가합니다."
+    "en": "Vector embeddings for code search require:\n\n- Continuous re-indexing as code changes\n- Handling local uncommitted changes\n- Additional security surface area for enterprise deployments\n- Infrastructure overhead (embedding models, vector databases)\n- Stale indices when developers work on multiple branches\n\nTraditional RAG approaches add complexity that may not be necessary with modern capable LLMs.",
+    "ko": "코드 검색을 위한 벡터 임베딩에는 다음이 필요합니다:\n\n- 코드 변경 시 지속적인 재인덱싱\n- 로컬 미커밋 변경 사항 처리\n- 엔터프라이즈 배포를 위한 추가 보안 표면\n- 인프라 오버헤드(임베딩 모델, 벡터 데이터베이스)\n- 개발자가 여러 브랜치에서 작업할 때 오래된 인덱스\n\n전통적인 RAG 접근 방식은 현대의 고성능 LLM에는 필요하지 않을 수 있는 복잡성을 추가합니다."
   },
   "solution": {
-    "en": "Replace vector search with agentic search using bash, grep, file traversal. Modern LLMs are skilled at using search tools iteratively to achieve comparable accuracy without maintenance burden.",
-    "ko": "벡터 검색을 bash, grep, 파일 탐색을 사용한 에이전틱 검색으로 대체합니다. 현대 LLM은 유지 관리 부담 없이 비슷한 정확도를 달성하기 위해 검색 도구를 반복적으로 사용하는 데 능숙합니다."
+    "en": "Replace vector search with **agentic search** using bash, grep, file traversal, and other command-line tools. Modern LLMs are skilled enough at using search tools iteratively to achieve comparable accuracy without the maintenance burden of vector indices.\n\n**Key approach:**\n\n1. **Tool-based search**: Provide grep, ripgrep, find, ls, and other search utilities\n2. **Iterative refinement**: Let the agent search multiple times, narrowing results\n3. **No pre-indexing**: Search happens on-demand against current file state\n4. **Optional MCP integration**: If teams want semantic search, expose it via MCP tool\n\n```pseudo\n# Instead of:\nvector_db.index(codebase)  # requires continuous updates\nresults = vector_db.query(embedding(query))\n\n# Use:\nagent.call_tool(\"grep\", pattern=\"function.*authenticate\")\nagent.call_tool(\"find\", pattern=\"**/auth/*.ts\")\nagent.refine_search_based_on_results()\n```",
+    "ko": "벡터 검색을 bash, grep, 파일 탐색 및 기타 커맨드라인 도구를 사용한 **에이전틱 검색**으로 대체합니다. 현대 LLM은 벡터 인덱스의 유지 관리 부담 없이 비슷한 정확도를 달성할 수 있을 만큼 검색 도구를 반복적으로 사용하는 데 능숙합니다.\n\n**핵심 접근 방식:**\n\n1. **도구 기반 검색**: grep, ripgrep, find, ls 및 기타 검색 유틸리티 제공\n2. **반복적 정제**: 에이전트가 여러 번 검색하면서 결과를 좁혀감\n3. **사전 인덱싱 불필요**: 현재 파일 상태에 대해 온디맨드 검색\n4. **선택적 MCP 통합**: 시맨틱 검색이 필요하면 MCP 도구를 통해 노출"
   },
   "ascii_diagram": "TRADITIONAL RAG:\nvector_db.index(codebase) → continuous updates\nresults = vector_db.query(embedding)\n→ Maintenance overhead\n\nAGENTIC SEARCH:\nagent.call_tool('grep', pattern)\nagent.call_tool('find', pattern)\nagent.refine_search_based_on_results()\n→ No pre-indexing needed",
   "mermaid_diagram": "flowchart TD\n    A[Search Query] --> B{Approach}\n    B -->|Traditional| C[Vector DB Index]\n    C --> D[Continuous Re-indexing]\n    D --> E[Query Embeddings]\n    B -->|Agentic| F[grep/ripgrep/find]\n    F --> G[Iterative Refinement]\n    G --> H[Current File State]\n    H --> I[Results]",
   "code_example": "# Instead of vector search:\n# vector_db.index(codebase)  # requires continuous updates\n# results = vector_db.query(embedding(query))\n\n# Use agentic search:\nagent.call_tool('grep', pattern='function.*authenticate')\nagent.call_tool('find', pattern='**/auth/*.ts')\nagent.refine_search_based_on_results()\n\n# Benefits: Always searches current state, no stale results",
   "when_to_use": {
-    "en": ["Frequently changing codebases", "Security-sensitive deployments", "Local development", "No vector infrastructure"],
-    "ko": ["자주 변경되는 코드베이스", "보안에 민감한 배포", "로컬 개발", "벡터 인프라 없음"]
+    "en": ["Code bases with frequent changes", "Teams without dedicated vector infrastructure", "Security-sensitive deployments (fewer external dependencies)", "Local development where files change constantly", "Multi-branch workflows"],
+    "ko": ["자주 변경되는 코드베이스", "전용 벡터 인프라가 없는 팀", "보안에 민감한 배포(외부 의존성 최소화)", "파일이 끊임없이 변경되는 로컬 개발", "멀티 브랜치 워크플로우"]
   },
   "pros": {
-    "en": ["No indexing to maintain", "Always current state", "Simpler security model", "No embedding costs"],
-    "ko": ["유지할 인덱싱 없음", "항상 현재 상태", "더 간단한 보안 모델", "임베딩 비용 없음"]
+    "en": ["No indexing infrastructure to maintain", "Always searches current state (no stale results)", "Works with local uncommitted changes", "Simpler security model", "Faster setup for new repositories", "No embedding model costs"],
+    "ko": ["유지할 인덱싱 인프라 없음", "항상 현재 상태 검색(오래된 결과 없음)", "로컬 미커밋 변경 사항과 호환", "더 간단한 보안 모델", "새 저장소에 대한 빠른 설정", "임베딩 모델 비용 없음"]
   },
   "cons": {
-    "en": ["Multiple iterations needed", "Slower on very large codebases", "Less semantic understanding"],
-    "ko": ["여러 번 반복 필요", "매우 큰 코드베이스에서 느림", "의미적 이해 부족"]
+    "en": ["May require multiple search iterations (more tokens)", "Slower on very large codebases (millions of files)", "Less semantic understanding (e.g., \"authentication\" vs \"login\")", "Requires capable models (Sonnet 4+) for good results", "Higher latency for complex queries"],
+    "ko": ["여러 검색 반복 필요(토큰 증가)", "매우 큰 코드베이스(수백만 파일)에서 느림", "시맨틱 이해 부족(예: \"authentication\" vs \"login\")", "좋은 결과를 위해 고성능 모델(Sonnet 4+) 필요", "복잡한 쿼리에 대한 높은 지연 시간"]
   },
   "tags": ["search", "vector-embeddings", "bash", "grep", "RAG", "agentic-RAG"]
 }

@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://www.nibzard.com/claude-code",
   "problem": {
-    "en": "Manually copying shell command output into prompts is tedious and error-prone.",
-    "ko": "셸 명령 출력을 프롬프트에 수동으로 복사하는 것은 지루하고 오류가 발생하기 쉽습니다."
+    "en": "When an AI agent interacts with a local development environment, it often needs to execute shell commands (e.g., run linters, check git status, list files) and then use the output of these commands as context for its subsequent reasoning or actions. Manually copying and pasting command output into the prompt is tedious and error-prone.",
+    "ko": "AI 에이전트가 로컬 개발 환경과 상호작용할 때, 셸 명령(예: 린터 실행, git 상태 확인, 파일 목록 조회)을 실행하고 그 출력을 후속 추론이나 작업의 컨텍스트로 사용해야 하는 경우가 많습니다. 명령 출력을 프롬프트에 수동으로 복사하고 붙여넣는 것은 지루하고 오류가 발생하기 쉽습니다."
   },
   "solution": {
-    "en": "Provide a mechanism (e.g., ! prefix) to execute shell commands and automatically inject both command and output into agent context.",
-    "ko": "셸 명령을 실행하고 명령과 출력을 모두 에이전트 컨텍스트에 자동으로 주입하는 메커니즘(예: ! 접두사)을 제공합니다."
+    "en": "Provide a dedicated mechanism within the agent's interface (e.g., a special prefix like `!` or a specific command mode) that allows the user to directly issue a shell command to be executed in the local environment. Crucially, both the command itself and its full output (stdout and stderr) are automatically captured and injected into the agent's current conversational or working context.\n\nThe `!` prefix syntax originates from IPython (2001) and has become the de facto standard across AI coding platforms (Claude Code, Cursor, GitHub Copilot, Continue.dev, Aider, Replit Agent).\n\nThis ensures that the agent is immediately aware of the command that was run and its results, allowing it to seamlessly incorporate this information into its ongoing tasks without requiring manual data transfer by the user.",
+    "ko": "에이전트 인터페이스 내에 전용 메커니즘(예: `!` 같은 특수 접두사 또는 특정 명령 모드)을 제공하여, 사용자가 로컬 환경에서 셸 명령을 직접 실행할 수 있게 합니다. 핵심적으로, 명령 자체와 전체 출력(stdout 및 stderr)이 자동으로 캡처되어 에이전트의 현재 대화 또는 작업 컨텍스트에 주입됩니다.\n\n`!` 접두사 구문은 IPython(2001)에서 유래하여 AI 코딩 플랫폼(Claude Code, Cursor, GitHub Copilot, Continue.dev, Aider, Replit Agent) 전반의 사실상 표준이 되었습니다.\n\n이를 통해 에이전트는 실행된 명령과 그 결과를 즉시 인식하며, 사용자의 수동 데이터 전달 없이 진행 중인 작업에 이 정보를 원활하게 통합할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────┐\n│User: !ls -la│\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Execute    │\n│  ls -la     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Command +    │\n│Output →     │\n│  Context    │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Agent aware  │\n│of results   │\n└─────────────┘",
   "mermaid_diagram": "sequenceDiagram\n    participant User\n    participant Interface\n    participant Shell\n    participant Agent\n\n    User->>Interface: !ls -la\n    Interface->>Shell: Execute: ls -la\n    Shell-->>Interface: Command output\n    Interface->>Agent: Inject command + output\n    Agent-->>User: Response with shell context",
   "code_example": "# In Claude Code, typing !ls -la executes locally\n# Both command and output are added to context\n\n$ !git status\n# → Executes git status\n# → Adds \"$ git status\\n<output>\" to Claude's context\n# → Claude can now reason about the repo state",
   "when_to_use": {
-    "en": ["Development environments", "System administration tasks", "Build/test workflows"],
-    "ko": ["개발 환경", "시스템 관리 작업", "빌드/테스트 워크플로우"]
+    "en": ["When agent success depends on reliable tool invocation and environment setup", "Implement PTY-aware execution with graceful fallback for non-interactive commands", "Validate commands before execution (allowlist-based, dangerous pattern detection)", "Capture full output (stdout, stderr, exit codes) for complete context", "Add observability around tool latency, failures, and fallback paths"],
+    "ko": ["에이전트 성공이 신뢰할 수 있는 도구 호출과 환경 설정에 의존하는 경우", "비대화형 명령에 대한 그레이스풀 폴백이 있는 PTY 인식 실행 구현", "실행 전 명령 검증(허용 목록 기반, 위험 패턴 감지)", "완전한 컨텍스트를 위해 전체 출력(stdout, stderr, 종료 코드) 캡처", "도구 지연, 실패, 폴백 경로에 대한 관찰 가능성 추가"]
   },
   "pros": {
-    "en": ["Seamless integration", "Real-time system awareness", "Reduced copy-paste"],
-    "ko": ["원활한 통합", "실시간 시스템 인식", "복사-붙여넣기 감소"]
+    "en": ["Eliminates manual copy-paste workflow", "Enables seamless context injection", "Universal adoption provides mature implementations", "Strong academic foundations (ToolFormer, ReAct, RAG)"],
+    "ko": ["수동 복사-붙여넣기 워크플로우 제거", "원활한 컨텍스트 주입 가능", "범용적 채택으로 성숙한 구현체 제공", "강력한 학술적 기반(ToolFormer, ReAct, RAG)"]
   },
   "cons": {
-    "en": ["Security considerations for arbitrary execution", "Output size limits"],
-    "ko": ["임의 실행에 대한 보안 고려", "출력 크기 제한"]
+    "en": ["Introduces integration coupling and environment-specific upkeep", "Requires security considerations (validation, sandboxing)", "Output size can impact token costs"],
+    "ko": ["통합 결합도 및 환경별 유지 관리 발생", "보안 고려 사항 필요(검증, 샌드박싱)", "출력 크기가 토큰 비용에 영향"]
   },
   "tags": ["shell-integration", "context-management", "local-execution", "cli"]
 }
