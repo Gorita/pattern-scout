@@ -472,6 +472,46 @@
     "related": []
   },
   {
+    "id": "schema-guided-graph-retrieval",
+    "title": "Schema-Guided Graph Retrieval for Multi-Hop Reasoning",
+    "title_ko": "스키마 기반 그래프 검색을 통한 멀티홉 추론",
+    "category": "Context & Memory",
+    "description": "Complex QA over private or domain-specific corpora often needs more structure than flat chunk retrieval, but naive GraphRAG systems still fail in predictable ways:\n\n- **Retrieval is too broad:** entit",
+    "problem": "Complex QA over private or domain-specific corpora often needs more structure than flat chunk retrieval, but naive GraphRAG systems still fail in predictable ways:\n\n- **Retrieval is too broad:** entity, relation, keyword, and summary nodes all compete during search, so evidence gets noisy.\n- **Question decomposition is disconnected from storage:** the planner breaks a query into sub-questions without knowing which entity types or relations actually exist in the graph.\n- **Domain transfer is expensive:** each new corpus needs hand-tuned ontology work or brittle prompt rewrites.\n- **Large graphs become hard to navigate:** even when the graph is correct, retrieval quality drops as the system lacks higher-level abstractions for routing.\n\nThe core issue is misalignment. Construction, retrieval, and reasoning each use different assumptions about the domain, so the graph accumulates structure that the retriever cannot reliably exploit.",
+    "solution": "Treat the schema as the control surface for the entire GraphRAG pipeline, not just an extraction hint.\n\nThe same schema should guide:\n\n1. **Graph construction:** define seed entity types, relations, and attributes that bound extraction.\n2. **Schema evolution:** let the extraction stage propose high-confidence additions when new domains require new types.\n3. **Hierarchical graph organization:** build higher-level keyword or community layers so retrieval can move across abstractions, not only raw triples.\n4. **Query decomposition:** prompt an agent with the same schema to produce focused sub-questions plus the node, relation, and attribute types likely involved.\n5. **Typed retrieval:** filter or bias retrieval toward those schema types before scoring and aggregating evidence.\n6. **Parallel evidence gathering:** run the decomposed sub-questions concurrently, then merge triples and chunk evidence for final reasoning.\n\n```text\nschema = load_seed_schema()\n\ngraph = build_graph(\n  documents,\n  schema=schema,\n  allow_schema_evolution=true\n)\n\ngraph = add_keyword_and_community_layers(graph)\n\nplan = decompose_question(\n  question,\n  schema=schema\n)\n\nevidence = parallel_map(plan.sub_questions, sub_q =>\n  retrieve(\n    graph,\n    query=sub_q,\n    type_filter=plan.involved_types\n  )\n)\n\nanswer = reason_over(merge(evidence))\n```\n\nThe distinctive move is not \"use a graph\" by itself. It is **reusing one schema across ingestion, planning, and retrieval** so the system can ask better sub-questions, search a narrower part of the graph, and adapt to new domains without redesigning the whole stack.",
+    "when_to_use": [
+      "Multi-hop reasoning over private or domain-specific knowledge needed",
+      "Flat chunk retrieval produces too much irrelevant context",
+      "Domain has a stable enough ontology to define useful types up front",
+      "GraphRAG system that can expand into adjacent domains without rebuilding everything"
+    ],
+    "pros": [
+      "Improves retrieval precision by narrowing search to relevant schema types",
+      "Makes multi-hop questions easier to answer through explicit sub-question planning",
+      "Creates a cleaner domain-transfer path than fully hand-crafted ontologies",
+      "Produces more interpretable reasoning traces than flat dense retrieval alone",
+      "Supports combining low-level evidence with higher-level community summaries"
+    ],
+    "cons": [
+      "Requires upfront schema design and ongoing governance",
+      "Bad schema choices can hide relevant evidence instead of improving search",
+      "Schema evolution can introduce noisy or overlapping types if left unchecked",
+      "More moving parts than simple vector search: extraction, graph maintenance, decomposition, typed retrieval, and aggregation",
+      "Parallel sub-question retrieval improves coverage but increases orchestration complexity and latency variance"
+    ],
+    "tags": [
+      "graphrag",
+      "schema-guided",
+      "multi-hop-reasoning",
+      "query-decomposition",
+      "type-filtered-retrieval",
+      "knowledge-graph",
+      "schema-evolution",
+      "community-detection"
+    ],
+    "related": []
+  },
+  {
     "id": "self-identity-accumulation",
     "title": "Self-Identity Accumulation",
     "title_ko": "자기 정체성 축적",
@@ -891,23 +931,28 @@
     "title": "Iterative Prompt & Skill Refinement",
     "title_ko": "반복적 프롬프트 및 스킬 개선",
     "category": "Feedback Loops",
-    "description": "Agent usage reveals gaps in prompts, skills, and tools, but there's no systematic way to improve them Implement multiple complementary refinement mechanisms: responsive feedback, owner-led editing, AI",
-    "problem": "Agent usage reveals gaps in prompts, skills, and tools, but there's no systematic way to improve them.",
-    "solution": "Implement multiple complementary refinement mechanisms: responsive feedback, owner-led editing, AI-enhanced refinement, and dashboard tracking.",
+    "description": "Agent usage reveals gaps in prompts, skills, and tools—but how do you systematically improve them? When a workflow fails or behaves sub-optimally, you need multiple mechanisms to capture feedback and ",
+    "problem": "Agent usage reveals gaps in prompts, skills, and tools—but how do you systematically improve them? When a workflow fails or behaves sub-optimally, you need multiple mechanisms to capture feedback and iterate. Single approaches aren't enough; you need a multi-pronged refinement strategy.",
+    "solution": "Implement multiple complementary refinement mechanisms that work together. No single mechanism catches all issues—you need layered approaches. This approach is grounded in RLHF research showing that human feedback is irreplaceable for alignment, while RLAIF demonstrates AI-assisted feedback enables scale. Four key mechanisms: (1) Responsive Feedback — monitor internal #ai channel for issues, skim workflow interactions daily. (2) Owner-Led Refinement — store prompts in editable documents, make them discoverable and editable by anyone. (3) Claude-Enhanced Refinement — use Datadog MCP to pull logs into skill repository. (4) Dashboard Tracking — track workflow run frequency, errors, and tool usage for data-driven prioritization.",
     "when_to_use": [
-      "Internal agent platforms",
-      "Team-wide prompt management",
-      "Continuous improvement processes"
+      "Feedback channel for internal agent issues",
+      "Editable prompts stored in Notion/docs, not code",
+      "Prompt links included in every workflow output",
+      "Log access via Datadog/observability with MCP integration",
+      "Dashboards tracking workflow runs, errors, tool usage"
     ],
     "pros": [
-      "Multi-layered catches different issues",
-      "Continuous improvement",
-      "Accessible to anyone"
+      "Multi-layered catches issues different mechanisms miss",
+      "Continuous improvement, not episodic",
+      "Accessible to anyone for contribution",
+      "Data-driven prioritization via dashboards",
+      "Central team can maintain platform-level skills"
     ],
     "cons": [
-      "No silver bullet",
-      "Maintenance overhead",
-      "Permission complexity"
+      "No silver bullet — can't eliminate any mechanism",
+      "Maintenance overhead from multiple systems",
+      "Permission complexity requiring balanced edit access",
+      "Alert fatigue from too many signals"
     ],
     "tags": [
       "refinement",
@@ -915,6 +960,8 @@
       "prompts",
       "skills",
       "feedback",
+      "multi-mechanism",
+      "continuous-improvement",
       "dashboards"
     ],
     "related": []
@@ -1260,27 +1307,28 @@
     "title_ko": "출시 자체가 리서치",
     "category": "Learning & Adaptation",
     "description": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind Treat shipping as research: release features not because you're certain they'll work, but to lear",
-    "problem": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind. Traditional product development emphasizes validation and certainty before release, but when the market changes every 3-6 weeks, you can't afford to wait.",
-    "solution": "Treat shipping as research: release features not because you're certain they'll work, but to learn whether they work. Ship to figure out what works and doesn't. Design for reversibility so features can be easily removed. Embrace rapid addition AND removal of features based on learnings. Users on the frontier appreciate constant evolution.",
+    "problem": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind. Traditional product development emphasizes validation and certainty before release, but when the market changes every 3-6 weeks, you can't afford to wait. Expert intuition is unreliable: research across major technology companies shows that 80-90% of product ideas fail to improve key metrics, even when experts are confident they will work (Kohavi et al., 2007). Real-world experimentation beats theoretical analysis.",
+    "solution": "Treat shipping as research: release features not because you're certain they'll work, but to learn whether they work. Ship to figure out what works and doesn't work. Let reality and customer feedback guide your evolution. The frontier is moving so fast that you must ship to discover what works. Analysis and planning can't keep up with the rate of change. Design for reversibility so features can be easily removed. Shipping as research means being willing to both add AND remove features rapidly based on what you learn. Enabling infrastructure like feature flags and gradual rollout mechanisms are essential enablers.",
     "when_to_use": [
-      "User base is early adopters who understand experimentation",
-      "Operating on a rapidly evolving frontier like AI agents",
-      "Small enough team to pivot quickly",
-      "Cost of being wrong is low (reversible features)"
+      "Ship before you're certain — doesn't break existing functionality, team believes it's worth trying, can be reversed",
+      "Design for reversibility — minimal dependencies, clean interfaces, no deep coupling",
+      "Communicate experimental nature to users",
+      "Measure everything — usage metrics, success/failure rates, user feedback, performance",
+      "Kill quickly when something isn't working"
     ],
     "pros": [
       "Learn faster than competitors waiting for certainty",
       "Real-world validation over theoretical analysis",
-      "User goodwill from being part of the journey",
-      "Agility to pivot quickly when something fails",
+      "User goodwill from frontier users who appreciate being part of the journey",
+      "Agility to pivot quickly when something doesn't work",
       "Discover approaches that planning would miss"
     ],
     "cons": [
-      "Some features will be built and then killed",
-      "Constant change can disorient users",
-      "User churn from those preferring stability",
-      "Public failures can damage reputation",
-      "Building throwaway features seems resource-inefficient"
+      "Wasted effort — some features will be built and then killed",
+      "User confusion from constant change",
+      "Churn from users preferring stability over experimentation",
+      "Brand risk from public failures",
+      "Resource inefficiency from building throwaway features"
     ],
     "tags": [
       "research",
@@ -1774,6 +1822,47 @@
     "related": []
   },
   {
+    "id": "declarative-multi-agent-topology-definition",
+    "title": "Declarative Multi-Agent Topology Definition",
+    "title_ko": "선언적 멀티 에이전트 토폴로지 정의",
+    "category": "Orchestration & Control",
+    "description": "Multi-agent systems today are wired imperatively: each framework has its own SDK, config format, and orchestration primitives Define the entire multi-agent topology in a single declarative file using ",
+    "problem": "Multi-agent systems today are wired imperatively: each framework has its own SDK, config format, and orchestration primitives. This creates several problems:\n\n- **Vendor lock-in**: A supervisor topology built for one framework must be rewritten from scratch to run on another.\n- **Implicit topology**: The agent graph — who talks to whom, what gates block progress, which flows fan out — is buried in code rather than visible at a glance.\n- **No single source of truth**: When the topology lives across scattered config files, prompts, and glue code, refactoring or auditing the system requires reading everything.\n- **Repeated scaffolding work**: Teams re-implement the same patterns (pipeline, fan-out, debate, human-in-the-loop gate) in every new project and every new framework.",
+    "solution": "Define the entire multi-agent topology in a single declarative file using a purpose-built grammar. The file describes **what** the system looks like — agents, flows, gates, hooks, group chats — and a compiler generates **how** it runs on each target platform.\n\n**Core primitives:**\n\n1. **Agents**: Name, model, role, tools, and constraints.\n2. **Flows**: Directed edges between agents — pipelines, fan-out, fan-in, cycles.\n3. **Gates**: Approval checkpoints (human, automated, or conditional) positioned between flow steps.\n4. **Hooks**: Lifecycle callbacks (pre-run, post-run, on-error) attached to agents or flows.\n5. **Group chats**: Multi-agent conversation protocols with turn-taking rules.\n\n```\ntopology code-review {\n  agent reviewer {\n    model \"claude-sonnet\"\n    role \"Review pull requests for correctness and style\"\n    tools [grep, read_file]\n  }\n\n  agent security {\n    model \"claude-sonnet\"\n    role \"Check for security vulnerabilities\"\n    tools [grep, semgrep]\n  }\n\n  agent summarizer {\n    model \"claude-haiku\"\n    role \"Produce a concise review summary\"\n  }\n\n  flow fan-out {\n    start -> [reviewer, security]  // parallel\n    [reviewer, security] -> summarizer  // fan-in\n  }\n\n  gate human-approval {\n    after summarizer\n    type human\n    prompt \"Approve this review before posting?\"\n  }\n}\n```\n\nA compiler parses the topology into an AST and emits platform-specific output — config files for CLI agents, runnable code for SDK targets, or visual diagrams for documentation.",
+    "when_to_use": [
+      "Start with a common pattern: Pipeline, fan-out/fan-in, or supervisor are good first topologies",
+      "Compile to your target: Use a binding/compiler to emit the platform-specific configuration or code",
+      "Enforce gates declaratively: Declare gates at specific flow positions rather than sprinkling approval logic throughout code",
+      "Version the topology: The declarative file is small, diffable, and reviewable in version control",
+      "Visualize before running: Generate a diagram from the topology to verify the agent graph matches your intent"
+    ],
+    "pros": [
+      "Portability: One topology definition works across multiple frameworks — switch platforms without rewriting orchestration logic",
+      "Readability: The full agent graph is visible in one file, making review and onboarding faster",
+      "Pattern reuse: Common multi-agent patterns become composable building blocks rather than bespoke code",
+      "Auditability: Gates, permissions, and flows are explicit and diffable in version control"
+    ],
+    "cons": [
+      "Abstraction cost: A declarative layer cannot expose every platform-specific feature; escape hatches or extensions are needed for advanced cases",
+      "Grammar learning curve: Teams must learn a new syntax, though the goal is to keep it minimal and readable",
+      "Compiler fidelity: Each binding must faithfully map declarative primitives to platform capabilities, which varies across targets",
+      "Early ecosystem: The pattern is emerging; tooling and community support are still maturing"
+    ],
+    "tags": [
+      "multi-agent",
+      "topology",
+      "declarative",
+      "orchestration",
+      "scaffolding",
+      "pipeline",
+      "fan-out",
+      "supervisor",
+      "gate",
+      "cross-platform"
+    ],
+    "related": []
+  },
+  {
     "id": "discrete-phase-separation",
     "title": "Discrete Phase Separation",
     "title_ko": "분리된 단계 분리",
@@ -2133,29 +2222,35 @@
     "title": "Initializer-Maintainer Dual Agent Architecture",
     "title_ko": "초기화-유지관리 이중 에이전트 아키텍처",
     "category": "Orchestration & Control",
-    "description": "Long-running agent projects face distinct failure modes at different lifecycle stages Use two-agent architecture: Initializer Agent (runs once) creates feature list, progress tracking, and environment",
-    "problem": "Long-running agent projects face distinct failure modes at different lifecycle stages. Single-agent approaches either over-engineer each session or under-invest in foundations.",
-    "solution": "Use two-agent architecture: Initializer Agent (runs once) creates feature list, progress tracking, and environment setup. Maintainer Agent (subsequent sessions) reads context, selects tasks, implements, and commits.",
+    "description": "Long-running agent projects face distinct failure modes at different lifecycle stages: project initialization requires comprehensive setup (environment configuration, feature specification, test infra",
+    "problem": "Long-running agent projects face distinct failure modes at different lifecycle stages: project initialization requires comprehensive setup (environment configuration, feature specification, test infrastructure, progress tracking), while incremental development requires reading prior context, selecting tasks, implementing, and verifying repeatedly. Single-agent approaches either over-engineer each session (wasting setup time) or under-invest in foundations (leading to drift and confusion). Session boundaries create context loss, causing agents to restart from scratch or lose track of project state.",
+    "solution": "Implement a two-agent architecture with lifecycle-specialized responsibilities. (1) Initializer Agent runs once at project start: creates comprehensive feature list with all requirements, establishes progress tracking artifacts (e.g., progress.txt), sets up environment bootstrap scripts (e.g., init.sh), configures testing infrastructure, makes first git commit with foundational structure. (2) Maintainer/Coding Agent runs in subsequent sessions: executes session bootstrapping ritual (verify working directory, read git logs and progress files, read feature list and select next incomplete feature, run bootstrap script, run existing tests), works on one feature at a time, commits after each verified feature, updates progress artifacts.",
     "when_to_use": [
-      "Multi-session projects (days/weeks)",
-      "50+ discrete features",
-      "Team using agents for sustained development"
+      "Projects requiring many sessions to complete (days/weeks of agent work)",
+      "Complex applications with 50+ discrete features",
+      "Scenarios where context loss between sessions is costly",
+      "Teams using agents for sustained development, not one-shot tasks"
     ],
     "pros": [
-      "Clear separation of concerns",
-      "Session bootstrapping prevents context loss",
-      "Git + progress files provide rich context"
+      "Clear separation of concerns between setup and execution",
+      "Session bootstrapping ritual prevents context loss",
+      "Mirrors effective human team practices (shift handoffs)",
+      "Initializer creates consistent foundation for all future sessions",
+      "Git history + progress files provide rich context for new sessions"
     ],
     "cons": [
-      "Requires upfront feature specification",
-      "Two prompts to maintain",
-      "Not for exploratory projects"
+      "Requires upfront investment in comprehensive feature specification",
+      "Two different prompts/configurations to maintain",
+      "Initializer must anticipate needs of Coding Agent",
+      "Not suitable for exploratory or research-oriented projects",
+      "Overhead is wasteful for small, single-session tasks"
     ],
     "tags": [
       "long-running-agents",
       "session-handoff",
       "lifecycle-specialization",
-      "project-bootstrap"
+      "project-bootstrap",
+      "incremental-development"
     ],
     "related": []
   },
@@ -3042,24 +3137,28 @@
     "title_ko": "액션 캐싱 및 리플레이 패턴",
     "category": "Reliability & Eval",
     "description": "LLM-based agent execution is expensive (both in costs and latency) and non-deterministic Record every action during execution with precise metadata (XPaths, frame indices, execution details), enabling",
-    "problem": "LLM-based agent execution is expensive (both in costs and latency) and non-deterministic. Running the same workflow multiple times yields different results and incurs repeated LLM costs, making regression testing impossible.",
-    "solution": "Record every action during execution with precise metadata (XPaths, frame indices, execution details), enabling deterministic replay without LLM calls. Use intelligent fallback to LLM only when XPath resolution fails.",
+    "problem": "LLM-based agent execution is expensive (both in costs and latency) and non-deterministic. Running the same workflow multiple times yields different results and incurs repeated LLM costs. This creates several issues: cost explosion from repeated LLM token burns for identical tasks, non-determinism with different outputs from same input, no regression testing capability, slow iteration due to LLM costs, and no practical CI/CD integration for agent workflows.",
+    "solution": "Record every action during execution with precise metadata (XPaths, frame indices, execution details), enabling deterministic replay without LLM calls. The cache captures enough information to replay actions even when page structure changes slightly. This pattern builds on experience replay from reinforcement learning, where agents learn by reusing past successful actions rather than exploring anew each time. Replay uses intelligent fallback: try cached XPath directly, retry with normalized XPath variations, invoke LLM for element resolution if still failing, and update cache with successful resolution. Can also generate standalone scripts from cached workflows.",
     "when_to_use": [
-      "Regression testing for agent workflows",
-      "Cost reduction for repeated tasks",
-      "CI/CD integration for automation scripts",
-      "Deterministic workflow execution"
+      "Enable action caching during agent execution",
+      "Persist cache for later replay use",
+      "Replay from cache with XPath retry and LLM fallback",
+      "CI/CD integration for automated regression testing",
+      "Export workflows as standalone scripts for debugging"
     ],
     "pros": [
-      "Dramatic cost reduction (near-zero for replays)",
-      "10-100x faster than LLM execution",
-      "Enables deterministic regression testing",
-      "Graceful degradation with LLM fallback"
+      "Dramatic cost reduction — near-zero for replays; documented 43-97% cost reductions; 85%+ cache hit rates",
+      "Deterministic regression testing to verify fixes don't break workflows",
+      "10-100x faster performance than LLM execution",
+      "Complete execution history for debugging",
+      "Script generation to export workflows as standalone automation",
+      "Graceful degradation via LLM fallback for page structure changes"
     ],
     "cons": [
-      "Cache management overhead",
-      "Brittle to significant UI changes",
-      "Initial LLM cost still required",
+      "Cache management overhead for storing, versioning, and invalidating",
+      "Brittle to significant UI changes that break XPaths",
+      "Initial LLM cost still required for first run",
+      "Storage complexity as caches accumulate and need cleanup",
       "Only works for deterministic workflows"
     ],
     "tags": [
@@ -3281,25 +3380,27 @@
     "title": "Failover-Aware Model Fallback",
     "title_ko": "장애 인식 모델 폴백",
     "category": "Reliability & Eval",
-    "description": "AI model requests fail for varied reasons Semantic error classification with intelligent fallback chains",
-    "problem": "AI model requests fail for varied reasons. Simple retry logic fails to distinguish between transient failures (timeouts, rate limits) that benefit from retry, semantic failures (auth, billing) where retry is futile, and user aborts where retry wastes resources.",
-    "solution": "Semantic error classification with intelligent fallback chains. Each failure is categorized into a specific reason type, and fallback behavior is tailored to that reason with multi-model fallback chains and provider-specific allowlists.",
+    "description": "AI model requests fail for varied and often opaque reasons Semantic error classification with intelligent fallback chains",
+    "problem": "AI model requests fail for varied and often opaque reasons. Simple retry logic fails to distinguish between: transient failures (timeouts, rate limits) that benefit from retry with backoff, semantic failures (auth errors, billing issues) where retry is futile, and user aborts where retry wastes resources and frustrates users. Agents using multiple models or providers need intelligent fallback strategies that respect failure semantics, avoid retry loops, and provide clear diagnostics.",
+    "solution": "Semantic error classification with intelligent fallback chains. Each failure is categorized into a specific reason type, and fallback behavior is tailored to that reason. Core concepts: Error classification maps provider-specific error codes to universal semantic types (timeout, rate_limit, auth, billing, format, context_overflow) for consistent handling. Reason-aware fallback triggers different behaviors per reason type — timeout/rate_limit retry with next model, auth/billing fail immediately, format/context_overflow may retry with adjusted request. User abort detection distinguishes user-initiated aborts from timeout-induced aborts. Multi-model chains provide ordered list of provider/model candidates. Provider allowlists prevent fallback to incompatible models. Diagnostics tracking records each failed attempt with error details.",
     "when_to_use": [
-      "Multi-model agent systems",
-      "High-availability requirements",
-      "Cost-sensitive deployments"
+      "Define fallback chains with ordered list of alternative models per use case",
+      "Configure allowlists to restrict fallback to compatible models",
+      "Classify errors by mapping provider-specific error codes to semantic reasons",
+      "Track attempts with provider, model, error, and reason for observability",
+      "Handle exhaustion by aggregating error messages when all candidates fail"
     ],
     "pros": [
-      "Resilience to transient failures",
-      "Cost optimization via cheaper fallbacks",
-      "Clear diagnostics",
-      "Respects user aborts"
+      "Resilience — transient failures don't block the agent",
+      "Cost optimization via fallback to cheaper models when premium unavailable",
+      "Clear diagnostics with attempt history showing which models failed and why",
+      "User abort respect distinguishing cancellation from timeout"
     ],
     "cons": [
-      "Latency penalty per failed attempt",
-      "Inconsistent outputs across models",
-      "Cost accumulation from multiple attempts",
-      "Complex configuration"
+      "Latency penalty from each failed attempt adding round-trip time",
+      "Inconsistent outputs as different models may respond differently",
+      "Cost accumulation from multiple API charges for single logical request",
+      "Complex configuration managing allowlists, chains, and provider-specific behavior"
     ],
     "tags": [
       "fallback",
@@ -3518,30 +3619,36 @@
     "title": "Schema Validation Retry with Cross-Step Learning",
     "title_ko": "크로스 스텝 학습을 통한 스키마 검증 재시도",
     "category": "Reliability & Eval",
-    "description": "LLMs don't always produce valid structured output Implement multi-attempt retry with detailed Zod error feedback and cross-step error accumulation for learning",
-    "problem": "LLMs don't always produce valid structured output. Single-attempt validation leads to task failures even when retry would succeed.",
-    "solution": "Implement multi-attempt retry with detailed Zod error feedback and cross-step error accumulation for learning.",
+    "description": "LLMs don't always produce valid structured output matching the expected schema Implement multi-step retry with detailed error feedback and cross-step error accumulation",
+    "problem": "LLMs don't always produce valid structured output matching the expected schema. Single-attempt validation leads to task failures even when retry would succeed. The issues compound in multi-step workflows: schema violations, one-and-done failure terminating entire workflows, no learning from mistakes across steps, wasted tokens on failed responses, and fragile workflows from flaky LLM outputs.",
+    "solution": "Implement multi-step retry with detailed error feedback and cross-step error accumulation. The agent learns from its validation failures across the entire workflow. Core mechanisms include: (1) Multi-attempt retry with detailed feedback — industry practice uses 2-3 retry attempts; research shows iterative refinement with feedback improves output quality by 15-45% (Self-Refine, ICLR 2024). (2) Cross-step error accumulation — the agent maintains a rolling window of recent schema errors and includes them in subsequent LLM calls. (3) Structured feedback loop — each retry iteration provides specific, actionable feedback. Alternative: Server-side validation via OpenAI Structured Outputs and Anthropic Tool Use can enforce schema compliance at the API level, eliminating client-side retry loops.",
     "when_to_use": [
-      "Structured output generation",
-      "Multi-step workflows",
-      "Reliability-critical agents"
+      "Define schemas with Zod using strict schemas with clear error messages",
+      "Implement retry wrapper with configurable max attempts",
+      "Inject error context before each step to prevent repeating mistakes",
+      "Configure agent context with error history size and cross-step error count"
     ],
     "pros": [
-      "Higher success rate",
-      "Cross-step learning",
-      "Better debugging"
+      "Higher success rate with 3-attempt retry",
+      "Cross-step learning avoids repeating mistakes across workflow",
+      "Detailed Zod error feedback guides LLM to specific fixes",
+      "Better debugging with error history diagnostics",
+      "Configurable balance of attempt count vs. cost/latency"
     ],
     "cons": [
-      "Increased latency on failures",
-      "Higher token costs",
-      "Not guaranteed fix"
+      "Increased latency from multiple LLM calls on retries",
+      "Higher cost as failed attempts still consume tokens",
+      "Context bloat if error history is not limited",
+      "Not guaranteed as some LLMs struggle to correct from errors",
+      "Additional retry logic and error management complexity"
     ],
     "tags": [
       "retry",
       "validation",
       "cross-step-learning",
       "structured-output",
-      "zod"
+      "zod",
+      "error-accumulation"
     ],
     "related": []
   },
@@ -3908,26 +4015,28 @@
     "title": "Sandboxed Tool Authorization",
     "title_ko": "샌드박스 도구 권한 부여",
     "category": "Security & Safety",
-    "description": "Tool authorization needs flexibility across multiple environments (dev vs prod), different agent roles (coding vs messaging), hierarchical delegation, and plugin ecosystems requiring dynamic inclusion",
-    "problem": "Tool authorization needs flexibility across multiple environments (dev vs prod), different agent roles (coding vs messaging), hierarchical delegation, and plugin ecosystems requiring dynamic inclusion.",
-    "solution": "Pattern-based policies with deny-by-default and inheritance. Tools are authorized by matching against compiled patterns (exact, regex, wildcard), with deny lists taking precedence. Subagents inherit parent policies with additional restrictions.",
+    "description": "Tool authorization needs flexibility but also security Pattern-based policies with deny-by-default and inheritance",
+    "problem": "Tool authorization needs flexibility but also security. Static allowlists don't scale across: multiple environments (development permissive vs. production restrictive), different agent roles (coding agents need filesystem access; messaging agents shouldn't), hierarchical delegation (subagents should inherit restrictions from parents but with additional constraints), and plugin ecosystems (external tools need dynamic inclusion without manual allowlist updates). Agents need a policy system that supports pattern matching, deny-by-default semantics, and hierarchical inheritance.",
+    "solution": "Pattern-based policies with deny-by-default and inheritance. Tools are authorized by matching against compiled patterns (exact, regex, wildcard), with deny lists taking precedence over allow lists. Subagents inherit parent policies with additional restrictions, and profile-based tiers provide presets for common agent types. This approach aligns with the academic Action Selector pattern (Beurer-Kellner et al., 2025), which treats the LLM as an instruction decoder rather than a live controller. Core concepts: Pattern matching supports exact matches, wildcards (fs:*), and regex-like patterns. Deny-by-default means empty allow list denies all tools. Deny precedence ensures matching deny patterns block tools regardless of allow list. Related tool inheritance grants implicit permissions (e.g., exec allows apply_patch). Profile-based tiers (minimal, coding, messaging, full) provide quick configuration. Tool groups enable bulk policies (group:fs, group:runtime, group:sessions).",
     "when_to_use": [
-      "Multi-environment deployments",
-      "Role-based agent permissions",
-      "Plugin/MCP tool ecosystems"
+      "Define tool groups for bulk policy rules (group:fs, group:runtime)",
+      "Choose a predefined profile (minimal, coding, messaging, full) as baseline",
+      "Layer explicit allow/deny rules on top of the profile",
+      "Configure subagent restrictions with additional deny rules",
+      "Filter tools at runtime using the policy matcher"
     ],
     "pros": [
-      "Flexible pattern matching",
-      "Security by default",
-      "Hierarchical control for subagents",
-      "Profile presets for common roles",
-      "Plugin support via tool groups"
+      "Flexible patterns — wildcards and groups enable concise policies for large tool sets",
+      "Security by default — deny-by-default semantics prevent accidental permission grants",
+      "Hierarchical control — subagents restricted further without modifying parent policies",
+      "Profile presets — common agent types have pre-configured policies",
+      "Plugin support — tool groups can include plugin tools via dynamic discovery"
     ],
     "cons": [
-      "Pattern complexity can be confusing",
-      "Policy explosion with many agents",
-      "Evaluation order bugs can cause issues",
-      "Related tool decisions are subjective"
+      "Pattern complexity — regex-like patterns can be confusing; errors may grant unintended access",
+      "Policy explosion — many agents with different policies can be difficult to manage and audit",
+      "Evaluation order — deny-before-allow precedence must be consistently applied; bugs can cause security issues",
+      "Related tool ambiguity — deciding which tools are 'related' is subjective and may not cover all cases"
     ],
     "tags": [
       "authorization",
@@ -4016,22 +4125,23 @@
     "category": "Security & Safety",
     "description": "In multi-agent systems, trust boundaries are often implicit: agents communicate by convention without verifiable identity, and delegation chains are hard to audit Apply zero-trust principles to inter-",
     "problem": "In multi-agent systems, trust boundaries are often implicit: agents communicate by convention without verifiable identity, and delegation chains are hard to audit. This enables impersonation, privilege confusion, and unverifiable task delegation.",
-    "solution": "Apply zero-trust principles to inter-agent communication. Agent identities are cryptographically asserted (Ed25519 key pairs per agent for fast signatures). Mutual trust handshakes confirm identity before requests are accepted. Delegation tokens carry signed scope, TTL, and parent authority. Bounded delegation limits chain depth and blast radius. Every request is evaluated as an untrusted call until identity, authorization, and delegation lineage are verified. Policies are enforced per hop, not just at the edge.",
+    "solution": "Apply zero-trust principles to inter-agent communication. Agent identities are cryptographically asserted (Ed25519 key pairs per agent for fast signatures with 64-byte size). Mutual trust handshakes confirm identity before requests are accepted. Delegation tokens carry signed scope, TTL, and parent authority. Bounded delegation limits chain depth and blast radius. Every request is evaluated as an untrusted call until identity, authorization, and delegation lineage are verified. Policies are enforced per hop, not just at the edge, and verification results are logged as first-class audit events. This turns \"agent collaboration\" into a traceable authorization graph rather than a trust-by-convention channel.",
     "when_to_use": [
-      "Multi-agent systems with untrusted communication",
-      "Systems needing auditable delegation chains",
-      "Cross-organizational agent collaboration requiring verifiable identity"
+      "Enable trust checks for every inter-agent request, not just sensitive ones",
+      "Keep delegation scopes narrowly scoped and short-lived",
+      "Require explicit expiry and refresh for long-running tasks",
+      "Centralize verifier policy (TTL defaults, trust score decay, blocklist/allowlist)"
     ],
     "pros": [
       "Prevents impersonation and privilege confusion",
-      "Traceable authorization graph",
-      "Modest verification overhead (~0.05-0.15ms per request)",
-      "Production-scale precedent with SPIFFE/SPIRE"
+      "Traceable authorization graph for auditing",
+      "Modest verification overhead (~0.05-0.15ms per request for single and 3-hop chains)",
+      "Production-scale precedent with SPIFFE/SPIRE (1000+ deployments, CNCF-graduated)"
     ],
     "cons": [
-      "Adds latency and key management components",
-      "Security operations discipline for key rotation needed",
-      "Trust scoring adds governance overhead",
+      "Adds latency and additional components for key management and verification",
+      "Requires security operations discipline around key rotation and revocation",
+      "Trust scoring and policy tuning adds governance overhead",
       "Existing agent frameworks need adapter glue"
     ],
     "tags": [
@@ -4549,6 +4659,40 @@
     "related": []
   },
   {
+    "id": "mcp-pattern-injection",
+    "title": "MCP Pattern Injection",
+    "title_ko": "MCP 패턴 인젝션",
+    "category": "Tool Use & Environment",
+    "description": "AI coding assistants lack domain-specific knowledge about framework best practices Use **MCP (Model Context Protocol) servers** to inject production patterns directly into the AI assistant's context:\n",
+    "problem": "AI coding assistants lack domain-specific knowledge about framework best practices. When building LangGraph agents, developers must repeatedly explain patterns, copy-paste from docs, or watch the AI reinvent suboptimal solutions. The assistant's training data is often outdated relative to fast-moving frameworks.",
+    "solution": "Use **MCP (Model Context Protocol) servers** to inject production patterns directly into the AI assistant's context:\n\n1. Create an MCP server that exposes domain patterns as tools and resources\n2. Structure patterns with clear signatures, descriptions, and code snippets\n3. Configure Claude Desktop or Cursor to connect to the MCP server\n4. The AI can now \"call\" patterns on-demand, getting current best practices\n\n```typescript\n// Example: MCP tool that returns a LangGraph pattern\nserver.tool(\"get_pattern\", { name: z.string() }, async ({ name }) => {\n  const pattern = PATTERNS[name];\n  return {\n    content: [{\n      type: \"text\",\n      text: `## ${pattern.title}\\n\\n${pattern.description}\\n\\n\\`\\`\\`python\\n${pattern.code}\\n\\`\\`\\``\n    }]\n  };\n});\n```\n\nThe key insight: MCP servers act as **live documentation** that the AI can query, rather than static context that burns tokens.",
+    "when_to_use": [
+      "Build MCP servers for any framework your team uses heavily (LangGraph, FastAPI, React patterns)",
+      "Keep patterns small and focused — one pattern per tool call",
+      "Include 'when to use' and 'when NOT to use' guidance in pattern descriptions",
+      "Version your patterns alongside your codebase",
+      "Use npx for easy distribution: npx your-patterns-mcp"
+    ],
+    "pros": [
+      "Always up-to-date patterns",
+      "On-demand retrieval saves context space",
+      "Patterns are structured and tested"
+    ],
+    "cons": [
+      "Requires MCP server setup",
+      "Adds latency for tool calls",
+      "Patterns must be maintained"
+    ],
+    "tags": [
+      "mcp",
+      "code-patterns",
+      "tool-injection",
+      "context-enhancement",
+      "langgraph"
+    ],
+    "related": []
+  },
+  {
     "id": "multi-platform-communication-aggregation",
     "title": "Multi-Platform Communication Aggregation",
     "title_ko": "다중 플랫폼 커뮤니케이션 집계",
@@ -5032,9 +5176,9 @@
     "title": "Codebase Optimization for Agents",
     "title_ko": "에이전트를 위한 코드베이스 최적화",
     "category": "UX & Collaboration",
-    "description": "When introducing AI agents to a codebase, there's a tendency to preserve human developer experience (DX) Optimize the codebase for agents first, humans second",
-    "problem": "When introducing AI agents to a codebase, there's a tendency to preserve human developer experience (DX). This limits agent effectiveness because the codebase remains optimized for humans. Even good models struggle without clear feedback loops—agents fail not because of capability limits but because the codebase isn't 'welded' to the agent.",
-    "solution": "Optimize the codebase for agents first, humans second. Accept that tooling and workflows may regress for humans to unlock better agent performance. Key areas: CLI interfaces with machine-readable output, single-command test execution, skills that encapsulate operations, and AGENTS.md files. This creates a snowball effect: agent tooling improves, humans use agents more, editors matter less, more incentive to optimize for agents.",
+    "description": "When introducing AI agents to a codebase, there's a natural tendency to preserve the human developer experience (DX) Optimize the codebase for agents first, humans second",
+    "problem": "When introducing AI agents to a codebase, there's a natural tendency to preserve the human developer experience (DX). However, this limits agent effectiveness because the codebase remains optimized for humans, not for the AI workers who will increasingly operate autonomously. A related problem: even good models struggle without clear feedback loops. When an agent can't verify its changes work, it fails not because of capability limits but because the codebase isn't \"welded\" to the agent.",
+    "solution": "Optimize the codebase for agents first, humans second. Accept that tooling, workflows, and even the editor experience may regress for humans in order to unlock dramatically better agent performance. The counterintuitive insight: once you embrace agent-optimized workflows, you'll use the human-centric tools less anyway. This creates a snowball effect: agent tooling gets better, humans use agents more, humans use editors less, editor experience matters less, more incentive to optimize for agents. Key principle: \"Welding the agent to the codebase\" means creating tight, automated feedback loops so the agent can verify its changes work automatically, get clear signals about success/failure, and iterate without human intervention. Practical examples include terminal emulator with screenshot flag, CLI data-only output for agent parsing, and single-command test execution with cached results. CLAUDE.md is emerging as a complementary standard for agent guidance with project-specific instructions.",
     "when_to_use": [
       "Agents will use a workflow 10x more than humans",
       "The workflow is automatable and well-defined",
@@ -5042,25 +5186,27 @@
       "Team is committed to agent-first development"
     ],
     "pros": [
-      "Dramatically better agent performance",
+      "Dramatically better agent performance — agents work faster and more reliably",
       "Accelerates transition to agent-first workflows",
-      "Future-proof for increasing AI autonomy",
-      "Compound improvements through snowball effect"
+      "Future-proof positioning for increasing AI autonomy",
+      "Compound improvements through snowball effect — better agents lead to more usage leading to more investment"
     ],
     "cons": [
-      "Human developer experience regresses",
-      "Team resistance to 'worse' tools",
-      "Hybrid team challenges for members not using agents",
-      "Lock-in risk with agent-specific patterns"
+      "Human DX regresses — traditional workflows may become worse",
+      "Team resistance from developers who may resist 'worse' tools",
+      "Hybrid team challenges for members not using agents as much",
+      "Lock-in risk from heavy investment in agent-specific patterns"
     ],
     "tags": [
       "agent-first",
       "human-dx",
+      "regression",
       "optimization",
       "tooling",
       "codebase-design",
-      "feedback-loops",
-      "agent-native"
+      "trade-offs",
+      "agent-native",
+      "feedback-loops"
     ],
     "related": []
   },
