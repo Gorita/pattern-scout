@@ -6,27 +6,61 @@
   "status": "emerging",
   "original_url": "https://github.com/hyperbrowserai/HyperAgent",
   "problem": {
-    "en": "LLMs don't always produce valid structured output. Single-attempt validation leads to task failures even when retry would succeed.",
-    "ko": "LLM이 항상 유효한 구조화된 출력을 생성하지 않습니다. 단일 시도 검증은 재시도가 성공할 수 있는 경우에도 작업 실패로 이어집니다."
+    "en": "LLMs don't always produce valid structured output matching the expected schema. Single-attempt validation leads to task failures even when retry would succeed. The issues compound in multi-step workflows: schema violations, one-and-done failure terminating entire workflows, no learning from mistakes across steps, wasted tokens on failed responses, and fragile workflows from flaky LLM outputs.",
+    "ko": "LLM이 항상 예상 스키마와 일치하는 유효한 구조화된 출력을 생성하지 않습니다. 단일 시도 검증은 재시도가 성공할 수 있는 경우에도 작업 실패로 이어집니다. 다단계 워크플로우에서 문제가 복합됩니다: 스키마 위반, 단일 실패로 전체 워크플로우 종료, 단계 간 실수에서의 학습 부재, 실패한 응답에 대한 토큰 낭비, 불안정한 LLM 출력으로 인한 취약한 워크플로우가 발생합니다."
   },
   "solution": {
-    "en": "Implement multi-attempt retry with detailed Zod error feedback and cross-step error accumulation for learning.",
-    "ko": "상세한 Zod 오류 피드백과 학습을 위한 크로스 스텝 오류 누적으로 다중 시도 재시도를 구현합니다."
+    "en": "Implement multi-step retry with detailed error feedback and cross-step error accumulation. The agent learns from its validation failures across the entire workflow. Core mechanisms include: (1) Multi-attempt retry with detailed feedback — industry practice uses 2-3 retry attempts; research shows iterative refinement with feedback improves output quality by 15-45% (Self-Refine, ICLR 2024). (2) Cross-step error accumulation — the agent maintains a rolling window of recent schema errors and includes them in subsequent LLM calls. (3) Structured feedback loop — each retry iteration provides specific, actionable feedback. Alternative: Server-side validation via OpenAI Structured Outputs and Anthropic Tool Use can enforce schema compliance at the API level, eliminating client-side retry loops.",
+    "ko": "상세한 오류 피드백과 크로스 스텝 오류 누적을 통한 다단계 재시도를 구현합니다. 에이전트는 전체 워크플로우에 걸쳐 검증 실패로부터 학습합니다. 핵심 메커니즘: (1) 상세 피드백을 통한 다중 시도 재시도 — 업계 관행은 2-3회 재시도를 사용하며, 연구에 따르면 피드백을 통한 반복 개선이 출력 품질을 15-45% 향상시킵니다(Self-Refine, ICLR 2024). (2) 크로스 스텝 오류 누적 — 에이전트가 최근 스키마 오류의 롤링 윈도우를 유지하고 후속 LLM 호출에 포함합니다. (3) 구조화된 피드백 루프 — 각 재시도 반복이 구체적이고 실행 가능한 피드백을 제공합니다. 대안: OpenAI 구조화된 출력과 Anthropic 도구 사용을 통한 서버 측 검증으로 API 수준에서 스키마 준수를 강제할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────┐\n│ LLM Output  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Zod Validate│\n└──────┬──────┘\n   ┌───┴───┐\n   ▼       ▼\n[Pass]  [Fail]\n   │       │\n   │  ┌────▼────┐\n   │  │ Append  │\n   │  │ Error   │\n   │  │Feedback │\n   │  └────┬────┘\n   │       │\n   │  ┌────▼────┐\n   │  │ Retry   │\n   │  │(max 3)  │\n   │  └────┬────┘\n   └───┬───┘\n       ▼\n   [Result]",
-  "mermaid_diagram": "sequenceDiagram\n    participant LLM\n    participant Validator\n    participant ErrorHistory\n\n    LLM->>Validator: Generate output\n    alt Valid\n        Validator-->>LLM: Success\n    else Invalid - Attempt 1\n        Validator-->>ErrorHistory: Store error\n        ErrorHistory->>LLM: Feedback + retry\n    end",
+  "mermaid_diagram": "sequenceDiagram\n    participant LLM\n    participant Validator as Zod Validator\n    participant Context as Agent Context\n    participant History as Error History\n\n    loop Multi-Step Workflow\n        Note over LLM,History: Step N\n        LLM->>Validator: Generate structured output\n        Validator->>Validator: Validate against schema\n        alt Valid\n            Validator-->>LLM: Success\n            LLM->>History: Store success\n        else Invalid - Attempt 1\n            Validator-->>LLM: Zod error details\n            LLM->>Context: Store error in history\n            LLM->>LLM: Retry with error feedback\n        end\n        alt Still Invalid - Attempt 2\n            Validator-->>LLM: Zod error details\n            LLM->>Context: Store error in history\n            Context->>LLM: Include last 3 errors\n            LLM->>LLM: Retry with cross-step context\n        end\n    end",
   "code_example": "const maxAttempts = 3;\nlet msgs = [initialPrompt];\n\nfor (let attempt = 0; attempt < maxAttempts; attempt++) {\n  const result = await llm.invoke(schema, msgs);\n  \n  if (result.parsed) return result.parsed;\n  \n  // Store for cross-step learning\n  ctx.schemaErrors.push({\n    stepIndex: currStep,\n    error: getZodError(result.rawText)\n  });\n  \n  // Append error feedback for retry\n  msgs.push({\n    role: 'user',\n    content: `Validation errors:\\n${error}\\nPlease fix.`\n  });\n}",
   "when_to_use": {
-    "en": ["Structured output generation", "Multi-step workflows", "Reliability-critical agents"],
-    "ko": ["구조화된 출력 생성", "다단계 워크플로우", "신뢰성 중요 에이전트"]
+    "en": [
+      "Define schemas with Zod using strict schemas with clear error messages",
+      "Implement retry wrapper with configurable max attempts",
+      "Inject error context before each step to prevent repeating mistakes",
+      "Configure agent context with error history size and cross-step error count"
+    ],
+    "ko": [
+      "명확한 오류 메시지가 있는 엄격한 Zod 스키마 정의",
+      "설정 가능한 최대 시도 횟수의 재시도 래퍼 구현",
+      "실수 반복 방지를 위한 각 단계 전 오류 컨텍스트 주입",
+      "오류 기록 크기 및 크로스 스텝 오류 수를 갖춘 에이전트 컨텍스트 설정"
+    ]
   },
   "pros": {
-    "en": ["Higher success rate", "Cross-step learning", "Better debugging"],
-    "ko": ["높은 성공률", "크로스 스텝 학습", "더 나은 디버깅"]
+    "en": [
+      "Higher success rate with 3-attempt retry",
+      "Cross-step learning avoids repeating mistakes across workflow",
+      "Detailed Zod error feedback guides LLM to specific fixes",
+      "Better debugging with error history diagnostics",
+      "Configurable balance of attempt count vs. cost/latency"
+    ],
+    "ko": [
+      "3회 시도 재시도로 높은 성공률",
+      "크로스 스텝 학습으로 워크플로우 전반의 실수 반복 방지",
+      "상세한 Zod 오류 피드백이 LLM을 구체적 수정으로 안내",
+      "오류 기록 진단을 통한 더 나은 디버깅",
+      "시도 횟수 대 비용/지연의 설정 가능한 균형"
+    ]
   },
   "cons": {
-    "en": ["Increased latency on failures", "Higher token costs", "Not guaranteed fix"],
-    "ko": ["실패 시 지연 증가", "높은 토큰 비용", "수정 보장 안됨"]
+    "en": [
+      "Increased latency from multiple LLM calls on retries",
+      "Higher cost as failed attempts still consume tokens",
+      "Context bloat if error history is not limited",
+      "Not guaranteed as some LLMs struggle to correct from errors",
+      "Additional retry logic and error management complexity"
+    ],
+    "ko": [
+      "재시도 시 다중 LLM 호출로 인한 지연 증가",
+      "실패한 시도도 토큰을 소비하여 높은 비용",
+      "오류 기록이 제한되지 않으면 컨텍스트 비대화",
+      "일부 LLM은 오류 수정에 어려움을 겪어 보장 불가",
+      "추가 재시도 로직 및 오류 관리 복잡성"
+    ]
   },
-  "tags": ["retry", "validation", "cross-step-learning", "structured-output", "zod"]
+  "tags": ["retry", "validation", "cross-step-learning", "structured-output", "zod", "error-accumulation"]
 }

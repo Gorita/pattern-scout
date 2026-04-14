@@ -6,24 +6,58 @@
   "status": "validated-in-production",
   "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/agents/tool-policy.ts",
   "problem": {
-    "en": "Tool authorization needs flexibility across multiple environments (dev vs prod), different agent roles (coding vs messaging), hierarchical delegation, and plugin ecosystems requiring dynamic inclusion.",
-    "ko": "도구 권한 부여는 여러 환경(개발 vs 프로덕션), 다양한 에이전트 역할(코딩 vs 메시징), 계층적 위임, 동적 포함이 필요한 플러그인 생태계에서 유연성이 필요합니다."
+    "en": "Tool authorization needs flexibility but also security. Static allowlists don't scale across: multiple environments (development permissive vs. production restrictive), different agent roles (coding agents need filesystem access; messaging agents shouldn't), hierarchical delegation (subagents should inherit restrictions from parents but with additional constraints), and plugin ecosystems (external tools need dynamic inclusion without manual allowlist updates). Agents need a policy system that supports pattern matching, deny-by-default semantics, and hierarchical inheritance.",
+    "ko": "도구 권한 부여는 유연성과 보안이 모두 필요합니다. 정적 허용 목록은 다음에 대해 확장되지 않습니다: 여러 환경(개발은 허용적, 프로덕션은 제한적), 다양한 에이전트 역할(코딩 에이전트는 파일시스템 접근 필요, 메시징 에이전트는 불필요), 계층적 위임(서브에이전트는 부모의 제한을 상속하되 추가 제약 포함), 플러그인 생태계(외부 도구는 수동 허용 목록 업데이트 없이 동적 포함 필요). 에이전트는 패턴 매칭, 기본 거부 의미론, 계층적 상속을 지원하는 정책 시스템이 필요합니다."
   },
   "solution": {
-    "en": "Pattern-based policies with deny-by-default and inheritance. Tools are authorized by matching against compiled patterns (exact, regex, wildcard), with deny lists taking precedence. Subagents inherit parent policies with additional restrictions.",
-    "ko": "기본 거부와 상속을 통한 패턴 기반 정책입니다. 도구는 컴파일된 패턴(정확, 정규식, 와일드카드)에 대해 매칭하여 권한이 부여되며, 거부 목록이 우선합니다. 서브에이전트는 추가 제한과 함께 부모 정책을 상속합니다."
+    "en": "Pattern-based policies with deny-by-default and inheritance. Tools are authorized by matching against compiled patterns (exact, regex, wildcard), with deny lists taking precedence over allow lists. Subagents inherit parent policies with additional restrictions, and profile-based tiers provide presets for common agent types. This approach aligns with the academic Action Selector pattern (Beurer-Kellner et al., 2025), which treats the LLM as an instruction decoder rather than a live controller. Core concepts: Pattern matching supports exact matches, wildcards (fs:*), and regex-like patterns. Deny-by-default means empty allow list denies all tools. Deny precedence ensures matching deny patterns block tools regardless of allow list. Related tool inheritance grants implicit permissions (e.g., exec allows apply_patch). Profile-based tiers (minimal, coding, messaging, full) provide quick configuration. Tool groups enable bulk policies (group:fs, group:runtime, group:sessions).",
+    "ko": "기본 거부와 상속을 통한 패턴 기반 정책입니다. 도구는 컴파일된 패턴(정확, 정규식, 와일드카드)에 대해 매칭하여 권한이 부여되며, 거부 목록이 허용 목록보다 우선합니다. 서브에이전트는 추가 제한과 함께 부모 정책을 상속하고, 프로필 기반 등급이 일반적인 에이전트 유형에 대한 프리셋을 제공합니다. 이 접근 방식은 LLM을 실시간 컨트롤러가 아닌 명령 디코더로 취급하는 학술적 액션 셀렉터 패턴(Beurer-Kellner et al., 2025)과 일치합니다. 핵심 개념: 패턴 매칭은 정확 매치, 와일드카드(fs:*), 정규식 유사 패턴을 지원합니다. 기본 거부는 빈 허용 목록이 모든 도구를 거부함을 의미합니다. 거부 우선은 매칭되는 거부 패턴이 허용 목록과 관계없이 도구를 차단함을 보장합니다. 관련 도구 상속은 암묵적 권한을 부여합니다(예: exec가 apply_patch를 허용). 프로필 기반 등급(minimal, coding, messaging, full)이 빠른 설정을 제공합니다. 도구 그룹이 대량 정책을 가능하게 합니다(group:fs, group:runtime, group:sessions)."
   },
   "when_to_use": {
-    "en": ["Multi-environment deployments", "Role-based agent permissions", "Plugin/MCP tool ecosystems"],
-    "ko": ["다중 환경 배포", "역할 기반 에이전트 권한", "플러그인/MCP 도구 생태계"]
+    "en": [
+      "Define tool groups for bulk policy rules (group:fs, group:runtime)",
+      "Choose a predefined profile (minimal, coding, messaging, full) as baseline",
+      "Layer explicit allow/deny rules on top of the profile",
+      "Configure subagent restrictions with additional deny rules",
+      "Filter tools at runtime using the policy matcher"
+    ],
+    "ko": [
+      "대량 정책 규칙을 위한 도구 그룹 정의(group:fs, group:runtime)",
+      "기준선으로 사전 정의된 프로필(minimal, coding, messaging, full) 선택",
+      "프로필 위에 명시적 허용/거부 규칙 추가",
+      "추가 거부 규칙으로 서브에이전트 제한 설정",
+      "정책 매처를 사용하여 런타임에 도구 필터링"
+    ]
   },
   "pros": {
-    "en": ["Flexible pattern matching", "Security by default", "Hierarchical control for subagents", "Profile presets for common roles", "Plugin support via tool groups"],
-    "ko": ["유연한 패턴 매칭", "기본 보안", "서브에이전트를 위한 계층적 제어", "일반 역할을 위한 프로필 프리셋", "도구 그룹을 통한 플러그인 지원"]
+    "en": [
+      "Flexible patterns — wildcards and groups enable concise policies for large tool sets",
+      "Security by default — deny-by-default semantics prevent accidental permission grants",
+      "Hierarchical control — subagents restricted further without modifying parent policies",
+      "Profile presets — common agent types have pre-configured policies",
+      "Plugin support — tool groups can include plugin tools via dynamic discovery"
+    ],
+    "ko": [
+      "유연한 패턴 — 와일드카드와 그룹이 대규모 도구 세트에 대한 간결한 정책 가능",
+      "기본 보안 — 기본 거부 의미론이 실수로 인한 권한 부여 방지",
+      "계층적 제어 — 부모 정책 수정 없이 서브에이전트를 추가로 제한",
+      "프로필 프리셋 — 일반적인 에이전트 유형에 사전 설정된 정책",
+      "플러그인 지원 — 동적 발견을 통해 도구 그룹에 플러그인 도구 포함 가능"
+    ]
   },
   "cons": {
-    "en": ["Pattern complexity can be confusing", "Policy explosion with many agents", "Evaluation order bugs can cause issues", "Related tool decisions are subjective"],
-    "ko": ["패턴 복잡성이 혼란스러울 수 있음", "많은 에이전트로 정책 폭발", "평가 순서 버그가 문제 유발 가능", "관련 도구 결정이 주관적"]
+    "en": [
+      "Pattern complexity — regex-like patterns can be confusing; errors may grant unintended access",
+      "Policy explosion — many agents with different policies can be difficult to manage and audit",
+      "Evaluation order — deny-before-allow precedence must be consistently applied; bugs can cause security issues",
+      "Related tool ambiguity — deciding which tools are 'related' is subjective and may not cover all cases"
+    ],
+    "ko": [
+      "패턴 복잡성 — 정규식 유사 패턴이 혼란스러울 수 있으며 오류가 의도치 않은 접근을 허용할 수 있음",
+      "정책 폭발 — 다른 정책을 가진 많은 에이전트가 관리 및 감사하기 어려울 수 있음",
+      "평가 순서 — 거부 우선 순서가 일관되게 적용되어야 하며 버그가 보안 문제를 유발 가능",
+      "관련 도구 모호성 — 어떤 도구가 '관련된' 것인지 결정이 주관적이며 모든 경우를 포함하지 못할 수 있음"
+    ]
   },
   "tags": ["authorization", "policy", "allowlist", "deny-by-default", "pattern-matching", "subagent-security"]
 }

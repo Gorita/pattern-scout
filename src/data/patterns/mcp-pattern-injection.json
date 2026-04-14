@@ -1,0 +1,59 @@
+{
+  "id": "mcp-pattern-injection",
+  "title": "MCP Pattern Injection",
+  "title_ko": "MCP 패턴 인젝션",
+  "category": "Tool Use & Environment",
+  "status": "validated-in-production",
+  "original_url": "https://github.com/Rajathbharadwaj/langgraph-patterns-mcp",
+  "problem": {
+    "en": "AI coding assistants lack domain-specific knowledge about framework best practices. When building LangGraph agents, developers must repeatedly explain patterns, copy-paste from docs, or watch the AI reinvent suboptimal solutions. The assistant's training data is often outdated relative to fast-moving frameworks.",
+    "ko": "AI 코딩 어시스턴트는 프레임워크 모범 사례에 대한 도메인 특화 지식이 부족합니다. LangGraph 에이전트를 구축할 때 개발자는 패턴을 반복적으로 설명하거나, 문서에서 복사-붙여넣기하거나, AI가 차선의 솔루션을 재발명하는 것을 지켜봐야 합니다. 어시스턴트의 학습 데이터는 빠르게 발전하는 프레임워크에 비해 종종 구식입니다."
+  },
+  "solution": {
+    "en": "Use **MCP (Model Context Protocol) servers** to inject production patterns directly into the AI assistant's context:\n\n1. Create an MCP server that exposes domain patterns as tools and resources\n2. Structure patterns with clear signatures, descriptions, and code snippets\n3. Configure Claude Desktop or Cursor to connect to the MCP server\n4. The AI can now \"call\" patterns on-demand, getting current best practices\n\n```typescript\n// Example: MCP tool that returns a LangGraph pattern\nserver.tool(\"get_pattern\", { name: z.string() }, async ({ name }) => {\n  const pattern = PATTERNS[name];\n  return {\n    content: [{\n      type: \"text\",\n      text: `## ${pattern.title}\\n\\n${pattern.description}\\n\\n\\`\\`\\`python\\n${pattern.code}\\n\\`\\`\\``\n    }]\n  };\n});\n```\n\nThe key insight: MCP servers act as **live documentation** that the AI can query, rather than static context that burns tokens.",
+    "ko": "**MCP(Model Context Protocol) 서버**를 사용하여 프로덕션 패턴을 AI 어시스턴트의 컨텍스트에 직접 주입합니다:\n\n1. 도메인 패턴을 도구와 리소스로 노출하는 MCP 서버를 생성합니다\n2. 명확한 시그니처, 설명, 코드 스니펫으로 패턴을 구조화합니다\n3. Claude Desktop 또는 Cursor를 MCP 서버에 연결하도록 설정합니다\n4. AI가 온디맨드로 패턴을 \"호출\"하여 최신 모범 사례를 얻을 수 있습니다\n\n핵심 통찰: MCP 서버는 토큰을 소모하는 정적 컨텍스트가 아니라 AI가 쿼리할 수 있는 **라이브 문서** 역할을 합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Build MCP servers for any framework your team uses heavily (LangGraph, FastAPI, React patterns)",
+      "Keep patterns small and focused — one pattern per tool call",
+      "Include 'when to use' and 'when NOT to use' guidance in pattern descriptions",
+      "Version your patterns alongside your codebase",
+      "Use npx for easy distribution: npx your-patterns-mcp"
+    ],
+    "ko": [
+      "팀이 많이 사용하는 프레임워크용 MCP 서버 구축 (LangGraph, FastAPI, React 패턴)",
+      "패턴을 작고 집중적으로 유지 — 도구 호출당 하나의 패턴",
+      "패턴 설명에 '사용 시기'와 '사용하지 말아야 할 시기' 가이드 포함",
+      "코드베이스와 함께 패턴 버전 관리",
+      "npx를 사용한 간편 배포: npx your-patterns-mcp"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Always up-to-date patterns",
+      "On-demand retrieval saves context space",
+      "Patterns are structured and tested"
+    ],
+    "ko": [
+      "항상 최신 패턴 유지",
+      "온디맨드 검색으로 컨텍스트 공간 절약",
+      "패턴이 구조화되고 테스트됨"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Requires MCP server setup",
+      "Adds latency for tool calls",
+      "Patterns must be maintained"
+    ],
+    "ko": [
+      "MCP 서버 설정 필요",
+      "도구 호출에 지연 시간 추가",
+      "패턴 유지보수 필요"
+    ]
+  },
+  "ascii_diagram": "┌──────────────┐    ┌─────────────────┐\n│  AI Assistant │◄──►│  MCP Server     │\n│  (Claude/     │    │  ┌───────────┐  │\n│   Cursor)     │    │  │ Pattern 1 │  │\n│               │    │  │ Pattern 2 │  │\n│  \"get_pattern\"│───►│  │ Pattern 3 │  │\n│               │◄───│  │ ...       │  │\n└──────────────┘    │  └───────────┘  │\n                    └─────────────────┘",
+  "mermaid_diagram": "flowchart LR\n    A[AI Assistant] -->|get_pattern| B[MCP Server]\n    B --> C[Domain Patterns]\n    C -->|Pattern Code + Docs| A\n    D[Developer] -->|Ask about framework| A\n    A -->|Best practice code| D",
+  "tags": ["mcp", "code-patterns", "tool-injection", "context-enhancement", "langgraph"]
+}

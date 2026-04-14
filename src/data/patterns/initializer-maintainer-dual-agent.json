@@ -6,27 +6,61 @@
   "status": "validated-in-production",
   "original_url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
   "problem": {
-    "en": "Long-running agent projects face distinct failure modes at different lifecycle stages. Single-agent approaches either over-engineer each session or under-invest in foundations.",
-    "ko": "장기 실행 에이전트 프로젝트는 다른 생명주기 단계에서 별개의 실패 모드에 직면합니다. 단일 에이전트 접근 방식은 각 세션을 과도하게 엔지니어링하거나 기초에 투자를 적게 합니다."
+    "en": "Long-running agent projects face distinct failure modes at different lifecycle stages: project initialization requires comprehensive setup (environment configuration, feature specification, test infrastructure, progress tracking), while incremental development requires reading prior context, selecting tasks, implementing, and verifying repeatedly. Single-agent approaches either over-engineer each session (wasting setup time) or under-invest in foundations (leading to drift and confusion). Session boundaries create context loss, causing agents to restart from scratch or lose track of project state.",
+    "ko": "장기 실행 에이전트 프로젝트는 다른 생명주기 단계에서 별개의 실패 모드에 직면합니다: 프로젝트 초기화에는 포괄적인 설정(환경 구성, 기능 명세, 테스트 인프라, 진행 추적)이 필요하고, 점진적 개발에는 이전 컨텍스트 읽기, 작업 선택, 구현, 검증을 반복해야 합니다. 단일 에이전트 접근 방식은 각 세션을 과도하게 엔지니어링하거나(설정 시간 낭비) 기초에 투자를 적게 합니다(드리프트와 혼란 초래). 세션 경계가 컨텍스트 손실을 만들어 에이전트가 처음부터 다시 시작하거나 프로젝트 상태를 잃어버립니다."
   },
   "solution": {
-    "en": "Use two-agent architecture: Initializer Agent (runs once) creates feature list, progress tracking, and environment setup. Maintainer Agent (subsequent sessions) reads context, selects tasks, implements, and commits.",
-    "ko": "이중 에이전트 아키텍처 사용: 초기화 에이전트(한 번 실행)는 기능 목록, 진행 추적, 환경 설정을 생성합니다. 유지관리 에이전트(후속 세션)는 컨텍스트를 읽고, 작업을 선택하고, 구현하고, 커밋합니다."
+    "en": "Implement a two-agent architecture with lifecycle-specialized responsibilities. (1) Initializer Agent runs once at project start: creates comprehensive feature list with all requirements, establishes progress tracking artifacts (e.g., progress.txt), sets up environment bootstrap scripts (e.g., init.sh), configures testing infrastructure, makes first git commit with foundational structure. (2) Maintainer/Coding Agent runs in subsequent sessions: executes session bootstrapping ritual (verify working directory, read git logs and progress files, read feature list and select next incomplete feature, run bootstrap script, run existing tests), works on one feature at a time, commits after each verified feature, updates progress artifacts.",
+    "ko": "생명주기에 특화된 책임을 가진 이중 에이전트 아키텍처를 구현합니다. (1) 초기화 에이전트는 프로젝트 시작 시 한 번 실행됩니다: 모든 요구사항을 포함한 종합 기능 목록을 생성하고, 진행 추적 산출물(예: progress.txt)을 수립하고, 환경 부트스트랩 스크립트(예: init.sh)를 설정하고, 테스트 인프라를 구성하고, 기초 구조로 첫 번째 git 커밋을 합니다. (2) 유지관리/코딩 에이전트는 후속 세션에서 실행됩니다: 세션 부트스트래핑 의식을 수행하고(작업 디렉토리 확인, git 로그 및 진행 파일 읽기, 기능 목록 읽고 다음 미완료 기능 선택, 부트스트랩 스크립트 실행, 기존 테스트 실행), 한 번에 하나의 기능을 작업하고, 검증된 각 기능 후 커밋하고, 진행 산출물을 업데이트합니다."
   },
   "ascii_diagram": "┌─────────────────────────┐\n│   INITIALIZER AGENT     │\n│     (runs ONCE)         │\n├─────────────────────────┤\n│• Create feature-list.json│\n│• Create init.sh          │\n│• Create progress.txt     │\n│• Initial git commit      │\n└────────────┬────────────┘\n             │\n┌────────────▼────────────┐\n│   MAINTAINER AGENT      │\n│  (each subsequent run)  │\n├─────────────────────────┤\n│1. Read git log + progress│\n│2. Read feature-list      │\n│3. Select next feature    │\n│4. Run init.sh            │\n│5. Implement + test       │\n│6. Update progress        │\n│7. Commit changes         │\n└─────────────────────────┘",
-  "mermaid_diagram": "sequenceDiagram\n    participant Init as Initializer Agent\n    participant FS as Filesystem\n    participant Code as Coding Agent\n    participant Git as Git\n\n    Note over Init: Runs ONCE\n    Init->>FS: Create feature-list.json\n    Init->>FS: Create init.sh\n    Init->>Git: Initial commit\n\n    Note over Code: Each subsequent session\n    loop Session N\n        Code->>Git: Read git log\n        Code->>FS: Read progress.txt\n        Code->>FS: Read feature-list.json\n        Code->>Code: Implement feature\n        Code->>FS: Update progress\n        Code->>Git: Commit\n    end",
+  "mermaid_diagram": "sequenceDiagram\n    participant Init as Initializer Agent\n    participant FS as Filesystem\n    participant Coding as Coding Agent\n    participant Git as Git Repository\n\n    Note over Init: Runs ONCE at project start\n    Init->>FS: Create feature-list.json (all \"passes: false\")\n    Init->>FS: Create init.sh (environment bootstrap)\n    Init->>FS: Create progress.txt (empty log)\n    Init->>Git: Initial commit with foundation\n\n    Note over Coding: Runs in EACH subsequent session\n    loop Session N\n        Coding->>Git: Read git log for context\n        Coding->>FS: Read progress.txt\n        Coding->>FS: Read feature-list.json\n        Coding->>Coding: Select highest-priority incomplete feature\n        Coding->>FS: Run init.sh (start servers)\n        Coding->>Coding: Run E2E tests (verify baseline)\n        Coding->>Coding: Implement single feature\n        Coding->>Coding: Verify feature passes\n        Coding->>FS: Update progress.txt\n        Coding->>Git: Commit changes\n    end",
   "code_example": "# Handoff artifacts structure\n# project/\n# ├── feature-list.json  # All features with pass/fail status\n# ├── progress.txt       # Running log of decisions\n# ├── init.sh            # One-command environment startup\n# └── .git/              # Descriptive commits as context\n\n# Maintainer Agent session bootstrapping ritual:\n# 1. pwd (verify working directory)\n# 2. git log --oneline -10\n# 3. cat progress.txt\n# 4. cat feature-list.json | jq '.features[] | select(.passes==false)'\n# 5. ./init.sh\n# 6. npm test (verify baseline)\n# 7. Implement next feature",
   "when_to_use": {
-    "en": ["Multi-session projects (days/weeks)", "50+ discrete features", "Team using agents for sustained development"],
-    "ko": ["다중 세션 프로젝트 (일/주)", "50개 이상의 개별 기능", "지속적인 개발을 위해 에이전트를 사용하는 팀"]
+    "en": [
+      "Projects requiring many sessions to complete (days/weeks of agent work)",
+      "Complex applications with 50+ discrete features",
+      "Scenarios where context loss between sessions is costly",
+      "Teams using agents for sustained development, not one-shot tasks"
+    ],
+    "ko": [
+      "완료에 여러 세션이 필요한 프로젝트 (일/주 단위의 에이전트 작업)",
+      "50개 이상의 개별 기능이 있는 복잡한 애플리케이션",
+      "세션 간 컨텍스트 손실이 비용이 큰 시나리오",
+      "일회성 작업이 아닌 지속적 개발을 위해 에이전트를 사용하는 팀"
+    ]
   },
   "pros": {
-    "en": ["Clear separation of concerns", "Session bootstrapping prevents context loss", "Git + progress files provide rich context"],
-    "ko": ["명확한 관심사 분리", "세션 부트스트래핑이 컨텍스트 손실 방지", "Git + 진행 파일이 풍부한 컨텍스트 제공"]
+    "en": [
+      "Clear separation of concerns between setup and execution",
+      "Session bootstrapping ritual prevents context loss",
+      "Mirrors effective human team practices (shift handoffs)",
+      "Initializer creates consistent foundation for all future sessions",
+      "Git history + progress files provide rich context for new sessions"
+    ],
+    "ko": [
+      "설정과 실행 사이의 명확한 관심사 분리",
+      "세션 부트스트래핑 의식이 컨텍스트 손실 방지",
+      "효과적인 인간 팀 관행(교대 인수인계)을 반영",
+      "초기화 에이전트가 모든 미래 세션을 위한 일관된 기반 생성",
+      "Git 기록 + 진행 파일이 새 세션에 풍부한 컨텍스트 제공"
+    ]
   },
   "cons": {
-    "en": ["Requires upfront feature specification", "Two prompts to maintain", "Not for exploratory projects"],
-    "ko": ["사전 기능 명세 필요", "유지할 두 개의 프롬프트", "탐색적 프로젝트에 부적합"]
+    "en": [
+      "Requires upfront investment in comprehensive feature specification",
+      "Two different prompts/configurations to maintain",
+      "Initializer must anticipate needs of Coding Agent",
+      "Not suitable for exploratory or research-oriented projects",
+      "Overhead is wasteful for small, single-session tasks"
+    ],
+    "ko": [
+      "종합적 기능 명세에 대한 사전 투자 필요",
+      "유지할 두 개의 다른 프롬프트/구성",
+      "초기화 에이전트가 코딩 에이전트의 요구를 예측해야 함",
+      "탐색적 또는 연구 지향 프로젝트에 부적합",
+      "작은 단일 세션 작업에는 오버헤드가 낭비"
+    ]
   },
-  "tags": ["long-running-agents", "session-handoff", "lifecycle-specialization", "project-bootstrap"]
+  "tags": ["long-running-agents", "session-handoff", "lifecycle-specialization", "project-bootstrap", "incremental-development"]
 }

@@ -6,59 +6,61 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=4rx36wc9ugw",
   "problem": {
-    "en": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind. Traditional product development emphasizes validation and certainty before release, but when the market changes every 3-6 weeks, you can't afford to wait.",
-    "ko": "빠르게 변하는 AI 환경에서 확실성을 기다린 후 구축하면 항상 뒤처집니다. 전통적인 제품 개발은 출시 전 검증과 확실성을 강조하지만, 시장이 3-6주마다 변할 때는 기다릴 여유가 없습니다."
+    "en": "In the rapidly evolving AI landscape, waiting for certainty before building means you're always behind. Traditional product development emphasizes validation and certainty before release, but when the market changes every 3-6 weeks, you can't afford to wait. Expert intuition is unreliable: research across major technology companies shows that 80-90% of product ideas fail to improve key metrics, even when experts are confident they will work (Kohavi et al., 2007). Real-world experimentation beats theoretical analysis.",
+    "ko": "빠르게 변하는 AI 환경에서 확실성을 기다린 후 구축하면 항상 뒤처집니다. 전통적인 제품 개발은 출시 전 검증과 확실성을 강조하지만, 시장이 3-6주마다 변할 때는 기다릴 여유가 없습니다. 전문가 직관은 신뢰할 수 없습니다: 주요 기술 기업 전반의 연구에 따르면 전문가가 확신하더라도 제품 아이디어의 80-90%가 핵심 지표 개선에 실패합니다(Kohavi et al., 2007). 실제 실험이 이론적 분석을 이깁니다."
   },
   "solution": {
-    "en": "Treat shipping as research: release features not because you're certain they'll work, but to learn whether they work. Ship to figure out what works and doesn't. Design for reversibility so features can be easily removed. Embrace rapid addition AND removal of features based on learnings. Users on the frontier appreciate constant evolution.",
-    "ko": "출시를 리서치로 취급합니다: 기능이 작동할 것이라는 확신 때문이 아니라, 작동하는지 배우기 위해 릴리스합니다. 무엇이 효과적인지 파악하기 위해 출시합니다. 기능을 쉽게 제거할 수 있도록 가역성을 고려하여 설계합니다. 학습에 기반한 기능의 빠른 추가와 제거를 수용합니다. 프론티어의 사용자는 지속적인 진화를 높이 평가합니다."
+    "en": "Treat shipping as research: release features not because you're certain they'll work, but to learn whether they work. Ship to figure out what works and doesn't work. Let reality and customer feedback guide your evolution. The frontier is moving so fast that you must ship to discover what works. Analysis and planning can't keep up with the rate of change. Design for reversibility so features can be easily removed. Shipping as research means being willing to both add AND remove features rapidly based on what you learn. Enabling infrastructure like feature flags and gradual rollout mechanisms are essential enablers.",
+    "ko": "출시를 리서치로 취급합니다: 기능이 작동할 것이라는 확신 때문이 아니라, 작동하는지 배우기 위해 릴리스합니다. 무엇이 효과적인지 파악하기 위해 출시합니다. 현실과 고객 피드백이 진화를 안내하게 합니다. 프론티어가 너무 빠르게 움직이고 있어 무엇이 작동하는지 발견하려면 출시해야 합니다. 분석과 계획은 변화 속도를 따라갈 수 없습니다. 기능을 쉽게 제거할 수 있도록 가역성을 고려하여 설계합니다. 출시 자체가 리서치란 학습한 것에 기반하여 기능을 빠르게 추가하고 제거하는 것을 모두 수용하는 것입니다. 기능 플래그와 점진적 롤아웃 메커니즘 같은 지원 인프라가 필수적입니다."
   },
   "when_to_use": {
     "en": [
-      "User base is early adopters who understand experimentation",
-      "Operating on a rapidly evolving frontier like AI agents",
-      "Small enough team to pivot quickly",
-      "Cost of being wrong is low (reversible features)"
+      "Ship before you're certain — doesn't break existing functionality, team believes it's worth trying, can be reversed",
+      "Design for reversibility — minimal dependencies, clean interfaces, no deep coupling",
+      "Communicate experimental nature to users",
+      "Measure everything — usage metrics, success/failure rates, user feedback, performance",
+      "Kill quickly when something isn't working"
     ],
     "ko": [
-      "실험을 이해하는 얼리 어답터 사용자 기반",
-      "AI 에이전트와 같이 빠르게 변하는 프론티어에서 운영",
-      "빠르게 방향 전환할 수 있는 충분히 작은 팀",
-      "틀렸을 때의 비용이 낮은 경우 (가역적 기능)"
+      "확신 전에 출시 — 기존 기능을 깨뜨리지 않고, 팀이 시도할 가치가 있다고 믿으며, 되돌릴 수 있음",
+      "가역성을 위한 설계 — 최소 의존성, 깔끔한 인터페이스, 깊은 결합 없음",
+      "사용자에게 실험적 성격 전달",
+      "모든 것을 측정 — 사용량 지표, 성공/실패율, 사용자 피드백, 성능",
+      "작동하지 않을 때 빠르게 제거"
     ]
   },
   "pros": {
     "en": [
       "Learn faster than competitors waiting for certainty",
       "Real-world validation over theoretical analysis",
-      "User goodwill from being part of the journey",
-      "Agility to pivot quickly when something fails",
+      "User goodwill from frontier users who appreciate being part of the journey",
+      "Agility to pivot quickly when something doesn't work",
       "Discover approaches that planning would miss"
     ],
     "ko": [
       "확실성을 기다리는 경쟁자보다 빠르게 학습",
       "이론적 분석보다 실제 검증",
-      "여정에 참여하는 사용자의 호의",
+      "여정에 참여하는 것을 높이 평가하는 프론티어 사용자의 호의",
       "실패 시 빠른 방향 전환 민첩성",
       "계획으로는 놓칠 수 있는 접근 방식 발견"
     ]
   },
   "cons": {
     "en": [
-      "Some features will be built and then killed",
-      "Constant change can disorient users",
-      "User churn from those preferring stability",
-      "Public failures can damage reputation",
-      "Building throwaway features seems resource-inefficient"
+      "Wasted effort — some features will be built and then killed",
+      "User confusion from constant change",
+      "Churn from users preferring stability over experimentation",
+      "Brand risk from public failures",
+      "Resource inefficiency from building throwaway features"
     ],
     "ko": [
-      "일부 기능은 만들고 나서 제거됨",
-      "지속적 변경이 사용자를 혼란스럽게 할 수 있음",
-      "안정성을 선호하는 사용자의 이탈",
-      "공개적 실패가 평판을 손상시킬 수 있음",
-      "일회성 기능 구축이 자원 비효율적으로 보임"
+      "낭비되는 노력 — 일부 기능은 만들고 나서 제거됨",
+      "지속적 변경으로 인한 사용자 혼란",
+      "실험보다 안정성을 선호하는 사용자의 이탈",
+      "공개적 실패로 인한 브랜드 위험",
+      "일회성 기능 구축으로 인한 자원 비효율"
     ]
   },
-  "mermaid_diagram": "graph TD\n    A[Observation/Insight] --> B{Ship to Learn?}\n    B -->|No, Wait| C[Market Moves On]\n    C --> D[Obsolete Before Starting]\n    B -->|Yes, Ship| E[Get Real Feedback]\n    E --> F{Works?}\n    F -->|Yes| G[Double Down]\n    F -->|No| H[Pivot or Kill]\n    G --> I[Learned What Works]\n    H --> I\n    I --> J[Next Insight]",
+  "mermaid_diagram": "graph TD\n    A[Observation/Insight] --> B{Ship to Learn?}\n    B -->|No, Wait for Certainty| C[Market Moves On]\n    C --> D[Obsolete Before Starting]\n    B -->|Yes, Ship as Research| E[Get Real Feedback]\n    E --> F{Works?}\n    F -->|Yes| G[Double Down]\n    F -->|No| H[Pivot or Kill]\n    G --> I[Learned What Works]\n    H --> I\n    I --> J[Next Insight]",
   "tags": ["research", "experimentation", "rapid-iteration", "learning", "dogfooding", "shipping", "uncertainty"]
 }
