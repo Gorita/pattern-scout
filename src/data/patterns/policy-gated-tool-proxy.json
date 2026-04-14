@@ -1,0 +1,64 @@
+{
+  "id": "policy-gated-tool-proxy",
+  "title": "Policy-Gated Tool Proxy",
+  "title_ko": "정책 기반 도구 프록시",
+  "category": "Security & Safety",
+  "status": "emerging",
+  "original_url": "https://arxiv.org/abs/2506.08837",
+  "problem": {
+    "en": "AI agents call external tools (databases, APIs, file systems) through protocols like MCP. Once an agent has access to a tool server, it can invoke any tool with any arguments. There is no enforcement layer between \"the agent decided to call this tool\" and \"the tool executed.\" This creates three gaps:\n\n1. **No access control** -- agents can call tools they shouldn't (e.g., production DB delete when only reads are authorized).\n2. **No audit trail** -- when something goes wrong, there's no record of what tool calls were made, by which agent, with what arguments.\n3. **No policy enforcement** -- compliance rules (data residency, PII handling, rate limits) can't be enforced at the tool-call boundary.",
+    "ko": "AI 에이전트는 MCP와 같은 프로토콜을 통해 외부 도구(데이터베이스, API, 파일 시스템)를 호출합니다. 에이전트가 도구 서버에 접근 권한을 가지면 어떤 도구든 어떤 인수로든 호출할 수 있습니다. \"에이전트가 이 도구를 호출하기로 결정함\"과 \"도구가 실행됨\" 사이에 강제 계층이 없습니다. 이로 인해 세 가지 공백이 발생합니다:\n\n1. **접근 제어 부재** -- 에이전트가 호출해서는 안 되는 도구를 호출할 수 있습니다 (예: 읽기만 승인된 상태에서 프로덕션 DB 삭제).\n2. **감사 추적 부재** -- 문제 발생 시 어떤 에이전트가 어떤 인수로 어떤 도구 호출을 했는지 기록이 없습니다.\n3. **정책 강제 부재** -- 컴플라이언스 규칙(데이터 상주, PII 처리, 속도 제한)을 도구 호출 경계에서 강제할 수 없습니다."
+  },
+  "solution": {
+    "en": "Place a transparent proxy between the agent and the tool server. The proxy intercepts every tool call, evaluates it against a policy engine, and either forwards the call, blocks it, or routes it through a human approval workflow. Every decision is logged to an append-only audit trail.\n\n**Core components:**\n\n- **Proxy layer**: sits between agent and tool server, speaks the same protocol on both sides (e.g., MCP in, MCP out). The agent doesn't know it's talking to a proxy.\n- **Policy engine**: evaluates each tool call against declarative rules. Rules can match on tool name, argument values, caller identity, time of day, rate limits, or custom predicates.\n- **Decision outcomes**: allow, deny, require-approval (routes to human), transform (modify arguments before forwarding).\n- **Audit log**: append-only record of every tool call, policy evaluation result, and execution outcome. Ideally hash-chained for tamper evidence.",
+    "ko": "에이전트와 도구 서버 사이에 투명한 프록시를 배치합니다. 프록시는 모든 도구 호출을 가로채서 정책 엔진에 대해 평가하고, 호출을 전달하거나 차단하거나 사람 승인 워크플로우로 라우팅합니다. 모든 결정은 추가 전용 감사 로그에 기록됩니다.\n\n**핵심 구성 요소:**\n\n- **프록시 계층**: 에이전트와 도구 서버 사이에 위치하며 양쪽에서 동일한 프로토콜을 사용합니다 (예: MCP 입력, MCP 출력). 에이전트는 프록시와 통신하고 있다는 것을 인식하지 못합니다.\n- **정책 엔진**: 각 도구 호출을 선언적 규칙에 대해 평가합니다. 규칙은 도구 이름, 인수 값, 호출자 ID, 시간대, 속도 제한 또는 사용자 정의 조건으로 매칭할 수 있습니다.\n- **결정 결과**: 허용, 거부, 승인 필요(사람에게 라우팅), 변환(전달 전 인수 수정).\n- **감사 로그**: 모든 도구 호출, 정책 평가 결과, 실행 결과의 추가 전용 기록. 위변조 방지를 위해 해시 체인 방식이 이상적입니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Multi-agent systems where different agents need different tool permissions",
+      "Regulated environments (finance, healthcare) requiring audit trails",
+      "Production deployments where certain tool calls need human sign-off",
+      "Any setup where \"the agent has MCP access\" is too coarse-grained"
+    ],
+    "ko": [
+      "서로 다른 에이전트가 서로 다른 도구 권한이 필요한 멀티 에이전트 시스템",
+      "감사 추적이 필요한 규제 환경 (금융, 의료)",
+      "특정 도구 호출에 사람 승인이 필요한 프로덕션 배포",
+      "\"에이전트에 MCP 접근 권한\"이 너무 광범위한 모든 환경"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Transparent to both agent and tool server -- no code changes on either side",
+      "Policies are declarative and auditable, not buried in agent prompts",
+      "Hash-chained audit logs provide tamper-evident compliance records",
+      "Can enforce rate limits, data residency, and PII rules at the boundary",
+      "Composable with other patterns (human-in-the-loop, observability)"
+    ],
+    "ko": [
+      "에이전트와 도구 서버 양쪽에 투명 -- 양쪽 모두 코드 변경 불필요",
+      "정책이 선언적이고 감사 가능하며 에이전트 프롬프트에 매몰되지 않음",
+      "해시 체인 감사 로그로 위변조 방지 컴플라이언스 기록 제공",
+      "경계에서 속도 제한, 데이터 상주, PII 규칙 강제 가능",
+      "다른 패턴과 조합 가능 (휴먼인더루프, 관측 가능성)"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Adds latency to every tool call (policy evaluation + logging)",
+      "Policy rules require maintenance as tools and requirements evolve",
+      "Human approval flows introduce blocking waits and availability dependencies",
+      "Cannot catch policy violations that span multiple tool calls (need higher-level orchestration for that)",
+      "Proxy must be as available as the tool servers it fronts"
+    ],
+    "ko": [
+      "모든 도구 호출에 지연 시간 추가 (정책 평가 + 로깅)",
+      "도구와 요구사항 변화에 따라 정책 규칙 유지보수 필요",
+      "사람 승인 흐름이 차단 대기와 가용성 의존성 도입",
+      "여러 도구 호출에 걸친 정책 위반 포착 불가 (상위 오케스트레이션 필요)",
+      "프록시의 가용성이 프런트에 있는 도구 서버만큼 높아야 함"
+    ]
+  },
+  "mermaid_diagram": "sequenceDiagram\n    participant Agent\n    participant Proxy as Policy-Gated Proxy\n    participant Policy as Policy Engine\n    participant Human as Human (optional)\n    participant Tool as Tool Server\n\n    Agent->>Proxy: call_tool(name, args)\n    Proxy->>Policy: evaluate(tool, args, caller)\n    alt Allowed\n        Policy->>Proxy: ALLOW\n        Proxy->>Tool: forward call\n        Tool->>Proxy: result\n        Proxy->>Proxy: log(call, ALLOW, result)\n        Proxy->>Agent: result\n    else Denied\n        Policy->>Proxy: DENY(reason)\n        Proxy->>Proxy: log(call, DENY, reason)\n        Proxy->>Agent: error(policy_violation)\n    else Requires Approval\n        Policy->>Proxy: REQUIRE_APPROVAL\n        Proxy->>Human: approval request\n        Human->>Proxy: approve/reject\n        Proxy->>Proxy: log(call, APPROVAL_RESULT)\n        Proxy->>Tool: forward if approved\n        Tool->>Proxy: result\n        Proxy->>Agent: result or rejection\n    end",
+  "tags": ["governance", "policy-engine", "mcp", "audit-trail", "tool-proxy", "access-control", "compliance"]
+}

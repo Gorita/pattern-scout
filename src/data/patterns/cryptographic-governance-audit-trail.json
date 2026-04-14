@@ -1,0 +1,57 @@
+{
+  "id": "cryptographic-governance-audit-trail",
+  "title": "Cryptographic Governance Audit Trail",
+  "title_ko": "암호화 거버넌스 감사 추적",
+  "category": "Security & Safety",
+  "status": "emerging",
+  "original_url": "https://github.com/jagmarques/asqav-sdk",
+  "problem": {
+    "en": "When AI agents execute tool calls autonomously, there is no tamper-evident record of what happened. Traditional logging is mutable - logs can be altered after the fact. In regulated environments (finance, healthcare, EU AI Act), teams need to prove exactly what an agent did, when, and whether it operated within policy. Without cryptographic guarantees, audit trails have no legal or compliance weight.",
+    "ko": "AI 에이전트가 자율적으로 도구를 호출할 때, 무슨 일이 일어났는지에 대한 변조 방지 기록이 존재하지 않습니다. 전통적인 로깅은 변경 가능하여 사후에 로그가 조작될 수 있습니다. 규제 환경(금융, 의료, EU AI Act)에서는 에이전트가 정확히 무엇을 했는지, 언제 했는지, 정책 범위 내에서 운영되었는지 증명해야 합니다. 암호화 보장이 없으면 감사 추적은 법적 또는 컴플라이언스 효력이 없습니다."
+  },
+  "solution": {
+    "en": "Sign every agent action with a post-quantum digital signature (ML-DSA) at the point of execution. Each tool call produces a signed receipt containing the action, parameters, result hash, timestamp, and policy evaluation outcome. These receipts form an append-only chain that is tamper-evident by construction. The governance layer operates as middleware that wraps the agent tool-calling interface: (1) Pre-execution: Check the tool call against a policy file, (2) Execution: Run the tool call normally, (3) Post-execution: Sign the action receipt with ML-DSA and append to the audit trail.",
+    "ko": "실행 시점에서 모든 에이전트 동작에 포스트 양자 디지털 서명(ML-DSA)을 적용합니다. 각 도구 호출은 동작, 매개변수, 결과 해시, 타임스탬프, 정책 평가 결과를 포함하는 서명된 영수증을 생성합니다. 이러한 영수증은 구조적으로 변조가 불가능한 추가 전용 체인을 형성합니다. 거버넌스 레이어는 에이전트 도구 호출 인터페이스를 래핑하는 미들웨어로 동작합니다: (1) 실행 전: 정책 파일에 대해 도구 호출을 확인, (2) 실행: 도구 호출을 정상적으로 실행, (3) 실행 후: ML-DSA로 동작 영수증에 서명하고 감사 추적에 추가합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Any agent framework that supports tool-calling middleware (LangChain, CrewAI, MCP, etc.)",
+      "Regulated environments requiring tamper-evident audit trails",
+      "EU AI Act Article 12 (record-keeping) and SOC2 audit evidence",
+      "Policy enforcement with allowed tools, rate limits, and data access rules"
+    ],
+    "ko": [
+      "도구 호출 미들웨어를 지원하는 에이전트 프레임워크 (LangChain, CrewAI, MCP 등)",
+      "변조 방지 감사 추적이 필요한 규제 환경",
+      "EU AI Act 제12조 (기록 보존) 및 SOC2 감사 증거",
+      "허용 도구, 속도 제한, 데이터 접근 규칙에 대한 정책 시행"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Tamper-evident audit trail",
+      "Policy enforcement before execution",
+      "Quantum-safe signatures",
+      "Framework-agnostic"
+    ],
+    "ko": [
+      "변조 방지 감사 추적",
+      "실행 전 정책 시행",
+      "양자 안전 서명",
+      "프레임워크 무관"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Adds latency to each tool call (signing overhead)",
+      "Requires key management",
+      "Receipt storage grows linearly with agent activity"
+    ],
+    "ko": [
+      "각 도구 호출에 지연 추가 (서명 오버헤드)",
+      "키 관리 필요",
+      "에이전트 활동에 비례하여 영수증 저장소 선형 증가"
+    ]
+  },
+  "tags": ["governance", "audit-trail", "compliance", "cryptographic-signing", "policy-enforcement", "eu-ai-act", "owasp"]
+}

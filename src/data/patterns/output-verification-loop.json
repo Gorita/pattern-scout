@@ -1,0 +1,57 @@
+{
+  "id": "output-verification-loop",
+  "title": "Output Verification Loop",
+  "title_ko": "출력 검증 루프",
+  "category": "Reliability & Eval",
+  "status": "emerging",
+  "original_url": "https://github.com/veroq-ai/shield",
+  "problem": {
+    "en": "LLM agents confidently produce outputs that contain factual errors, hallucinated citations, or unsupported claims. In multi-agent pipelines the problem compounds: one agent's hallucination becomes another agent's input. Standard reflection loops catch stylistic issues but lack grounding against external evidence, so factual errors pass through unchallenged.",
+    "ko": "LLM 에이전트는 사실 오류, 환각된 인용, 또는 근거 없는 주장을 포함한 출력을 자신 있게 생성합니다. 멀티 에이전트 파이프라인에서는 문제가 증폭됩니다: 한 에이전트의 환각이 다른 에이전트의 입력이 됩니다. 표준 리플렉션 루프는 스타일 문제는 포착하지만 외부 증거에 대한 근거 검증이 없어 사실 오류가 이의 없이 통과됩니다."
+  },
+  "solution": {
+    "en": "Insert a verification step between generation and action. The step works in three phases:\n\n1. **Claim extraction** -- decompose the LLM output into individual, atomic claims.\n2. **Evidence retrieval** -- for each claim, retrieve supporting or contradicting evidence from authoritative sources (APIs, knowledge bases, RAG stores).\n3. **Scoring** -- assign a per-claim trust score based on evidence alignment and return an aggregate confidence for the full output.\n\nThe agent (or orchestrator) uses the scores to decide whether to proceed, retry with a corrected prompt, or escalate to a human.\n\n```pseudo\noutput = agent.generate(prompt)\nresult = verify(output, context)\n\nif result.trust_score >= threshold:\n    proceed(output)\nelse:\n    retry_with_feedback(result.flagged_claims)\n```\n\nIn multi-agent systems, run verification at each hand-off between agents so errors don't propagate through the pipeline. Verification receipts (signed, timestamped results) provide an audit trail for compliance.",
+    "ko": "생성과 실행 사이에 검증 단계를 삽입합니다. 이 단계는 세 가지 단계로 동작합니다:\n\n1. **주장 추출** -- LLM 출력을 개별 원자적 주장으로 분해합니다.\n2. **증거 검색** -- 각 주장에 대해 권위 있는 출처(API, 지식 베이스, RAG 저장소)에서 지지 또는 반박 증거를 검색합니다.\n3. **점수 산정** -- 증거 정합성을 기반으로 주장별 신뢰 점수를 부여하고 전체 출력에 대한 종합 신뢰도를 반환합니다.\n\n에이전트(또는 오케스트레이터)는 점수를 사용하여 진행, 수정된 프롬프트로 재시도, 또는 사람에게 에스컬레이션할지 결정합니다. 멀티 에이전트 시스템에서는 에이전트 간 전달 시점마다 검증을 실행하여 오류가 파이프라인을 통해 전파되지 않도록 합니다. 검증 영수증(서명된 타임스탬프 결과)은 컴플라이언스를 위한 감사 추적을 제공합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Place a verification call after any agent step that produces factual claims others will depend on",
+      "Set a trust-score threshold appropriate to the domain (higher for medical/financial, lower for exploratory research)",
+      "In a swarm or multi-agent pipeline, verify at every agent boundary rather than only at the final output",
+      "Store verification receipts when you need a compliance audit trail"
+    ],
+    "ko": [
+      "다른 에이전트가 의존할 사실적 주장을 생성하는 에이전트 단계 이후 검증 호출 배치",
+      "도메인에 적합한 신뢰 점수 임계값 설정 (의료/금융은 높게, 탐색적 연구는 낮게)",
+      "스웜 또는 멀티 에이전트 파이프라인에서 최종 출력뿐 아니라 모든 에이전트 경계에서 검증",
+      "컴플라이언스 감사 추적이 필요한 경우 검증 영수증 저장"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Catches factual errors that reflection loops miss",
+      "Provides quantified confidence rather than binary pass/fail",
+      "Audit trail via receipts",
+      "Composable across multi-agent pipelines"
+    ],
+    "ko": [
+      "리플렉션 루프가 놓치는 사실 오류 포착",
+      "이진 합격/불합격이 아닌 정량화된 신뢰도 제공",
+      "영수증을 통한 감사 추적",
+      "멀티 에이전트 파이프라인 전반에 걸쳐 조합 가능"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Adds latency per verification call",
+      "Evidence quality bounds verification quality",
+      "Requires an evidence source relevant to the domain"
+    ],
+    "ko": [
+      "검증 호출당 지연 시간 추가",
+      "증거 품질이 검증 품질의 상한을 결정",
+      "도메인에 관련된 증거 소스 필요"
+    ]
+  },
+  "tags": ["verification", "hallucination-detection", "trust-scores", "fact-checking", "multi-agent"]
+}

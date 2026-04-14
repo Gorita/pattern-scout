@@ -1,0 +1,62 @@
+{
+  "id": "unified-tool-gateway",
+  "title": "Unified Tool Gateway",
+  "title_ko": "통합 도구 게이트웨이",
+  "category": "Tool Use & Environment",
+  "status": "emerging",
+  "original_url": "https://microservices.io/patterns/apigateway.html",
+  "problem": {
+    "en": "As agent capabilities grow, they need access to an expanding set of external tools -- web search, image generation, competitor research, security scanning, video production, and more. Each tool typically requires its own API key, authentication flow, rate-limiting logic, and billing integration.\n\nThis creates several compounding problems:\n\n* **Credential sprawl**: Agents or their operators must manage dozens of API keys across different providers, each with different authentication schemes.\n* **Integration tax**: Every new tool requires custom integration code -- error handling, retries, schema translation, and response normalization.\n* **Billing fragmentation**: Usage is scattered across many provider dashboards, making cost tracking and budget enforcement difficult.\n* **Discovery overhead**: Agents have no unified way to find what tools are available or what capabilities they can access.",
+    "ko": "에이전트의 능력이 성장함에 따라 점점 더 많은 외부 도구에 대한 접근이 필요합니다 -- 웹 검색, 이미지 생성, 경쟁사 조사, 보안 스캐닝, 영상 제작 등. 각 도구는 일반적으로 자체 API 키, 인증 흐름, 속도 제한 로직, 과금 통합이 필요합니다.\n\n이로 인해 여러 복합적인 문제가 발생합니다:\n\n* **자격 증명 확산**: 에이전트 또는 운영자가 서로 다른 인증 체계를 가진 수십 개의 API 키를 관리해야 합니다.\n* **통합 세금**: 새 도구마다 오류 처리, 재시도, 스키마 변환, 응답 정규화를 위한 커스텀 통합 코드가 필요합니다.\n* **과금 파편화**: 사용량이 여러 제공자 대시보드에 분산되어 비용 추적과 예산 집행이 어렵습니다.\n* **탐색 오버헤드**: 에이전트가 사용 가능한 도구와 접근 가능한 기능을 찾는 통합된 방법이 없습니다."
+  },
+  "solution": {
+    "en": "Place a single gateway between the agent and all external tool providers. The gateway handles discovery, authentication, routing, execution, and billing -- exposing a uniform interface to the agent regardless of the underlying provider.\n\nThe pattern works through four layers:\n\n1. **Discovery layer**: A unified registry where agents query available tools and their capabilities via a single endpoint or protocol (e.g., MCP `tools/list`).\n2. **Authentication layer**: The gateway holds provider credentials on behalf of the agent. The agent authenticates once to the gateway; the gateway handles per-provider auth.\n3. **Routing layer**: Incoming tool calls are routed to the correct provider, with schema translation if needed. Long-running tools are dispatched to async workers.\n4. **Metering layer**: Every call is logged, metered, and billed through a single system, enabling budget caps and usage visibility.",
+    "ko": "에이전트와 모든 외부 도구 제공자 사이에 단일 게이트웨이를 배치합니다. 게이트웨이는 탐색, 인증, 라우팅, 실행, 과금을 처리하며 -- 기반 제공자와 무관하게 에이전트에 균일한 인터페이스를 노출합니다.\n\n이 패턴은 네 가지 계층을 통해 동작합니다:\n\n1. **탐색 계층**: 에이전트가 단일 엔드포인트 또는 프로토콜(예: MCP `tools/list`)을 통해 사용 가능한 도구와 기능을 조회하는 통합 레지스트리입니다.\n2. **인증 계층**: 게이트웨이가 에이전트를 대신하여 제공자 자격 증명을 보유합니다. 에이전트는 게이트웨이에 한 번만 인증하고, 게이트웨이가 제공자별 인증을 처리합니다.\n3. **라우팅 계층**: 수신된 도구 호출이 올바른 제공자로 라우팅되며, 필요시 스키마 변환이 이루어집니다. 장시간 실행 도구는 비동기 워커로 디스패치됩니다.\n4. **미터링 계층**: 모든 호출이 단일 시스템을 통해 로깅, 측정, 과금되어 예산 한도와 사용량 가시성을 지원합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Teams deploying agents that need 10+ external capabilities",
+      "Platforms offering tool access to multiple agents or users",
+      "Scenarios requiring centralized billing, rate limiting, or audit logging"
+    ],
+    "ko": [
+      "10개 이상의 외부 기능이 필요한 에이전트를 배포하는 팀",
+      "여러 에이전트 또는 사용자에게 도구 접근을 제공하는 플랫폼",
+      "중앙 집중식 과금, 속도 제한 또는 감사 로깅이 필요한 시나리오"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Agents integrate once rather than per-provider -- dramatically reduces integration surface",
+      "Centralized billing and usage tracking across all tools",
+      "New tools become available to all agents without code changes",
+      "Single point for rate limiting, logging, and access control",
+      "Credential isolation -- agents never see raw provider API keys"
+    ],
+    "ko": [
+      "에이전트가 제공자별이 아닌 한 번만 통합 -- 통합 표면 대폭 감소",
+      "모든 도구에 대한 중앙 집중식 과금 및 사용량 추적",
+      "코드 변경 없이 새 도구를 모든 에이전트에 제공",
+      "속도 제한, 로깅, 접근 제어를 위한 단일 지점",
+      "자격 증명 격리 -- 에이전트가 원시 제공자 API 키를 볼 수 없음"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Single point of failure -- gateway outage blocks all tool access",
+      "Added latency from the extra network hop through the gateway",
+      "Cost markup -- gateway operators typically add a fee on top of provider costs",
+      "Vendor lock-in risk if the gateway uses proprietary protocols",
+      "Less control over provider-specific features or optimizations"
+    ],
+    "ko": [
+      "단일 장애 지점 -- 게이트웨이 장애 시 모든 도구 접근 차단",
+      "게이트웨이를 경유하는 추가 네트워크 홉으로 인한 지연 추가",
+      "비용 마크업 -- 게이트웨이 운영자가 제공자 비용 위에 수수료 추가",
+      "게이트웨이가 독점 프로토콜을 사용하면 벤더 종속 위험",
+      "제공자별 기능이나 최적화에 대한 제어 감소"
+    ]
+  },
+  "mermaid_diagram": "graph TD\n    A[AI Agent] -->|Single API Key| B[Tool Gateway]\n    B --> C{Router}\n    C --> D[Web Search Provider]\n    C --> E[Image Generation Provider]\n    C --> F[Security Scanner]\n    C --> G[Video Production]\n    C --> H[... N Providers]\n    B --> I[Discovery Registry]\n    B --> J[Usage Metering]\n    B --> K[Credential Vault]",
+  "tags": ["tool-gateway", "mcp", "tool-aggregation", "agent-tooling", "api-gateway", "tool-routing"]
+}

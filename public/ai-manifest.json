@@ -1863,6 +1863,41 @@
     "related": []
   },
   {
+    "id": "deterministic-zero-llm-orchestration",
+    "title": "Deterministic Zero-LLM Orchestration",
+    "title_ko": "결정론적 제로 LLM 오케스트레이션",
+    "category": "Orchestration & Control",
+    "description": "Multi-agent coding systems typically spend LLM tokens on coordination — deciding which agent works on what, routing tasks, merging results Keep the orchestrator as deterministic Python code that spend",
+    "problem": "Multi-agent coding systems typically spend LLM tokens on coordination — deciding which agent works on what, routing tasks, merging results. This coordination overhead adds cost, latency, and non-determinism where none is needed.",
+    "solution": "Keep the orchestrator as deterministic Python code that spends zero LLM tokens on coordination. The LLM budget goes entirely to the agents doing actual work. The orchestrator handles task decomposition via rule-based planning, agent assignment and parallel spawning, result verification through test execution, and git operations (branching, merging, committing). Agents handle code generation, problem solving, and implementation decisions.",
+    "when_to_use": [
+      "Multi-agent coding systems where coordination does not require LLM judgment",
+      "CI pipelines running in headless mode",
+      "Self-evolution mode for proposing and sandboxing improvements",
+      "Projects with well-defined structure suitable for rule-based planning"
+    ],
+    "pros": [
+      "Predictable coordination cost (zero LLM tokens)",
+      "Deterministic behavior — same goal produces same task breakdown",
+      "Faster iteration — no waiting for LLM to decide what to do next",
+      "Supports heterogeneous agents (Claude Code, Codex CLI, Gemini CLI, Qwen)"
+    ],
+    "cons": [
+      "Rigid decomposition — can't handle ambiguous goals that need LLM judgment to split",
+      "Requires well-defined project structure for rule-based planning",
+      "Less adaptive than LLM-routed orchestration for novel task types"
+    ],
+    "tags": [
+      "orchestration",
+      "multi-agent",
+      "parallel-execution",
+      "deterministic",
+      "test-driven",
+      "zero-llm-overhead"
+    ],
+    "related": []
+  },
+  {
     "id": "discrete-phase-separation",
     "title": "Discrete Phase Separation",
     "title_ko": "분리된 단계 분리",
@@ -2773,6 +2808,42 @@
     "related": []
   },
   {
+    "id": "signal-driven-agent-activation",
+    "title": "Signal-Driven Agent Activation",
+    "title_ko": "시그널 기반 에이전트 활성화",
+    "category": "Orchestration & Control",
+    "description": "Most agent workflows are command-driven: a user types a prompt, the agent acts Decouple agent activation from user commands by introducing a signal layer between external data sources and agent workfl",
+    "problem": "Most agent workflows are command-driven: a user types a prompt, the agent acts. This creates a bottleneck -- the agent only works when someone tells it to.\n\nIn domains like sales, security, DevOps, and finance, the right moment to act is determined by external signals (a prospect visits a pricing page, a CVE drops, a deployment fails, a stock hits a threshold). By the time a human notices and prompts the agent, the window has often closed.\n\nPolling dashboards or relying on human triage doesn't scale. The agent needs a mechanism to watch for signals and self-activate when conditions are met.",
+    "solution": "Decouple agent activation from user commands by introducing a signal layer between external data sources and agent workflows.\n\nThe pattern has three components:\n\n### 1. Signal Collector\nA background process that monitors external sources and emits structured events. Signal sources can be webhooks, RSS feeds, API polling, log tails, or message queues. The collector normalizes them into a common event schema.\n\n### 2. Activation Rules\nA declarative rule set that maps signals to workflows. Rules include cooldown periods to prevent repeated activation on the same entity, and condition filters to set activation thresholds.\n\n### 3. Workflow Dispatch\nWhen a rule fires, the agent receives the signal payload as context and executes a predefined workflow. The agent has full autonomy within the workflow scope but cannot exceed it -- activation rules act as guardrails.",
+    "when_to_use": [
+      "DevOps: Monitor deployment logs, detect anomalies, trigger rollback investigation",
+      "Security: Watch CVE feeds, match against dependency list, open remediation PRs",
+      "Sales: Track intent signals, enrich matching accounts, initiate outreach",
+      "Finance: Monitor price feeds, detect threshold crossings, execute hedging strategy"
+    ],
+    "pros": [
+      "Agents act at the right moment without human triage",
+      "Scales to signal volumes no human team can monitor",
+      "Composable -- new signal sources and workflows plug in independently",
+      "Auditable -- every action traces back to a specific signal event"
+    ],
+    "cons": [
+      "False positives trigger unnecessary workflows (noisy signals waste resources)",
+      "Requires upfront investment in signal normalization",
+      "Debugging chains (signal → rule → workflow) is harder than debugging direct commands",
+      "Risk of runaway activation if cooldowns and rate limits aren't enforced",
+      "Cold-start problem: rules need tuning before they're useful"
+    ],
+    "tags": [
+      "signals",
+      "event-driven",
+      "automation",
+      "orchestration",
+      "reactive"
+    ],
+    "related": []
+  },
+  {
     "id": "specification-driven-agent-development",
     "title": "Specification-Driven Agent Development",
     "title_ko": "명세 기반 에이전트 개발",
@@ -3207,6 +3278,42 @@
     "related": []
   },
   {
+    "id": "agent-circuit-breaker",
+    "title": "Agent Circuit Breaker",
+    "title_ko": "에이전트 서킷 브레이커",
+    "category": "Reliability & Eval",
+    "description": "Agents that use external tools — APIs, databases, web scrapers, code executors — face a common failure mode: a tool endpoint becomes degraded or unavailable, and the agent keeps calling it, burning to",
+    "problem": "Agents that use external tools — APIs, databases, web scrapers, code executors — face a common failure mode: a tool endpoint becomes degraded or unavailable, and the agent keeps calling it, burning tokens on retries that will never succeed. This creates three cascading problems: token waste from each failed tool call, latency amplification from sequential retries on a dead endpoint, and cascading failure where the agent stalls entirely instead of using alternative approaches.",
+    "solution": "Apply the classic Circuit Breaker pattern from distributed systems to agent tool invocations. The circuit breaker wraps each tool call and tracks failure rates, transitioning between three states: Closed (tool calls pass through normally, failures are counted), Open (tool calls are blocked immediately, returns a cached error or fallback), and Half-Open (one probe call is allowed through; if it succeeds, reset to Closed, if it fails, return to Open). Agent-specific adaptations include token-aware thresholds, fallback routing, per-tool granularity, and session-scoped state.",
+    "when_to_use": [
+      "Agent uses 3+ external tools that can independently fail",
+      "Tools have variable reliability (APIs with rate limits, web scrapers, third-party services)",
+      "Agent sessions are long enough that a tool may recover mid-session"
+    ],
+    "pros": [
+      "Prevents token waste from futile retries on broken tools",
+      "Enables graceful degradation — agent continues working with available tools",
+      "Self-healing: half-open probes restore tools automatically when they recover",
+      "Simple to implement (~50 lines of core logic)",
+      "Session-scoped state avoids the state management complexity of persistent breakers"
+    ],
+    "cons": [
+      "Adds a layer of indirection around tool calls",
+      "Threshold tuning requires understanding each tool's failure characteristics",
+      "May mask intermittent errors that would naturally resolve with a single retry",
+      "Agent must be prompted to handle CircuitOpenError gracefully (fallback awareness)",
+      "Not useful for agents with only 1-2 highly reliable tools"
+    ],
+    "tags": [
+      "circuit-breaker",
+      "fault-tolerance",
+      "tool-reliability",
+      "graceful-degradation",
+      "resilience"
+    ],
+    "related": []
+  },
+  {
     "id": "anti-reward-hacking-grader-design",
     "title": "Anti-Reward-Hacking Grader Design",
     "title_ko": "보상 해킹 방지 평가기 설계",
@@ -3543,6 +3650,40 @@
     "related": []
   },
   {
+    "id": "output-verification-loop",
+    "title": "Output Verification Loop",
+    "title_ko": "출력 검증 루프",
+    "category": "Reliability & Eval",
+    "description": "LLM agents confidently produce outputs that contain factual errors, hallucinated citations, or unsupported claims Insert a verification step between generation and action",
+    "problem": "LLM agents confidently produce outputs that contain factual errors, hallucinated citations, or unsupported claims. In multi-agent pipelines the problem compounds: one agent's hallucination becomes another agent's input. Standard reflection loops catch stylistic issues but lack grounding against external evidence, so factual errors pass through unchallenged.",
+    "solution": "Insert a verification step between generation and action. The step works in three phases:\n\n1. **Claim extraction** -- decompose the LLM output into individual, atomic claims.\n2. **Evidence retrieval** -- for each claim, retrieve supporting or contradicting evidence from authoritative sources (APIs, knowledge bases, RAG stores).\n3. **Scoring** -- assign a per-claim trust score based on evidence alignment and return an aggregate confidence for the full output.\n\nThe agent (or orchestrator) uses the scores to decide whether to proceed, retry with a corrected prompt, or escalate to a human.\n\n```pseudo\noutput = agent.generate(prompt)\nresult = verify(output, context)\n\nif result.trust_score >= threshold:\n    proceed(output)\nelse:\n    retry_with_feedback(result.flagged_claims)\n```\n\nIn multi-agent systems, run verification at each hand-off between agents so errors don't propagate through the pipeline. Verification receipts (signed, timestamped results) provide an audit trail for compliance.",
+    "when_to_use": [
+      "Place a verification call after any agent step that produces factual claims others will depend on",
+      "Set a trust-score threshold appropriate to the domain (higher for medical/financial, lower for exploratory research)",
+      "In a swarm or multi-agent pipeline, verify at every agent boundary rather than only at the final output",
+      "Store verification receipts when you need a compliance audit trail"
+    ],
+    "pros": [
+      "Catches factual errors that reflection loops miss",
+      "Provides quantified confidence rather than binary pass/fail",
+      "Audit trail via receipts",
+      "Composable across multi-agent pipelines"
+    ],
+    "cons": [
+      "Adds latency per verification call",
+      "Evidence quality bounds verification quality",
+      "Requires an evidence source relevant to the domain"
+    ],
+    "tags": [
+      "verification",
+      "hallucination-detection",
+      "trust-scores",
+      "fact-checking",
+      "multi-agent"
+    ],
+    "related": []
+  },
+  {
     "id": "wfgy-reliability-problem-map",
     "title": "Reliability Problem Map Checklist for RAG and Agents",
     "title_ko": "RAG 및 에이전트를 위한 신뢰성 문제 지도 체크리스트",
@@ -3793,6 +3934,76 @@
     "related": []
   },
   {
+    "id": "cryptographic-governance-audit-trail",
+    "title": "Cryptographic Governance Audit Trail",
+    "title_ko": "암호화 거버넌스 감사 추적",
+    "category": "Security & Safety",
+    "description": "When AI agents execute tool calls autonomously, there is no tamper-evident record of what happened Sign every agent action with a post-quantum digital signature (ML-DSA) at the point of execution",
+    "problem": "When AI agents execute tool calls autonomously, there is no tamper-evident record of what happened. Traditional logging is mutable - logs can be altered after the fact. In regulated environments (finance, healthcare, EU AI Act), teams need to prove exactly what an agent did, when, and whether it operated within policy. Without cryptographic guarantees, audit trails have no legal or compliance weight.",
+    "solution": "Sign every agent action with a post-quantum digital signature (ML-DSA) at the point of execution. Each tool call produces a signed receipt containing the action, parameters, result hash, timestamp, and policy evaluation outcome. These receipts form an append-only chain that is tamper-evident by construction. The governance layer operates as middleware that wraps the agent tool-calling interface: (1) Pre-execution: Check the tool call against a policy file, (2) Execution: Run the tool call normally, (3) Post-execution: Sign the action receipt with ML-DSA and append to the audit trail.",
+    "when_to_use": [
+      "Any agent framework that supports tool-calling middleware (LangChain, CrewAI, MCP, etc.)",
+      "Regulated environments requiring tamper-evident audit trails",
+      "EU AI Act Article 12 (record-keeping) and SOC2 audit evidence",
+      "Policy enforcement with allowed tools, rate limits, and data access rules"
+    ],
+    "pros": [
+      "Tamper-evident audit trail",
+      "Policy enforcement before execution",
+      "Quantum-safe signatures",
+      "Framework-agnostic"
+    ],
+    "cons": [
+      "Adds latency to each tool call (signing overhead)",
+      "Requires key management",
+      "Receipt storage grows linearly with agent activity"
+    ],
+    "tags": [
+      "governance",
+      "audit-trail",
+      "compliance",
+      "cryptographic-signing",
+      "policy-enforcement",
+      "eu-ai-act",
+      "owasp"
+    ],
+    "related": []
+  },
+  {
+    "id": "denial-tracking-permission-escalation",
+    "title": "Denial Tracking & Permission Escalation",
+    "title_ko": "거부 추적 및 권한 에스컬레이션",
+    "category": "Security & Safety",
+    "description": "When agents run in non-interactive contexts (background jobs, CI/CD pipelines, headless mode), every permission prompt is typically auto-denied Maintain a per-tool denial counter scoped to the current",
+    "problem": "When agents run in non-interactive contexts (background jobs, CI/CD pipelines, headless mode), every permission prompt is typically auto-denied. If the agent keeps attempting the same blocked tool, it wastes its iteration budget retrying an action that will never succeed. This leads to silent failures, stalled tasks, and burned compute with no progress. Even in interactive mode, a user who repeatedly denies a specific tool creates the same loop: the agent tries, gets denied, tries again with a slightly different argument, and gets denied again.",
+    "solution": "Maintain a per-tool denial counter scoped to the current conversation. After a configurable threshold of denials (typically 3), escalate instead of retrying. In interactive mode, prompt the user for blanket permission (e.g., 'Bash has been denied 3 times. Allow all Bash for this session?'). In non-interactive mode, switch to a fallback strategy (use a different tool, skip the step, or abort with a clear error). When escalation triggers and the user grants blanket permission, add the tool to alwaysAllowRules for the remainder of the session and reset the counter.",
+    "when_to_use": [
+      "Background or headless agent runners where prompts are auto-denied",
+      "CI/CD agents that need certain tools to complete their task",
+      "Long-running interactive sessions where approval fatigue is likely"
+    ],
+    "pros": [
+      "Prevents wasted iteration loops",
+      "Surfaces the real blocker early",
+      "Reduces approval fatigue in interactive mode",
+      "Trivial to implement (a counter and a branch)"
+    ],
+    "cons": [
+      "Blanket session permissions widen the attack surface after escalation",
+      "Threshold tuning requires experimentation",
+      "Fallback strategies must be defined per tool, adding configuration overhead"
+    ],
+    "tags": [
+      "permissions",
+      "denial-tracking",
+      "escalation",
+      "background-agents",
+      "non-interactive",
+      "safety"
+    ],
+    "related": []
+  },
+  {
     "id": "deterministic-security-scanning-build-loop",
     "title": "Deterministic Security Scanning Build Loop",
     "title_ko": "결정론적 보안 스캔 빌드 루프",
@@ -3823,6 +4034,46 @@
       "backpressure",
       "static-analysis",
       "supply-chain"
+    ],
+    "related": []
+  },
+  {
+    "id": "deterministic-threat-rule-scanning",
+    "title": "Deterministic Threat Rule Scanning",
+    "title_ko": "결정론적 위협 규칙 스캐닝",
+    "category": "Security & Safety",
+    "description": "AI agents that invoke external tools (MCP servers, function calls, skill files) are exposed to a class of attacks where malicious content is embedded in tool descriptions, responses, or skill definiti",
+    "problem": "AI agents that invoke external tools (MCP servers, function calls, skill files) are exposed to a class of attacks where malicious content is embedded in tool descriptions, responses, or skill definitions. These attacks include prompt injection via tool output, data exfiltration through encoded parameters, privilege escalation via hidden instructions, and tool poisoning through manipulated descriptions. LLM-based detection alone is unreliable for these threats: adversaries can craft payloads that exploit the same reasoning flexibility that makes LLMs useful. Security requires a deterministic baseline that cannot be bypassed by clever prompt engineering.",
+    "solution": "Maintain a library of deterministic regex-based rules, each targeting a specific threat pattern observed in real-world agent attacks. These rules run against tool descriptions, tool call arguments, tool responses, and skill definition files before the agent processes them. Each rule specifies a threat category, one or more regex patterns matching known attack signatures, severity level and recommended action (block, warn, log), and test cases for both true positives and false positives. The scanning layer sits between the agent and its tools, inspecting content at well-defined interception points. The key insight is layered defense: deterministic rules catch known patterns with near-perfect precision, while LLM-based review handles novel or ambiguous threats as a second layer.",
+    "when_to_use": [
+      "Tool descriptions scanning when tools are registered",
+      "Tool call arguments scanning before execution",
+      "Tool responses scanning before agent processes output",
+      "Skill/plugin definition files scanning at install time"
+    ],
+    "pros": [
+      "Deterministic and auditable: every detection decision is traceable to a specific rule",
+      "Near-zero latency compared to LLM-based security review",
+      "Cannot be bypassed by prompt injection (rules run outside the LLM context)",
+      "Rules are composable and independently testable",
+      "Complements LLM-based detection as part of a layered defense"
+    ],
+    "cons": [
+      "Regex rules only catch known patterns; novel attacks require rule updates",
+      "Recall is inherently limited by the rule library's coverage",
+      "May produce false positives on legitimate content that resembles attack patterns",
+      "Requires ongoing maintenance as the threat landscape evolves",
+      "Pattern matching cannot understand semantic intent"
+    ],
+    "tags": [
+      "security",
+      "threat-detection",
+      "regex",
+      "deterministic",
+      "prompt-injection",
+      "tool-poisoning",
+      "mcp",
+      "agent-safety"
     ],
     "related": []
   },
@@ -4007,6 +4258,45 @@
       "security",
       "mcp",
       "data-protection"
+    ],
+    "related": []
+  },
+  {
+    "id": "policy-gated-tool-proxy",
+    "title": "Policy-Gated Tool Proxy",
+    "title_ko": "정책 기반 도구 프록시",
+    "category": "Security & Safety",
+    "description": "AI agents call external tools (databases, APIs, file systems) through protocols like MCP Place a transparent proxy between the agent and the tool server",
+    "problem": "AI agents call external tools (databases, APIs, file systems) through protocols like MCP. Once an agent has access to a tool server, it can invoke any tool with any arguments. There is no enforcement layer between \"the agent decided to call this tool\" and \"the tool executed.\" This creates three gaps:\n\n1. **No access control** -- agents can call tools they shouldn't (e.g., production DB delete when only reads are authorized).\n2. **No audit trail** -- when something goes wrong, there's no record of what tool calls were made, by which agent, with what arguments.\n3. **No policy enforcement** -- compliance rules (data residency, PII handling, rate limits) can't be enforced at the tool-call boundary.",
+    "solution": "Place a transparent proxy between the agent and the tool server. The proxy intercepts every tool call, evaluates it against a policy engine, and either forwards the call, blocks it, or routes it through a human approval workflow. Every decision is logged to an append-only audit trail.\n\n**Core components:**\n\n- **Proxy layer**: sits between agent and tool server, speaks the same protocol on both sides (e.g., MCP in, MCP out). The agent doesn't know it's talking to a proxy.\n- **Policy engine**: evaluates each tool call against declarative rules. Rules can match on tool name, argument values, caller identity, time of day, rate limits, or custom predicates.\n- **Decision outcomes**: allow, deny, require-approval (routes to human), transform (modify arguments before forwarding).\n- **Audit log**: append-only record of every tool call, policy evaluation result, and execution outcome. Ideally hash-chained for tamper evidence.",
+    "when_to_use": [
+      "Multi-agent systems where different agents need different tool permissions",
+      "Regulated environments (finance, healthcare) requiring audit trails",
+      "Production deployments where certain tool calls need human sign-off",
+      "Any setup where \"the agent has MCP access\" is too coarse-grained"
+    ],
+    "pros": [
+      "Transparent to both agent and tool server -- no code changes on either side",
+      "Policies are declarative and auditable, not buried in agent prompts",
+      "Hash-chained audit logs provide tamper-evident compliance records",
+      "Can enforce rate limits, data residency, and PII rules at the boundary",
+      "Composable with other patterns (human-in-the-loop, observability)"
+    ],
+    "cons": [
+      "Adds latency to every tool call (policy evaluation + logging)",
+      "Policy rules require maintenance as tools and requirements evolve",
+      "Human approval flows introduce blocking waits and availability dependencies",
+      "Cannot catch policy violations that span multiple tool calls (need higher-level orchestration for that)",
+      "Proxy must be as available as the tool servers it fronts"
+    ],
+    "tags": [
+      "governance",
+      "policy-engine",
+      "mcp",
+      "audit-trail",
+      "tool-proxy",
+      "access-control",
+      "compliance"
     ],
     "related": []
   },
@@ -4930,6 +5220,43 @@
       "agent-guidance",
       "custom-tools",
       "natural-language-control"
+    ],
+    "related": []
+  },
+  {
+    "id": "unified-tool-gateway",
+    "title": "Unified Tool Gateway",
+    "title_ko": "통합 도구 게이트웨이",
+    "category": "Tool Use & Environment",
+    "description": "As agent capabilities grow, they need access to an expanding set of external tools -- web search, image generation, competitor research, security scanning, video production, and more Place a single ga",
+    "problem": "As agent capabilities grow, they need access to an expanding set of external tools -- web search, image generation, competitor research, security scanning, video production, and more. Each tool typically requires its own API key, authentication flow, rate-limiting logic, and billing integration.\n\nThis creates several compounding problems:\n\n* **Credential sprawl**: Agents or their operators must manage dozens of API keys across different providers, each with different authentication schemes.\n* **Integration tax**: Every new tool requires custom integration code -- error handling, retries, schema translation, and response normalization.\n* **Billing fragmentation**: Usage is scattered across many provider dashboards, making cost tracking and budget enforcement difficult.\n* **Discovery overhead**: Agents have no unified way to find what tools are available or what capabilities they can access.",
+    "solution": "Place a single gateway between the agent and all external tool providers. The gateway handles discovery, authentication, routing, execution, and billing -- exposing a uniform interface to the agent regardless of the underlying provider.\n\nThe pattern works through four layers:\n\n1. **Discovery layer**: A unified registry where agents query available tools and their capabilities via a single endpoint or protocol (e.g., MCP `tools/list`).\n2. **Authentication layer**: The gateway holds provider credentials on behalf of the agent. The agent authenticates once to the gateway; the gateway handles per-provider auth.\n3. **Routing layer**: Incoming tool calls are routed to the correct provider, with schema translation if needed. Long-running tools are dispatched to async workers.\n4. **Metering layer**: Every call is logged, metered, and billed through a single system, enabling budget caps and usage visibility.",
+    "when_to_use": [
+      "Teams deploying agents that need 10+ external capabilities",
+      "Platforms offering tool access to multiple agents or users",
+      "Scenarios requiring centralized billing, rate limiting, or audit logging"
+    ],
+    "pros": [
+      "Agents integrate once rather than per-provider -- dramatically reduces integration surface",
+      "Centralized billing and usage tracking across all tools",
+      "New tools become available to all agents without code changes",
+      "Single point for rate limiting, logging, and access control",
+      "Credential isolation -- agents never see raw provider API keys"
+    ],
+    "cons": [
+      "Single point of failure -- gateway outage blocks all tool access",
+      "Added latency from the extra network hop through the gateway",
+      "Cost markup -- gateway operators typically add a fee on top of provider costs",
+      "Vendor lock-in risk if the gateway uses proprietary protocols",
+      "Less control over provider-specific features or optimizations"
+    ],
+    "tags": [
+      "tool-gateway",
+      "mcp",
+      "tool-aggregation",
+      "agent-tooling",
+      "api-gateway",
+      "tool-routing"
     ],
     "related": []
   },
