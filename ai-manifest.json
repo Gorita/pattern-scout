@@ -71,30 +71,33 @@
     "title_ko": "컨텍스트 윈도우 자동 압축",
     "category": "Context & Memory",
     "description": "Context overflow is a silent killer of agent reliability Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry",
-    "problem": "Context overflow is a silent killer of agent reliability. When accumulated conversation history exceeds the model's context window, API errors occur, requiring manual intervention and complex retry logic.",
-    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. Two approaches: (1) Client-side summarization that compacts transcripts locally, (2) API-based compaction (e.g., OpenAI's /responses/compact endpoint) that preserves latent understanding via encrypted_content. The system detects overflow, compacts the session, validates the result, and retries transparently.",
+    "problem": "Context overflow is a silent killer of agent reliability. When accumulated conversation history exceeds the model's context window:\n\n- **API errors**: Requests fail with `context_length_exceeded` or similar errors\n- **Manual intervention**: Operators must truncate transcripts, losing valuable context\n- **Retry complexity**: Detecting overflow and retrying with compaction is error-prone\n\nAgents need automatic compaction that preserves essential information while staying within token limits, with model-specific validation and reserve token floors to prevent immediate re-overflow.",
+    "solution": "Automatic session compaction triggered by context overflow errors, with smart reserve tokens and lane-aware retry. The system detects overflow, compacts the session transcript, validates the result, and retries the request—all transparently to the user.\n\n**Core concepts:**\n\n- **Overflow detection**: Catches API errors indicating context length exceeded (`context_length_exceeded`, `prompt is too long`, etc.).\n- **Auto-retry with compaction**: On overflow, the session is compacted and the request is retried automatically.\n- **Reserve token floor**: Post-compaction, ensures a minimum number of tokens (default 20k) remain available to prevent immediate re-overflow.\n- **Lane-aware compaction**: Uses hierarchical lane queuing (session → global) to prevent deadlocks during compaction.\n- **Post-compaction verification**: Estimates token count after compaction and verifies it's less than the pre-compaction count.\n- **Model-specific validation**: Anthropic models require strict turn ordering; Gemini models have different transcript requirements.\n\n**Two complementary approaches:**\n\nThis pattern describes **reactive compaction** (detect overflow, compact, retry). An alternative approach is **preventive filtering** (reduce context at ingestion), used by systems like HyperAgent for browser accessibility tree extraction. Preventive filtering can delay or eliminate the need for reactive compaction by keeping context leaner from the start.\n\n**API-based compaction (OpenAI Responses API):**\n\nSome providers offer dedicated compaction endpoints that are more efficient than manual summarization:\n- **Preserves latent understanding**: The `encrypted_content` maintains the model's compressed representation of the original conversation\n- **More efficient**: Server-side compaction is faster than client-side summarization\n- **Auto-compaction**: Can trigger automatically when `auto_compact_limit` is exceeded",
     "when_to_use": [
-      "Long-running agent sessions",
-      "Multi-turn conversations",
-      "Tool-heavy workflows with large outputs"
+      "Configure reserve floor: set compaction.reserveTokensFloor to ensure headroom after compaction (default 20k)",
+      "Handle overflow errors: catch API errors, detect overflow via error message matching, then trigger compaction",
+      "Validate transcripts: apply model-specific validation (Anthropic turns, Gemini ordering) before retry",
+      "Estimate post-compaction tokens: verify that compaction actually reduced token count before retrying",
+      "Use lane queuing: run compaction through hierarchical lanes to avoid deadlocks with concurrent operations"
     ],
     "pros": [
-      "Transparent recovery from overflow",
-      "Preserves essential context via summaries",
-      "Prevents immediate re-overflow with reserve tokens",
-      "Model-aware validation"
+      "Transparent recovery: overflow errors are handled automatically without user intervention",
+      "Preserve essential context: compaction generates summaries rather than arbitrary truncation",
+      "Prevents re-overflow: reserve token floor ensures immediate re-overflow is unlikely",
+      "Model-aware: different validation rules per provider ensure API compatibility"
     ],
     "cons": [
-      "Summary quality may lose nuanced details",
-      "Latency penalty during compaction",
-      "Token estimation errors possible",
-      "Implementation complexity"
+      "Summary quality: auto-generated summaries may lose nuanced details that manual curation would preserve",
+      "Latency penalty: compaction and retry adds overhead (seconds to minutes depending on context size)",
+      "Token estimation errors: heuristics may misestimate actual token counts, leading to failed retries",
+      "Complexity: lane-aware queuing and model-specific validation increase implementation complexity"
     ],
     "tags": [
       "context-management",
       "compaction",
       "overflow-recovery",
       "token-estimation",
+      "transcript-validation",
       "api-compaction"
     ],
     "related": []
@@ -507,23 +510,28 @@
     "title": "Semantic Context Filtering Pattern",
     "title_ko": "의미론적 컨텍스트 필터링 패턴",
     "category": "Context & Memory",
-    "description": "Raw data sources are too verbose and noisy for effective LLM consumption, wasting tokens and confusing reasoning Extract only semantic, interactive, or relevant elements from raw data, providing clean",
-    "problem": "Raw data sources are too verbose and noisy for effective LLM consumption, wasting tokens and confusing reasoning.",
-    "solution": "Extract only semantic, interactive, or relevant elements from raw data, providing clean abstractions to the LLM.",
+    "description": "Raw data sources are too verbose and noisy for effective LLM consumption Extract only the semantic, interactive, or relevant elements from raw data",
+    "problem": "Raw data sources are too verbose and noisy for effective LLM consumption. Full representations include invisible elements, implementation details, and irrelevant information that bloat context and confuse reasoning. Research on boilerplate detection shows that 40-80% of web page content is typically navigation, footers, ads, and other boilerplate that should be filtered before semantic processing. This creates several problems: token explosion where raw data exceeds context limits or becomes prohibitively expensive, poor signal-to-noise where LLM wastes reasoning capacity on irrelevant details, slower inference with more tokens meaning slower generation and higher costs, and confused reasoning where noise leads to hallucinations or wrong conclusions. The issue appears across domains including web scraping (full HTML DOM with scripts, styles, tracking iframes), API responses (JSON with nested metadata, internal fields, debug info), document processing (headers, footers, navigation, boilerplate text), and code analysis (comments, whitespace, boilerplate code).",
+    "solution": "Extract only the semantic, interactive, or relevant elements from raw data. Filter out noise and provide the LLM with a clean representation that captures what matters for reasoning.\n\n**Core Principle: Don't send raw data to the LLM. Send semantic abstractions.**\n\nThis approach is validated across production systems including browser automation tools (Puppeteer/Playwright accessibility trees), RAG frameworks (LangChain, LlamaIndex semantic chunking), and code analysis tools (Aider's AST-based repo-map).\n\nKey techniques:\n1. **Browser Accessibility Tree**: Extract interactive elements only (100-200 tokens vs 10,000+ tokens for full HTML)\n2. **API Response Filtering**: Strip internal metadata, debug info, and internal fields to keep only business data\n3. **Document Section Extraction**: Skip headers, footers, navigation, legal disclaimers to keep only actual content (~20% of original size)\n4. **Maintain Reference Mapping**: Keep filtered-to-original mappings for execution",
     "when_to_use": [
-      "Web scraping agents",
-      "Document processing",
-      "API response handling"
+      "Identify semantic elements for your domain (web: interactive elements, API: business data, documents: content sections)",
+      "Build a filter layer that extracts only relevant data",
+      "Apply filtering before every LLM call",
+      "Maintain reference mapping from filtered to original data for execution"
     ],
     "pros": [
-      "10-100x token reduction",
-      "Better LLM reasoning",
-      "Lower costs and latency"
+      "Dramatic token reduction: 10-100x smaller context",
+      "Better LLM reasoning: Focus on signal, not noise",
+      "Lower costs: Fewer tokens = cheaper",
+      "Faster inference: Smaller context = faster generation",
+      "Higher reliability: Less confusion and hallucination"
     ],
     "cons": [
-      "Filter complexity",
-      "Potential information loss",
-      "Domain-specific filters needed"
+      "Filter complexity: Need to build and maintain filter logic",
+      "Information loss: May remove context that matters",
+      "Domain-specific: Filters need to be tailored per use case",
+      "Mapping overhead: Need to track filtered-to-original references",
+      "Potential bugs: Filter might remove important elements"
     ],
     "tags": [
       "context-filtering",
@@ -613,26 +621,23 @@
     "title": "AI-Assisted Code Review / Verification",
     "title_ko": "AI 지원 코드 리뷰 / 검증",
     "category": "Feedback Loops",
-    "description": "As AI generates increasing amounts of code, the bottleneck shifts from generation to verification Employ AI-powered tools to assist code review: analyze changes and highlight potential issues, summari",
-    "problem": "As AI generates increasing amounts of code, the bottleneck shifts from generation to verification. Ensuring AI-generated code is semantically correct, aligns with intent (especially if underspecified), and meets quality standards becomes crucial and time-consuming.",
-    "solution": "Employ AI-powered tools to assist code review: analyze changes and highlight potential issues, summarize intent/impact of changes, interactive systems for explaining code or justifying decisions, ensure alignment with user's 'mind's eye' intent.",
+    "description": "As AI models generate increasing amounts of code, the bottleneck in software development shifts from code generation to code verification and review Develop and employ AI-powered tools and processes s",
+    "problem": "As AI models generate increasing amounts of code, the bottleneck in software development shifts from code generation to code verification and review. Ensuring that AI-generated code is not only syntactically correct but also semantically correct, aligns with the intended functionality (especially if underspecified), and meets quality standards becomes crucial and time-consuming.",
+    "solution": "Develop and employ AI-powered tools and processes specifically designed to assist humans in reviewing and verifying code, whether it's AI-generated or human-written. This can involve:\n\n- AI agents that analyze code changes and highlight potential issues, bugs, or deviations from best practices.\n- Tools that help summarize the intent or impact of code changes, making it easier for human reviewers to understand.\n- Interactive systems where reviewers can ask the AI to explain parts of the code or justify certain decisions made during generation.\n- Mechanisms to ensure the AI's output aligns with the user's \"mind's eye\" or high-level intent, even if the initial specification was ambiguous.\n- Multi-agent approaches where one agent generates code while another critiques and verifies it, iterating until convergence.\n- Three-layer workflows stratifying tasks by complexity: AI-only for style/documentation, AI-human collaboration for logic/security, and human-only for architectural decisions.\n\nThe goal is to make the code review process more efficient and reliable, building confidence in the (AI-assisted) codebase.",
     "when_to_use": [
-      "Reviewing large AI-generated changes",
-      "Verifying alignment with underspecified intent",
-      "PR review process integration",
-      "Building confidence in AI-assisted codebases"
+      "Integrate AI verification tools into the PR review process",
+      "Prompt agents to explain their generated code or provide rationales for changes",
+      "Focus human review on verifying alignment with high-level intent and business logic"
     ],
     "pros": [
-      "Makes review more efficient",
-      "Highlights issues humans might miss",
-      "Summarizes complex changes",
-      "Interactive explanation capability"
+      "Reduces time spent on routine review tasks",
+      "Enables consistent enforcement of coding standards",
+      "Can identify issues humans miss through multi-agent debate and self-critique loops"
     ],
     "cons": [
-      "AI may miss subtle bugs",
-      "Over-reliance risk",
-      "Explanation quality varies",
-      "Adds tooling complexity"
+      "Risk of hallucination (reviewing non-existent code or making uncited claims)",
+      "High false positive rates can lead to alert fatigue",
+      "Teams heavily adopting AI assistants have seen significant increases in PR review time due to the volume of AI-generated changes requiring verification"
     ],
     "tags": [
       "code-review",
@@ -640,7 +645,8 @@
       "quality-assurance",
       "human-ai-collaboration",
       "trust",
-      "explainability"
+      "explainability",
+      "software-quality"
     ],
     "related": []
   },
@@ -1170,26 +1176,29 @@
     "title": "Frontier-Focused Development",
     "title_ko": "프론티어 중심 개발",
     "category": "Learning & Adaptation",
-    "description": "AI capabilities are advancing so rapidly that products optimized for today's models will be obsolete in months Always target the frontier—the state-of-the-art models—and design products that can rapid",
-    "problem": "AI capabilities are advancing so rapidly that products optimized for today's models will be obsolete in months. Many teams waste time solving problems that new models already solve, or build products tied to specific models that won't stay competitive.",
-    "solution": "Always target the frontier—the state-of-the-art models—and design products that can rapidly evolve. Key principles: no model selector (pick the best model per use case), frontier or nothing (only build features that push boundaries), rapid evolution (expect complete product changes every 3 months), and avoid subscription tie-ins to specific models.",
+    "description": "AI capabilities advance rapidly along predictable scaling laws—products optimized for today's models become obsolete in months **Always target the frontier**—the state-of-the-art models—and design pro",
+    "problem": "AI capabilities advance rapidly along predictable scaling laws—products optimized for today's models become obsolete in months. Many teams waste time solving problems that frontier models already solve, or build products tied to specific models that won't stay competitive.",
+    "solution": "**Always target the frontier**—the state-of-the-art models—and design products that can rapidly evolve as the frontier moves. Don't optimize for older, cheaper models, and don't offer model selectors that trap users in the past.\n\n**Core principles:**\n\n1. **No model selector**: Pick the best model for each use case, don't let users choose\n2. **Frontier or nothing**: Only build features that push boundaries and generate learning\n3. **Rapid evolution**: Expect to completely change your product every 3 months (AI product lifecycle research confirms quarterly cycles are necessary to remain competitive)\n4. **Subscription resistance**: Avoid being tied to one model's pricing structure\n\n**The problem with optimizing for cost:**\n\nEmergent abilities research shows some capabilities appear suddenly at scale and cannot be predicted or engineered around in smaller models. Cost optimization against today's models solves problems that frontier models will soon solve inherently.\n\n**Why no model selector?**\n\n1. **Learning**: Can't learn how users interact if everyone uses different models (research shows focused single-model products learn faster)\n2. **Focus**: One way to use the product means everyone benefits from improvements\n3. **Evolution**: Not beholden to models that were popular 3-6 months ago\n4. **Quality**: Can optimize specifically for the best model's capabilities\n\n**The risk of subscription models:**\n\nWhen you offer a subscription (like Claude Max), you become tied to that model:\n- Can't switch if a better model emerges\n- Price changes become user-hostile\n- Roadmap decisions dictated by one company",
     "when_to_use": [
       "Targeting early adopters and frontier users",
-      "Products where AI capability is the core differentiator",
+      "Building for developers who value speed over cost",
       "Small teams that can pivot quickly",
-      "Building for developers who value speed over cost"
+      "Products where AI capability is the core differentiator",
+      "Users who want to be on the cutting edge"
     ],
     "pros": [
-      "Always at the frontier as models improve",
-      "Rapid learning from focused usage",
-      "Future-proof with instant model switching capability",
-      "Quality focus on best capabilities"
+      "Always at the frontier: your product improves as models improve",
+      "Rapid learning: focused usage generates clear insights",
+      "Future-proof: can switch models instantly when something better emerges",
+      "Quality focus: optimize for best capabilities, not lowest common denominator",
+      "Innovation: positioned to discover what's possible with frontier models"
     ],
     "cons": [
-      "Higher costs with frontier models",
-      "Smaller market excluding cost-sensitive users",
-      "Rapid product changes every 3 months",
-      "Exclusionary to 'median' users wanting stability"
+      "Higher costs: frontier models are more expensive (for now)",
+      "Smaller market: some users won't pay for frontier performance",
+      "Rapid change: product may look completely different in 3 months",
+      "Exclusionary: not building for 'median' users who want stability",
+      "Uncertainty: constantly reinventing rather than stabilizing"
     ],
     "tags": [
       "frontier",
@@ -1197,7 +1206,8 @@
       "model-selection",
       "product-strategy",
       "learning",
-      "innovation"
+      "innovation",
+      "no-selector"
     ],
     "related": []
   },
@@ -1380,33 +1390,38 @@
     "title": "Agent Modes by Model Personality",
     "title_ko": "모델 성격 기반 에이전트 모드",
     "category": "Orchestration & Control",
-    "description": "Different AI models have fundamentally different personalities and working styles Design different agent modes optimized for each model's personality rather than forcing all models into a single inter",
-    "problem": "Different AI models have fundamentally different personalities and working styles. Treating all models the same leads to suboptimal outcomes. Some models are 'trigger happy' and want to run commands immediately, while others prefer thorough research before acting.",
-    "solution": "Design different agent modes optimized for each model's personality rather than forcing all models into a single interaction pattern. Each mode should have its own UI/UX patterns, tool configurations, expectation setting, and working style. Present these as different working modes (e.g., Smart Mode, Rush Mode, Deep Mode), not as a model selector dropdown.",
+    "description": "Different AI models have fundamentally different personalities and working styles Design **different agent modes** optimized for each model's personality rather than forcing all models into a single i",
+    "problem": "Different AI models have fundamentally different personalities and working styles. Treating all models the same—expecting them to work identically—leads to suboptimal outcomes. Users expect a consistent interface, but models like Opus 4.5 are \"trigger happy\" and want to run commands immediately, while models like GPT-5.2 are \"lazy\" and prefer thorough research before acting.",
+    "solution": "Design **different agent modes** optimized for each model's personality rather than forcing all models into a single interaction pattern. Each mode should have its own UI/UX patterns (font, prompt length guidance), tool configurations, expectation setting, and working style.\n\n**Key insight:** It's not about model selection—it's about **different ways of working**.\n\n**Model personalities identified:**\n- **Claude Opus 4.5**: Trigger happy, interactive. Runs commands, asks questions, rapid feedback loops. Best for quick back-and-forth, interactive tasks.\n- **GPT-5.2**: Lazy, thorough, deep researcher. Goes off for 45+ minutes, researches extensively, comes back with comprehensive results. Best for well-scoped problems, big tasks, finding information.\n\n**Implementation mechanisms:**\n- System prompts: Define personality-specific instructions per mode\n- Temperature/sampling: Low (0.1-0.3) for consistent modes; medium (0.4-0.7) for balanced; high (0.7-1.0+) for creative modes\n- Tool configuration: Mode-specific permission sets and constraints\n\n**Mode differentiation strategies:**\n1. Visual/UI differentiation: Different fonts, prompt length guidance\n2. Tool configuration: Smart mode optimized for rapid execution; Deep mode optimized for thorough research\n3. Expectation setting: Smart mode \"Watch the agent work\"; Deep mode \"Send off and check in 60 minutes later\"",
     "when_to_use": [
-      "Multi-model agent systems with different model backends",
-      "Products supporting both interactive and autonomous workflows",
-      "When model personalities significantly differ in working style",
-      "User-facing AI tools requiring clear expectation setting"
+      "Identify model personalities in your stack through internal testing",
+      "Create mode names that describe the working style, not the model",
+      "Differentiate UX to make each mode feel distinct",
+      "Configure tools per mode optimized for the model's strength",
+      "Set user expectations explaining when to use each mode",
+      "Smart Mode (Opus-like): Quick configuration tasks, debugging with rapid iteration, tasks requiring frequent human feedback",
+      "Deep Mode (GPT-5.2-like): Well-scoped problems, big tasks with clear requirements, research and information gathering"
     ],
     "pros": [
-      "Optimized for each model's strengths",
-      "Clear user expectations per mode",
-      "Reduced user frustration",
-      "Better outcomes through model-appropriate workflows"
+      "Optimized for each model's strengths: Better outcomes than one-size-fits-all",
+      "Clear user expectations: Users know how to interact with each mode",
+      "Reduced frustration: Users don't fight against model's natural tendencies",
+      "Better outcomes: Different models get to equally good results via different paths"
     ],
     "cons": [
-      "Increased complexity with multiple modes to maintain",
-      "User confusion about which mode to choose",
-      "Model evolution risk as personalities change with new versions",
-      "Testing overhead for each mode independently"
+      "Increased complexity: Multiple modes to maintain and document",
+      "User confusion: Some users just want \"the best model\"",
+      "Model evolution risk: Personalities change with new versions",
+      "Testing overhead: Need to validate each mode independently"
     ],
     "tags": [
       "model-personality",
       "interaction-modes",
       "multi-model",
       "ux-design",
-      "agent-behavior"
+      "agent-behavior",
+      "opus",
+      "gpt-52"
     ],
     "related": []
   },
@@ -1694,14 +1709,15 @@
     "title": "Custom Sandboxed Background Agent",
     "title_ko": "커스텀 샌드박스 백그라운드 에이전트",
     "category": "Orchestration & Control",
-    "description": "Off-the-shelf coding agents are either too generic (not integrated with company-specific environments), vendor-locked (tied to one model provider), or have limited context (can't access internal infra",
-    "problem": "Off-the-shelf coding agents are either too generic (not integrated with company-specific environments), vendor-locked (tied to one model provider), or have limited context (can't access internal infrastructure). Companies need coding agents that work within their specific development environment, iterate with closed feedback loops, provide real-time visibility, and are model-agnostic.",
-    "solution": "Build a custom background agent that runs in a sandboxed environment identical to developers. Key components include: (1) Sandboxed execution environment using Modal or similar for ephemeral dev environments, (2) Real-time communication layer via WebSockets for streaming stdout/stderr, (3) Closed feedback loop with compiler errors, linter warnings, and test failures guiding iterations, (4) Model-agnostic architecture supporting multiple frontier models, (5) Company-specific integration with internal tooling and workflows.",
+    "description": "Off-the-shelf coding agents (e Build a **custom background agent** that runs in a sandboxed environment identical to developers, with:\n\n**1",
+    "problem": "Off-the-shelf coding agents (e.g., Devin, Claude Code, Cursor) are either:\n\n- **Too generic** - Not deeply integrated with company-specific dev environments, tools, and workflows\n- **Vendor-locked** - Tightly coupled to one model provider, limiting flexibility and creating dependency\n- **Limited context** - Cannot access internal infrastructure, private repos, or company-specific tooling\n\nCompanies need coding agents that:\n\n- Work within their specific development environment\n- Can iterate with closed feedback loops (compiler, linter, tests)\n- Provide real-time visibility into agent progress\n- Are model-agnostic to switch providers as needed",
+    "solution": "Build a **custom background agent** that runs in a sandboxed environment identical to developers, with:\n\n**1. Sandboxed Execution Environment**\n- Use infrastructure like Modal for ephemeral, sandboxed dev environments\n- Agent runs with same context: codebase, dependencies, dev tools\n- Isolated from production but mirroring development setup\n\n**2. Real-Time Communication Layer**\n- WebSocket connection streams stdout/stderr to client\n- User sees agent progress in real-time (not polling)\n- Two-way communication for prompts and status updates\n\n**3. Closed Feedback Loop**\n- Agent iterates autonomously with machine-readable feedback\n- Compiler errors, linter warnings, test failures guide iterations\n- Not 1-shot implementation - but iterative refinement\n\n**4. Model-Agnostic Architecture**\n- Support multiple frontier models via pluggable interface\n- Switch between providers without rewriting infrastructure\n- Leverage best model for specific task type\n\n**5. Company-Specific Integration**\n- Deep integration with internal tooling, scripts, and workflows\n- Access to private repos, internal APIs, documentation\n- Customized to team's specific development practices\n\n**6. Security Best Practices**\n- Network isolation with egress lockdown (default-deny outbound rules)\n- Tool authorization with pattern-based allow/deny lists\n- Execution limits: timeouts, resource caps, privilege restrictions\n- Comprehensive audit logging for all agent actions",
     "when_to_use": [
       "Need deep integration with company-specific tools and workflows",
       "Want model flexibility without vendor lock-in",
       "Require real-time visibility into agent progress",
-      "Agent needs same development context as human developers"
+      "Agent needs same development context as human developers",
+      "Off-the-shelf agents (Devin, Cursor) work for generic tasks but can't deeply integrate with company infrastructure"
     ],
     "pros": [
       "Deep integration with company-specific tools and workflows",
@@ -1712,9 +1728,9 @@
     ],
     "cons": [
       "Engineering overhead - requires building and maintaining infrastructure",
-      "Security considerations - agent needs access to repos and credentials",
+      "Security considerations - agent needs access to repos, credentials",
       "Ongoing maintenance - unlike SaaS solutions, you own the ops burden",
-      "Requires DevOps expertise - sandbox management, WebSocket scaling"
+      "Requires devops expertise - sandbox management, websocket scaling"
     ],
     "tags": [
       "background-agent",
@@ -2664,29 +2680,38 @@
     "title": "Stop Hook Auto-Continue Pattern",
     "title_ko": "정지 훅 자동 계속 패턴",
     "category": "Orchestration & Control",
-    "description": "Agents may stop prematurely before completing all requirements, claiming they're done when they're not Use stop hooks to verify success criteria (tests pass, lint clean) before allowing agent terminat",
-    "problem": "Agents may stop prematurely before completing all requirements, claiming they're done when they're not.",
-    "solution": "Use stop hooks to verify success criteria (tests pass, lint clean) before allowing agent termination.",
+    "description": "Agents complete their turn and return control to the user even when the task isn't truly done Use **stop hooks** to programmatically check success criteria after each agent turn",
+    "problem": "Agents complete their turn and return control to the user even when the task isn't truly done. Common scenarios include: code compiles but tests fail, changes made but quality checks haven't passed, feature implemented but integration tests broken, and migrations run but verification steps not completed. Without intervention, the user must manually check and re-prompt the agent, creating friction.",
+    "solution": "Use **stop hooks** to programmatically check success criteria after each agent turn. If criteria aren't met, automatically continue the agent's execution until the task is genuinely complete.\n\n**Stop hook**: A script that runs when the agent finishes a turn. It can inspect state and decide whether to return control to the user or keep the agent running.\n\n```pseudo\ndefine_stop_hook() {\n    test_result = run_tests()\n    if test_result.failed:\n        agent.continue_with_prompt(\n            \"Tests failed with: {test_result.errors}. Fix these issues.\"\n        )\n    else:\n        agent.stop()  // Return control to user\n}\n```\n\n**Combined with dangerous mode**: In containerized/sandboxed environments, this enables fully autonomous operation until success.",
     "when_to_use": [
-      "Test-driven development",
-      "Quality gates",
-      "Autonomous agents"
+      "Define success criteria (tests pass, build succeeds, linter clean, etc.)",
+      "Create stop hook that checks these criteria",
+      "If criteria fail, inject feedback and continue agent execution",
+      "If criteria pass, return control to user",
+      "Combine with dangerous mode in containers for autonomous operation",
+      "Achieve deterministic outcomes from non-deterministic processes"
     ],
     "pros": [
-      "Completion guarantee",
-      "Quality maintenance",
-      "Automation"
+      "True task completion: Don't stop until actually done",
+      "Reduced human intervention: No manual re-prompting needed",
+      "Systematic quality: Encoded success criteria, not human judgment",
+      "Autonomous operation: Combined with SDK, enables fully hands-off tasks",
+      "Prevents premature completion: Agent can't declare victory too early"
     ],
     "cons": [
-      "Risk of infinite loops",
-      "Hook design required"
+      "Runaway costs: Agent might loop indefinitely if criteria impossible",
+      "Requires good criteria: Bad success checks lead to infinite loops",
+      "Container overhead: Safest in sandboxed environments",
+      "Debugging challenges: Harder to inspect mid-execution state",
+      "Timeout management: Need sensible limits to prevent infinite execution"
     ],
     "tags": [
       "hooks",
       "automation",
       "testing",
+      "determinism",
       "success-criteria",
-      "quality-gates"
+      "continuous-execution"
     ],
     "related": []
   },
@@ -3017,23 +3042,24 @@
     "title": "Adaptive Sandbox Fan-Out Controller",
     "title_ko": "적응형 샌드박스 팬아웃 컨트롤러",
     "category": "Reliability & Eval",
-    "description": "Parallel sandboxes can spawn many runs, but static fan-out policies don't adapt to task difficulty Add a controller that adapts fan-out in real time based on observed signals",
-    "problem": "Parallel sandboxes can spawn many runs, but static fan-out policies don't adapt to task difficulty. After some N, you're paying for redundant failures. If prompts are underspecified, scaling N just scales errors. Unbounded fan-out can overwhelm budgets and rate limits.",
-    "solution": "Add a controller that adapts fan-out in real time based on observed signals. Start small (N=3-5), sample early signals (success rate, diversity, error clustering), then decide: scale up if variance is high, stop early if confident, refine prompt if errors cluster, or decompose if repeated failures occur.",
+    "description": "Parallel sandboxes are intoxicating: you can spawn 10 Add a controller that *adapts fan-out in real time* based on observed signals from early runs",
+    "problem": "Parallel sandboxes are intoxicating: you can spawn 10... 100... 1000 runs. But two things break quickly:\n\n1. **Diminishing returns:** After some N, you're mostly paying for redundant failures or near-duplicate solutions\n2. **Prompt fragility:** If the prompt is underspecified, scaling N just scales errors (lots of sandboxes fail fast)\n3. **Resource risk:** Unbounded fan-out can overwhelm budgets, rate limits, or queues\n4. **Oscillation risk:** Poorly tuned thresholds can cause scale-up/scale-down thrashing as the controller oscillates between decisions\n\nStatic \"N=10 always\" policies don't adapt to task difficulty, model variance, or observed failure rates. Most implementations use static caps rather than true signal-driven adaptation.",
+    "solution": "Add a controller that *adapts fan-out in real time* based on observed signals from early runs.\n\n**Core loop:**\n\n1. **Start small:** Launch a small batch (e.g., N=3-5) in parallel\n2. **Early signal sampling:** As soon as the first X runs finish (or after T seconds), compute:\n   - success rate (exit code / test pass)\n   - diversity score (are solutions meaningfully different?)\n   - judge confidence / winner margin\n   - error clustering (same error everywhere vs varied errors)\n\n3. **Decide next action:**\n   - **Scale up** if: success rate is good but quality variance is high (you want a better winner)\n   - **Stop early** if: judge is confident + tests pass + solutions converge\n   - **Refine prompt / spec** if: error clustering is high (everyone fails the same way)\n   - **Switch strategy** if: repeated failure suggests decomposition is needed (spawn investigative sub-agent)\n\n4. **Budget guardrails:** Enforce max sandboxes, max runtime, and \"no-progress\" stop conditions\n\n5. **Hysteresis for stability:** Use different thresholds for scale-up vs. stop (e.g., scale up if confidence < 0.65, stop only if > 0.75) to prevent oscillation",
     "when_to_use": [
-      "Best-of-N codegen with sandbox execution",
-      "Tasks with cheap objective checks (unit tests, schema validation)",
-      "When latency and cost matter - need minimum N for reliability"
+      "Doing 'best-of-N codegen + execution' in sandboxes",
+      "Have cheap objective checks (unit tests, static analysis, schema validation)",
+      "Latency and cost matter: want the minimum N that achieves reliability"
     ],
     "pros": [
-      "Prevents scaling errors when prompts are bad",
-      "Lowers spend by stopping early when winner is clear",
-      "Makes sandbox swarms production-safe via budgets"
+      "Prevents 'scale errors' when prompts are bad",
+      "Lowers spend by stopping early when a clear winner appears",
+      "Makes sandbox swarms production-safe via budgets and no-progress stopping"
     ],
     "cons": [
-      "Requires instrumentation for failure signatures and confidence",
-      "Needs careful defaults to avoid oscillation",
-      "Bad scoring functions can cause premature stopping"
+      "Requires instrumentation (collecting failure signatures, confidence, diversity)",
+      "Needs careful defaults and hysteresis to avoid oscillation (scale up/down thrash)",
+      "Bad scoring functions can cause premature stopping",
+      "Few verified implementations; most systems use static caps instead of true signal-driven adaptation"
     ],
     "tags": [
       "fan-out",
@@ -3149,29 +3175,39 @@
     "title": "CriticGPT-Style Code Review",
     "title_ko": "CriticGPT 스타일 코드 리뷰",
     "category": "Reliability & Eval",
-    "description": "Human reviewers may miss subtle bugs in AI-generated code, especially as models become more sophisticated Deploy specialized AI models trained specifically for code critique and bug detection to assis",
-    "problem": "Human reviewers may miss subtle bugs in AI-generated code, especially as models become more sophisticated.",
-    "solution": "Deploy specialized AI models trained specifically for code critique and bug detection to assist human reviewers.",
+    "description": "As AI-generated code becomes more sophisticated, it becomes increasingly difficult for human reviewers to catch subtle bugs, security issues, or quality problems Deploy specialized AI models trained s",
+    "problem": "As AI-generated code becomes more sophisticated, it becomes increasingly difficult for human reviewers to catch subtle bugs, security issues, or quality problems. Traditional code review processes may miss issues in AI-generated code because the volume of generated code can overwhelm human reviewers, subtle bugs may appear correct at first glance, security vulnerabilities may be non-obvious, and style and best practice violations may be inconsistent.",
+    "solution": "Deploy specialized AI models trained specifically for code critique and evaluation. This approach builds on RLAIF (Reinforcement Learning from AI Feedback), which achieves ~100x cost reduction compared to human-only annotation. These models act as automated code reviewers that can:\n\n1. **Identify bugs** that human reviewers might miss\n2. **Detect security vulnerabilities** in generated code\n3. **Suggest improvements** for code quality and efficiency\n4. **Verify correctness** of implemented solutions\n5. **Check adherence** to coding standards and best practices\n\nThe critic model works alongside code generation models, providing an additional layer of quality assurance before code reaches human review or production.",
     "when_to_use": [
-      "AI code review pipelines",
-      "Security audits",
-      "Quality gates"
+      "Automated code review workflows with high commit volumes",
+      "CI/CD pipelines for pre-commit quality checks",
+      "Security-sensitive code requiring vulnerability detection",
+      "Git webhook integration for event-driven review",
+      "3-4 iterations of critique-refinement loops for complex changes",
+      "Mitigating collapse risks by decoupling evaluation/generation prompts and benchmarking against human-labeled anchor sets"
     ],
     "pros": [
-      "Consistent inspection",
-      "24/7 availability",
-      "Catches subtle bugs"
+      "Scalable code review process",
+      "Consistent quality standards",
+      "Catches issues early in development",
+      "Can review code 24/7 without breaks",
+      "Improves over time with more training"
     ],
     "cons": [
-      "False positives possible",
-      "Training costs",
-      "Context limitations"
+      "May have false positives requiring human verification",
+      "Training specialized critic models is resource-intensive",
+      "Cannot understand full business context like humans",
+      "May miss novel vulnerability types",
+      "Requires integration into existing workflows",
+      "Risk of evaluator-model collusion in self-critique loops (mitigate with anchor sets and adversarial examples)"
     ],
     "tags": [
       "evaluation",
       "code-review",
       "critique",
-      "bug-detection"
+      "quality-assurance",
+      "bug-detection",
+      "gpt-4"
     ],
     "related": []
   },
@@ -5022,32 +5058,34 @@
     "title": "Dev Tooling Assumptions Reset",
     "title_ko": "개발 도구 가정 재설정",
     "category": "UX & Collaboration",
-    "description": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense Re-",
-    "problem": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense. When agents write 90% of code, these tools create bottlenecks and friction.",
-    "solution": "Re-examine dev tooling assumptions from first principles. When agents write most code, the perceived value of changes drops dramatically. Replace linear tickets with immediate agent dispatch, PR reviews with automated verification, sprint planning with continuous flow. Embrace the 'primordial soup' of continuous agent-generated code rather than discrete human changes.",
+    "description": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense **R",
+    "problem": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense. When agents write most code, these tools create bottlenecks and friction. Academic research confirms this is a paradigm shift requiring ecosystem-level rethinking, not incremental adjustments.",
+    "solution": "**Re-examine dev tooling assumptions** from first principles. When agents write most code, the perceived value of changes drops dramatically, and workflows optimized for human effort become inefficient.\n\n**The ticket example:**\n\n- **Old world**: Bug reported → Developer busy → Create ticket → Assign next week → Developer gets context → Fix\n- **New world**: Bug reported → Send agent immediately → Agent diagnoses and fixes in same time it takes to create a ticket\n\n**The code review example:**\n\nGitHub features assume changes are valuable (emoji reactions, assigning reviewers, careful consideration). But when agents write 90% of code, you can say: 'Generate 10 variations of this.'\n\n**New tooling principles:**\n\n1. **Immediate action**: Don't queue work, spawn agents instantly\n2. **Variation generation**: Generate 10 versions, pick best\n3. **Automated verification**: Tests > reviews\n4. **Direct integration**: Fewer handoffs, more automation\n5. **Observable execution**: See what agents are doing, not approve each step\n6. **Machine-readable output**: JSON/structured data > human-readable logs\n7. **Unified logging**: Single log stream for all system events (client, server, database)\n\n**The 'primordial soup' metaphor:**\n\nWhen agents generate code continuously, you don't have discrete changes—you have a bubbling, brewing ecosystem of code variants. This requires new mental models: not linear tickets but continuous streams, not PR reviews but automated quality gates, not sprint planning but real-time prioritization.\n\n**Industry examples:**\n- **Model Context Protocol (MCP)**: Universal 'USB-C for AI' standard replacing proprietary tool integrations\n- **Unified logging** (Sourcegraph): Single JSONL stream for all system events, optimized for agent consumption\n- **Code-first interfaces** (Cloudflare): LLMs write code to call tools, reducing tokens 10-100x\n- **CLI-first design**: Tools with `--json` flags for machine-readable output",
     "when_to_use": [
       "Agents writing majority of code (50%+)",
       "Team comfortable with autonomous agents",
       "Codebase has good automated testing",
+      "Can tolerate experimentation and failure",
       "Leadership committed to new ways of working"
     ],
     "pros": [
-      "Removes bottlenecks by eliminating waiting for human availability",
-      "Faster iteration with immediate agent investigation",
-      "Better exploration through parallel approach generation",
-      "Reduced ceremony around changes",
-      "Scalability as agent usage grows"
+      "Removes bottlenecks: no waiting for human availability",
+      "Faster iteration: agents investigate immediately",
+      "Better exploration: generate multiple approaches in parallel",
+      "Reduced ceremony: less overhead around changes",
+      "Scalability: works better as agent usage grows"
     ],
     "cons": [
-      "Loss of visibility into what's happening",
-      "Integration challenges with existing tools",
-      "Team resistance to unfamiliar workflows",
-      "Increased blast radius with more automation",
-      "Transition pain with hybrid human/agent workflows"
+      "Loss of visibility: harder to track what's happening",
+      "Integration challenges: existing tools don't fit new model",
+      "Team resistance: developers attached to familiar workflows",
+      "New risks: more automation means blast radius increases",
+      "Transition pain: hybrid human/agent workflows are awkward"
     ],
     "tags": [
       "dev-tools",
       "assumptions",
+      "github",
       "tickets",
       "code-review",
       "tooling",
