@@ -193,37 +193,6 @@
     "related": []
   },
   {
-    "id": "dynamic-code-injection-on-demand-file-fetch",
-    "title": "Dynamic Code Injection (On-Demand File Fetch)",
-    "title_ko": "동적 코드 주입 (온디맨드 파일 가져오기)",
-    "category": "Context & Memory",
-    "description": "Manually copying/pasting files into prompts is tedious, wastes tokens, and interrupts workflow momentum Allow on-demand file injection via special syntax (@filename, /load) that automatically fetches ",
-    "problem": "Manually copying/pasting files into prompts is tedious, wastes tokens, and interrupts workflow momentum.",
-    "solution": "Allow on-demand file injection via special syntax (@filename, /load) that automatically fetches and summarizes files.",
-    "when_to_use": [
-      "Interactive coding sessions",
-      "Code exploration",
-      "Multi-file context needs"
-    ],
-    "pros": [
-      "Interactive exploration",
-      "Reduced human overhead",
-      "Improved agent accuracy"
-    ],
-    "cons": [
-      "Requires file system access",
-      "Security risk if unsandboxed",
-      "Summarization may omit context"
-    ],
-    "tags": [
-      "file-injection",
-      "at-mention",
-      "slash-commands",
-      "IDE-integration"
-    ],
-    "related": []
-  },
-  {
     "id": "dynamic-context-injection",
     "title": "Dynamic Context Injection",
     "title_ko": "동적 컨텍스트 주입",
@@ -498,27 +467,28 @@
     "title": "Self-Identity Accumulation",
     "title_ko": "자기 정체성 축적",
     "category": "Context & Memory",
-    "description": "AI agents lack continuous memory across sessions Dual-hook architecture for self-identity accumulation: SessionStart hook injects accumulated profile, SessionEnd hook extracts new insights",
-    "problem": "AI agents lack continuous memory across sessions. Each conversation starts from zero, causing lost familiarity, repetitive explanations, shallow relationships, and generic responses.",
-    "solution": "Dual-hook architecture for self-identity accumulation: SessionStart hook injects accumulated profile, SessionEnd hook extracts new insights. An evolving identity document (WHO_AM_I.md, SOUL.md) persists across sessions.",
+    "description": "AI agents lack continuous memory across sessions Implement **dual-hook architecture** for self-identity accumulation:\n\n1",
+    "problem": "AI agents lack continuous memory across sessions. Each conversation starts from zero, causing:\n\n- **Lost familiarity**: The agent doesn't remember user preferences, goals, or working patterns\n- **Repetitive explanations**: Users must re-explain context and preferences each session\n- **Shallow relationships**: Agent cannot build deeper understanding of user's needs over time\n- **Generic responses**: Without accumulated context, agents default to generic behaviors\n\nWhile episodic memory systems store past *experiences*, they don't address the need for an evolving *self-identity*—who the agent is in relation to the user.",
+    "solution": "Implement **dual-hook architecture** for self-identity accumulation:\n\n1. **SessionStart Hook**: Inject accumulated identity/profile at session start\n2. **SessionEnd Hook**: Extract new insights and refine the profile after each session\n3. **Identity Document**: A persistent file (e.g., WHO_AM_I.md, SOUL.md) that evolves over time\n\n**Core mechanism:**\n\n```python\n# SessionStart: Inject accumulated identity\ndef session_start_hook():\n    profile = read_file(\"WHO_AM_I.md\")\n    inject_context(profile)\n\n# SessionEnd: Refine identity with new insights\ndef session_end_hook(conversation):\n    new_insights = extract_insights(conversation)\n    current_profile = read_file(\"WHO_AM_I.md\")\n    updated_profile = merge_insights(current_profile, new_insights)\n    write_file(\"WHO_AM_I.md\", updated_profile)\n```\n\n**Profile structure typically includes:**\n\n- **Project Goals**: Evolving list of priorities and focus areas\n- **Preferences**: Coding opinions, tool choices, architectural preferences\n- **Communication Style**: Tone preferences, formatting conventions\n- **Workflow Patterns**: Research practices, decision-making patterns\n- **Boundaries**: What the agent should/shouldn't do",
     "when_to_use": [
-      "Personal assistant agents",
-      "Long-term user relationships",
-      "Preference learning scenarios"
+      "Create identity document with initial structure",
+      "Configure SessionStart hook to read and inject it",
+      "Configure SessionEnd hook to refine it with new insights",
+      "Include instructions for when/how to update"
     ],
     "pros": [
-      "Continuous familiarity across sessions",
-      "Deepening relationship over time",
-      "Reduced repetitive friction",
-      "Personalized behavior",
-      "Transparent and user-editable"
+      "Continuous familiarity: Agent \"remembers\" user across sessions",
+      "Deepening relationship: Understanding accumulates over time",
+      "Reduced friction: Less repetitive explanation of preferences",
+      "Personalized behavior: Agent adapts to user's specific style",
+      "Transparent: Identity is visible and editable by user"
     ],
     "cons": [
-      "Profile staleness risk",
-      "Overfitting to one user",
-      "Context token overhead",
-      "Extraction noise from sessions",
-      "Requires hook infrastructure"
+      "Staleness risk: Profile may become outdated if not updated",
+      "Overfitting: Agent may become too specialized to one user",
+      "Context overhead: Profile consumes tokens each session",
+      "Extraction noise: SessionEnd may extract irrelevant \"insights\"",
+      "Requires hooks: Needs lifecycle hook infrastructure"
     ],
     "tags": [
       "self-identity",
@@ -527,6 +497,7 @@
       "familiarity",
       "cross-session",
       "profile",
+      "soul-document",
       "agent-personality"
     ],
     "related": []
@@ -1799,28 +1770,32 @@
     "title": "Disposable Scaffolding Over Durable Features",
     "title_ko": "내구성 기능보다 일회용 스캐폴딩",
     "category": "Orchestration & Control",
-    "description": "Complex, durable features become obsolete when better models arrive, wasting engineering effort Build lightweight, disposable scaffolding that can be easily discarded and rebuilt when models improve",
-    "problem": "Complex, durable features become obsolete when better models arrive, wasting engineering effort.",
-    "solution": "Build lightweight, disposable scaffolding that can be easily discarded and rebuilt when models improve.",
+    "description": "In a field where foundation models improve dramatically every few months, investing significant engineering effort into building complex, durable features *around* the model is extremely risky Adopt a",
+    "problem": "In a field where foundation models improve dramatically every few months, investing significant engineering effort into building complex, durable features *around* the model is extremely risky. A feature that takes three months to build, such as a sophisticated context compression or a custom tool-chain for code editing, could be rendered obsolete overnight by the next model generation that performs the task natively.",
+    "solution": "Adopt a \"scaffolding\" mindset when building tooling and workflows for an agent. Treat most of the code written around the core model as temporary, lightweight, and disposable—like wooden scaffolding around a building under construction.\n\n- **Embrace \"The Bitter Lesson\":** Acknowledge that a lot of complex scaffolding will eventually \"fall into the model\" as its capabilities grow.\n- **Prioritize Speed:** Build the simplest possible solution that works *now*, with the assumption that it will be thrown away later.\n- **Avoid Over-Engineering:** Resist the urge to build scalable, robust, long-term solutions for problems that a better model could solve inherently.\n- **Apply the 6-Month Test:** Before building complex tooling, ask: *\"Will this be useful in 6 months when models improve?\"* If NO, build as disposable scaffolding with explicit disposal triggers.\n- **Make Disposability Explicit:** Document the temporary nature of scaffolding through clear naming, documented removal criteria, and architectural separation from durable features.",
     "when_to_use": [
-      "Rapidly evolving AI landscape",
-      "Model upgrade preparation",
-      "Experimental features"
+      "Model-specific workarounds like context compression or custom toolchains",
+      "Use the 6-month test: categorize as disposable if it compensates for current model limitations",
+      "Design scaffolding for easy removal with well-defined interfaces to durable components",
+      "Separate durable business value from temporary model workarounds"
     ],
     "pros": [
-      "Agility",
-      "Fast adaptation",
-      "Low maintenance cost"
+      "Faster development speed",
+      "Lower maintenance burden",
+      "High adaptability to new models",
+      "Intentional and bounded technical debt"
     ],
     "cons": [
-      "Technical debt risk",
-      "Repeated work"
+      "Accepts lower code quality for temporary components",
+      "Requires discipline to identify disposal triggers",
+      "Can conflict with compounding engineering investments"
     ],
     "tags": [
       "bitter-lesson",
       "temporary-tooling",
+      "model-centric",
       "adaptability",
-      "model-evolution"
+      "future-proofing"
     ],
     "related": []
   },
@@ -2375,28 +2350,30 @@
     "title": "Oracle and Worker Multi-Model Approach",
     "title_ko": "오라클과 워커 멀티 모델 접근법",
     "category": "Orchestration & Control",
-    "description": "Using expensive, powerful models for all tasks is cost-prohibitive and inefficient Use a powerful 'oracle' model for high-level strategy and planning, with cheaper 'worker' models for routine executio",
-    "problem": "Using expensive, powerful models for all tasks is cost-prohibitive and inefficient.",
-    "solution": "Use a powerful 'oracle' model for high-level strategy and planning, with cheaper 'worker' models for routine execution.",
+    "description": "Relying on a single AI model creates a trade-off between capability and cost Implement a two-tier system with specialized roles:\n\n- **The Worker (Claude Sonnet 4):** Fast, capable, and cost-effective ",
+    "problem": "Relying on a single AI model creates a trade-off between capability and cost. High-performance models are expensive for routine tasks, while cost-effective models may lack the reasoning power for complex problems.",
+    "solution": "Implement a two-tier system with specialized roles:\n\n- **The Worker (Claude Sonnet 4):** Fast, capable, and cost-effective agent handling bulk tool use and code generation\n- **The Oracle (OpenAI o3 / Gemini 2.5 Pro):** Powerful, expensive model reserved for high-level reasoning, architectural planning, and debugging complex issues\n\nThe Worker can explicitly request Oracle consultation when stuck or needing better strategy. The Oracle reviews the Worker's approach and suggests course corrections without polluting the main agent's context.",
     "when_to_use": [
-      "Cost optimization",
-      "Large-scale processing",
-      "Strategic planning tasks"
+      "Development environments and complex coding tasks",
+      "Architectural decisions requiring high-level reasoning",
+      "Debugging sessions where initial approaches fail",
+      "Cost optimization for large-scale processing"
     ],
     "pros": [
-      "Cost reduction",
-      "Strategy quality",
-      "Scalability"
+      "Cost-efficient use of frontier models",
+      "Sophisticated problem-solving",
+      "Specialized AI team approach"
     ],
     "cons": [
-      "Architecture complexity",
-      "Coordination overhead"
+      "Additional orchestration complexity",
+      "Potential latency from model switching",
+      "Requires careful Oracle invocation logic"
     ],
     "tags": [
       "multi-model",
       "cost-optimization",
       "strategic-reasoning",
-      "orchestration"
+      "architecture"
     ],
     "related": []
   },
@@ -2587,23 +2564,24 @@
     "title": "Recursive Best-of-N Delegation",
     "title_ko": "재귀적 Best-of-N 위임",
     "category": "Orchestration & Control",
-    "description": "Recursive delegation (parent -> sub-agents -> sub-sub-agents) has a failure mode: a single weak sub-agent result can poison parent's next steps At each node in a recursive agent tree, run best-of-N fo",
-    "problem": "Recursive delegation (parent -> sub-agents -> sub-sub-agents) has a failure mode: a single weak sub-agent result can poison parent's next steps. Errors compound up the tree. Pure recursion also underuses parallelism when a node is uncertain.",
-    "solution": "At each node in a recursive agent tree, run best-of-N for the current subtask before expanding. Decompose into subtasks, spawn K candidate workers per subtask in isolated sandboxes, score with judge (tests + LLM rubric), select top candidate, escalate uncertainty if confidence is low.",
+    "description": "Recursive delegation (parent agent → sub-agents → sub-sub-agents) decomposes big tasks, but has a failure mode:\n\n- A single weak sub-agent result can poison the parent's next steps (wrong assumption, ",
+    "problem": "Recursive delegation (parent agent → sub-agents → sub-sub-agents) decomposes big tasks, but has a failure mode:\n\n- A single weak sub-agent result can poison the parent's next steps (wrong assumption, missed file, bad patch)\n- Errors compound up the tree: \"one bad leaf\" can derail the whole rollout\n- Pure recursion underuses parallelism when a node is uncertain: you want multiple shots *right where the ambiguity is*\n\nMeanwhile, \"best-of-N\" parallel attempts help reliability, but without structure they waste compute by repeatedly solving the *same* problem instead of decomposing it. The pattern applies parallelism only where uncertainty exists—at the subtask level—while maintaining structured decomposition.",
+    "solution": "At *each node* in a recursive agent tree, run **best-of-N** for the current subtask before expanding further. This combines the structured decomposition of recursive delegation with the reliability of self-consistency sampling:\n\n1. **Decompose:** Parent turns task into sub-tasks (like normal recursive delegation)\n2. **Parallel candidates per subtask:** For each subtask, spawn **K candidate workers** in isolated sandboxes (K=2-5 typical)\n3. **Score candidates:** Use a judge that combines:\n   - Automated signals (tests, lint, exit code, diff size, runtime)\n   - LLM-as-judge rubric (correctness, adherence to constraints, simplicity)\n4. **Select + promote:** Pick the top candidate as the \"canonical\" result for that subtask\n5. **Escalate uncertainty:** If the judge confidence is low (or candidates disagree), either:\n   - Increase K for that subtask, or\n   - Spawn a focused \"investigator\" sub-agent to gather missing facts, then re-run selection\n6. **Aggregate upward:** Parent synthesizes selected results and continues recursion",
     "when_to_use": [
-      "Shardable subtasks with tricky individual shards",
-      "Tasks with cheap output scoring (unit tests, lint, type checks)",
-      "High-stakes changes where one wrong move is costly"
+      "Subtasks are shardable, but each shard can be tricky (ambiguous API use, repo-specific conventions)",
+      "You can score outputs cheaply (unit tests, type checks, lint, golden files)",
+      "\"One wrong move\" is costly (migration diffs, security-sensitive changes, large refactors)",
+      "Start with K=2 for most subtasks, increase to K=5 only on high uncertainty nodes"
     ],
     "pros": [
-      "Much more robust than single-recursion",
-      "Compute is targeted where uncertainty is high",
-      "Works naturally with sandboxed execution and patch workflows"
+      "Much more robust than single-recursion: local uncertainty gets extra shots",
+      "Compute is targeted: you spend K where it matters, not globally",
+      "Works naturally with sandboxed execution and patch-based workflows"
     ],
     "cons": [
-      "More orchestration complexity (judge, scoring, thresholds)",
-      "Higher cost/latency if K is overused",
-      "Judge quality becomes bottleneck"
+      "More orchestration complexity (judge, scoring, confidence thresholds)",
+      "Higher cost/latency if you overuse K",
+      "Judge quality becomes a bottleneck; add objective checks whenever possible"
     ],
     "tags": [
       "recursion",
@@ -2655,13 +2633,14 @@
     "title": "Specification-Driven Agent Development",
     "title_ko": "명세 기반 에이전트 개발",
     "category": "Orchestration & Control",
-    "description": "Hand-crafted prompts or loose user stories leave room for ambiguity; agents can wander or produce conflicting code Adopt a spec-first workflow where a formal specification file is the agent's primary ",
-    "problem": "Hand-crafted prompts or loose user stories leave room for ambiguity; agents can wander or produce conflicting code.",
-    "solution": "Adopt a spec-first workflow where a formal specification file is the agent's primary input and source of truth.",
+    "description": "Hand-crafted prompts or loose user stories leave room for ambiguity; agents can wander, over-interpret, or produce code that conflicts with stakeholder intent Adopt a **spec-first workflow** in which ",
+    "problem": "Hand-crafted prompts or loose user stories leave room for ambiguity; agents can wander, over-interpret, or produce code that conflicts with stakeholder intent.",
+    "solution": "Adopt a **spec-first workflow** in which a formal specification file (e.g., Markdown, OpenAPI, JSON Schema) is the agent's *primary* input and source of truth.\n\n- **Parse spec** → agent builds an explicit task graph.\n- **Scaffold** project structure & stub code straight from the spec.\n- **Enforce** that every generated artifact links back to a spec clause.\n- **Iterate** only by editing the spec, *not* by re-prompting ad-hoc.\n\n```pseudo\nif new_feature_requested:\n    write_spec(update)\n    agent.sync_with(spec)\n```\n\n**Core Framework (SPEC/EXPOSURE/TASK DELTA):**\n- **SPEC**: Version-controlled markdown capturing intent and values\n- **EXPOSURE**: What customers experience; spec is permanent, code is temporary\n- **TASK DELTA**: Continuous loop evaluating SPEC ↔ PRODUCT to identify gaps",
     "when_to_use": [
-      "Complex projects",
-      "Team collaboration",
-      "Audit-required systems"
+      "Write specifications first (Markdown files in git), then let agents scaffold from them",
+      "Documentation IS the spec—write it before code",
+      "Use tiered review: AI for patterns, humans for logic",
+      "Parallelize via git worktrees or multiple agents coordinating through shared spec files"
     ],
     "pros": [
       "Repeatable",
@@ -2670,7 +2649,7 @@
     ],
     "cons": [
       "Up-front spec writing effort",
-      "Learning curve for spec formats"
+      "Initial ramp-up for teams new to spec formats"
     ],
     "tags": [
       "spec-first",
@@ -2716,32 +2695,38 @@
     "title": "Sub-Agent Spawning",
     "title_ko": "서브 에이전트 생성 패턴",
     "category": "Orchestration & Control",
-    "description": "Complex tasks exceed single agent context limits and require specialized handling for different subtasks Let the main agent spawn focused sub-agents, each with its own fresh context, to work in parall",
-    "problem": "Complex tasks exceed single agent context limits and require specialized handling for different subtasks.",
-    "solution": "Let the main agent spawn focused sub-agents, each with its own fresh context, to work in parallel on shardable subtasks. Aggregate their results when done. Critical requirement: each subagent invocation must have a clear, specific task subject for traceability. Implementation approaches include declarative YAML configuration (defining subagent types with system prompts, allowed tools, and context windows) and dynamic spawning (on-demand parallel task execution). Parallel delegation best practices: launch independent tasks simultaneously, use clear task subjects, plan synthesis upfront, and limit to 2-4 subagents.",
+    "description": "Large multi-file tasks blow out the main agent's context window and reasoning budget Let the main agent **spawn focused sub-agents**, each with its own fresh context, to work in parallel on shardable ",
+    "problem": "Large multi-file tasks blow out the main agent's context window and reasoning budget. You need a way to delegate work to specialized agents with isolated contexts and tools.",
+    "solution": "Let the main agent **spawn focused sub-agents**, each with its own fresh context, to work in parallel on shardable subtasks. Aggregate their results when done.\n\n**Critical requirement**: Each subagent invocation must have a clear, specific task subject for traceability.\n\n**Implementation approaches:**\n\n### 1. Declarative YAML Configuration\nDefine subagent types in configuration files with their own system prompts, allowed tools, and context windows:\n\n```yaml\n# subagents/planning.yaml\nname: planning\nsystem_prompt: \"Break down complex tasks into steps...\"\ntools:\n  - list_files\n  - read_file\n```\n\n### 2. Dynamic Spawning\nSpawn subagents on-demand for parallel task execution with clear task subjects.\n\n**Parallel delegation best practices:**\n- Launch independent tasks simultaneously\n- Use clear task subjects for traceability\n- Plan synthesis upfront\n- Limit to 2-4 subagents\n\n**Three spawning architecture scales:**\n- **Virtual File Isolation** (2-4 subagents): Same-process spawning with explicit file passing\n- **Git Worktree Isolation** (10-100 subagents): Filesystem-level isolation using git worktrees\n- **Cloud Worker Spawning** (100+ agents): Container/VM isolation for enterprise-scale distributed processing",
     "when_to_use": [
-      "Large codebase operations",
-      "Parallel processing needs",
-      "Specialized task separation",
-      "Independent exploration tasks that can run simultaneously",
-      "Complex research requiring multiple focused investigations"
+      "Context window management for large file processing",
+      "I/O-bound workflows with concurrent network API calls",
+      "Code-driven workflows needing LLM delegation for specific determinations",
+      "Security isolation with separate tools/contexts in mutually isolated subagents",
+      "Massive parallelization needs (10+ concurrent agents via swarm migrations)"
     ],
     "pros": [
-      "Context isolation",
-      "Parallel processing",
-      "Specialization"
+      "Context isolation: Each subagent has clean context window",
+      "Parallelization: Reduce workflow latency through concurrent execution",
+      "Specialization: Different subagent types for different tasks",
+      "Virtual files: Precise control over what each subagent can see",
+      "Tool scoping: Limit subagent capabilities for security/simplicity",
+      "Declarative config: Reusable subagent definitions via YAML"
     ],
     "cons": [
-      "Coordination overhead",
-      "Increased costs",
-      "Complex result integration"
+      "Overhead: Spawning and coordinating subagents adds complexity",
+      "Cost: Running multiple agents simultaneously increases token usage",
+      "Coordination: Main agent must track and aggregate subagent results",
+      "Not always necessary: Frequently thought needed but found more natural alternative",
+      "Latency visibility: User-facing latency is invisible feature until problematic"
     ],
     "tags": [
       "orchestration",
       "context",
       "scalability",
       "subagents",
-      "parallelization",
+      "yaml-configuration",
+      "virtual-files",
       "subject-hygiene",
       "parallel-delegation"
     ],
@@ -3329,33 +3314,27 @@
     "title": "Merged Code + Language Skill Model",
     "title_ko": "코드 + 언어 스킬 모델 병합",
     "category": "Reliability & Eval",
-    "description": "Building a unified model excelling at both natural language tasks and code generation requires massive centralized training Adopt decentralized training + model merging: train separate Language and Co",
-    "problem": "Building a unified model excelling at both natural language tasks and code generation requires massive centralized training. This is compute-intensive and susceptible to catastrophic forgetting when mixing code and NL tasks.",
-    "solution": "Adopt decentralized training + model merging: train separate Language and Code specialists independently, then use weight averaging (or Fisher-weighted averaging) to merge them. Optionally follow with short fine-tuning on mixed data.",
+    "description": "Building a **unified model** that excels both at **natural language tasks** (e Adopt a **decentralized training + model merging** approach:\n\n**1",
+    "problem": "Building a **unified model** that excels both at **natural language tasks** (e.g., summarization, documentation generation) and **code generation/reasoning** typically requires a massive centralized training run. This is:\n\n- **Compute-Intensive:** Training from scratch on both code and language corpora demands enormous resources.\n- **Susceptible to Interference:** When mixing code and NL tasks in one pipeline, the model may forget earlier skills.",
+    "solution": "Adopt a **decentralized training + model merging** approach:\n\n**1. Train a \"Language Specialist\"**\n- Fine-tune a base LLM on documentation generation, summarization, code comments, and general NL tasks.\n\n**2. Train a \"Code Specialist\"**\n- Independently fine-tune the same base LLM architecture on code-specific corpora.\n\n**3. Merge Techniques**\n- **Simple Weight Averaging:** Arithmetic mean of model weights (Model Soups, NeurIPS 2022).\n- **Task Arithmetic:** Treat fine-tuning as vector operations—add/subtract task vectors: `W_merged = W_base + Σ λ_i * τ_i` where `τ_task = W_finetuned - W_base` (ICLR 2024).\n- **TIES Merging:** Trim top-k% parameters, elect sign direction, merge only non-conflicting parameters to reduce interference (arXiv 2023).\n- **Fisher-weighted:** Weight parameters by Fisher Information Matrix to preserve important updates (Elastic Weight Consolidation, PNAS 2017).\n\n**4. Iterative Merge Rounds**\n- As new specialists become available, periodically merge them into the main agent.",
     "when_to_use": [
-      "Building multi-skill coding agents",
-      "Combining independently trained specialists",
-      "Resource-constrained training",
-      "Iterative capability expansion"
+      "Ensure all specialist models share identical architecture (e.g., same number of layers, parameters)",
+      "Use MergeKit (Arcee AI) for production-ready merging with Task Arithmetic, TIES, DARE, and SLERP support",
+      "Run a benchmark suite covering both NL tasks and code tasks to detect interference post-merge"
     ],
     "pros": [
-      "Teams can develop skills independently",
-      "Reduced centralized compute needs",
-      "Iterative skill addition possible",
-      "Works surprisingly well"
+      "Parallelism in R&D: Teams can independently develop NL and code capabilities, then merge",
+      "Reduced Centralized Compute: No need for a single massive GPU cluster to train both skill sets simultaneously"
     ],
     "cons": [
-      "Naive averaging can dilute strengths",
-      "All specialists must share architecture",
-      "Same tokenizer/vocabulary required",
-      "May need post-merge validation"
+      "Potential Performance Dilution: Naive averaging can blur specialist strengths if distributions conflict",
+      "Alignment Required: All specialists must use the same base tokenizer and vocabulary to avoid mismatches"
     ],
     "tags": [
       "model-merging",
       "transfer-learning",
       "coding-agent",
-      "multilingual",
-      "decentralized-training"
+      "multilingual"
     ],
     "related": []
   },
@@ -3672,25 +3651,28 @@
     "title": "External Credential Sync",
     "title_ko": "외부 자격 증명 동기화",
     "category": "Security & Safety",
-    "description": "Users manage AI API credentials across multiple tools—CLIs, web portals, and local environments Cross-credential-source synchronization with near-expiry detection, type-aware upgrades, and duplicate d",
-    "problem": "Users manage AI API credentials across multiple tools—CLIs, web portals, and local environments. Manually re-entering credentials causes stale tokens, inconsistent state, and authentication failures.",
-    "solution": "Cross-credential-source synchronization with near-expiry detection, type-aware upgrades, and duplicate detection. The system reads credentials from external tool stores and syncs them with intelligent merging and freshness tracking.",
+    "description": "Users manage AI API credentials across multiple tools—CLIs (Claude Code, Codex CLI), web portals, and local development environments Cross-credential-source synchronization with near-expiry detection,",
+    "problem": "Users manage AI API credentials across multiple tools—CLIs (Claude Code, Codex CLI), web portals, and local development environments. Manually re-entering credentials for each tool is friction-prone and leads to:\n\n- **Stale tokens**: OAuth refresh tokens expire, causing authentication failures\n- **Inconsistent state**: Credentials updated in one tool don't propagate to others\n- **Token-only drift**: Some tools support OAuth refresh; others store static tokens that expire\n\nAgents need automatic credential synchronization to reduce authentication friction while maintaining security (no plaintext storage, proper expiry handling).",
+    "solution": "Cross-credential-source synchronization with near-expiry detection, type-aware upgrades, and duplicate detection. The system reads credentials from external tool stores (keychain, config files) and syncs them into the agent's credential store, with intelligent merging and freshness tracking.\n\n**Core concepts:**\n\n- **Source plugins**: Each external tool implements a credential reader that accesses its secure storage (keychain, encrypted config).\n- **Near-expiry detection**: Credentials within ~10 minutes of expiration trigger proactive refresh, preventing auth failures during active sessions.\n- **Type-aware upgrades**: OAuth credentials are preferred over token-only credentials. When sync detects an OAuth credential for a profile that previously had a token-only credential, it upgrades to enable auto-refresh.\n- **Duplicate detection**: Compares credential values (access tokens, refresh tokens) to avoid creating duplicate profiles for the same underlying account.\n- **TTL-based caching**: External reads are cached (~15 minutes) to avoid excessive keychain access while maintaining freshness.\n- **Immutable profile IDs**: Each external source maps to a fixed profile ID (e.g., `anthropic:claude-cli`), allowing stable references across sync cycles.\n\n```typescript\nconst EXTERNAL_CLI_NEAR_EXPIRY_MS = 10 * 60 * 1000;  // 10 minutes\nconst EXTERNAL_CLI_SYNC_TTL_MS = 15 * 60 * 1000;      // 15 minutes cache\n\nfunction isExternalProfileFresh(cred: Credential, now: number): boolean {\n  if (cred.type !== \"oauth\" && cred.type !== \"token\") return false;\n  if (typeof cred.expires !== \"number\") return true;\n  return cred.expires > now + EXTERNAL_CLI_NEAR_EXPIRY_MS;\n}\n```",
     "when_to_use": [
-      "Multi-tool environments",
-      "OAuth token management",
-      "CLI credential sharing"
+      "Identify credential sources and map external tools storing credentials for the same providers",
+      "Implement credential readers for each source's secure store (keychain, config file)",
+      "Define stable compound profile IDs for each external source",
+      "Sync on startup and periodically to refresh near-expiry credentials",
+      "Handle upgrade paths when OAuth becomes available for token-only profiles",
+      "Detect duplicates before creating new profiles"
     ],
     "pros": [
-      "Reduced authentication friction",
-      "Proactive token refresh",
-      "Automatic OAuth upgrades",
-      "Duplicate elimination"
+      "Reduced friction: Users authenticate once per provider; all tools benefit",
+      "Proactive refresh: Near-expiry detection prevents auth failures during active sessions",
+      "Type upgrades: OAuth adoption is automatic when tools upgrade from token-only to OAuth",
+      "Duplicate elimination: Avoids cluttering credential store with redundant profiles"
     ],
     "cons": [
-      "Keychain dependency",
-      "Platform-specific APIs",
-      "Privilege requirements",
-      "Sync lag due to caching"
+      "Keychain dependency: Requires access to OS keychain, which may fail in headless environments",
+      "Platform differences: Windows, macOS, and Linux keychain APIs differ; need abstractions",
+      "Privilege requirements: Reading keychain credentials may require user permission or elevated privileges",
+      "Sync lag: Cached reads (~15 minute TTL) mean fresh credentials may not appear immediately"
     ],
     "tags": [
       "credentials",
@@ -4355,22 +4337,56 @@
     "related": []
   },
   {
+    "id": "dynamic-code-injection-on-demand-file-fetch",
+    "title": "Dynamic Code Injection (On-Demand File Fetch)",
+    "title_ko": "동적 코드 주입 (온디맨드 파일 가져오기)",
+    "category": "Tool Use & Environment",
+    "description": "During an interactive coding session, a user or agent may need to inspect or modify files **not originally loaded** into the main context Allow **on-demand file injection** via special syntax (e",
+    "problem": "During an interactive coding session, a user or agent may need to inspect or modify files **not originally loaded** into the main context. Manually copying/pasting entire files into the prompt is:\n\n- Tedious and error-prone.\n- Wastes tokens on boilerplate (e.g., large config files).\n- Interrupts workflow momentum when switching between the editor and chat.",
+    "solution": "Allow **on-demand file injection** via special syntax (e.g., `@filename` or `/load file`) that automatically:\n\n**1. Fetches the requested file(s)** from disk or version control.\n**2. Summarizes** or **extracts** only the relevant portions (e.g., function bodies, AST-parsed definitions, or specific line ranges) if the file is large.\n**3. Injects** that snippet into the agent's current context, seamlessly extending its \"memory\" for the ongoing task.\n\nConcretely:\n\n- A user types `/load src/components/Button.js:lines 10–50` or `@src/setup/db.js`.\n- The agent's preprocessor intercepts this command, reads the specified file (or line range), and replaces the command with the file content (or trimmed snippet).\n- The rest of the prompt remains unchanged, so the agent can continue reasoning without restarting the conversation.",
+    "when_to_use": [
+      "Build a listener in your chat frontend or CLI that recognizes @ and /load tokens",
+      "Map recognized tokens to file paths; verify permissions and resolve symlinks",
+      "Read file text, run a line-range parser or AST-based snippet extractor (e.g., tree-sitter) if needed",
+      "Replace the token in the outgoing prompt with /// BEGIN <filename> ...content... /// END <filename>",
+      "Validate and reject path traversal attempts (e.g., @../../../etc/passwd)"
+    ],
+    "pros": [
+      "Enables interactive exploration of code without leaving the chat environment",
+      "Reduces human overhead: no manual copy/paste of code blocks",
+      "Improves agent accuracy by ensuring the most relevant code is directly visible",
+      "Token-efficient: 10-100x reduction versus full context loading; documented 3x+ development efficiency gains"
+    ],
+    "cons": [
+      "Requires the chat interface (or a proxy server) to have local file system access",
+      "Security critical: path validation, sensitive file blocking (.env, *.key), and sandboxing are non-negotiable",
+      "Summarization heuristics may omit subtle context (e.g., private helper functions)"
+    ],
+    "tags": [
+      "file-injection",
+      "at-mention",
+      "slash-commands",
+      "IDE-integration"
+    ],
+    "related": []
+  },
+  {
     "id": "egress-lockdown-no-exfiltration-channel",
     "title": "Egress Lockdown (No-Exfiltration Channel)",
     "title_ko": "송신 잠금 (데이터 유출 채널 차단)",
     "category": "Tool Use & Environment",
-    "description": "Even with private-data access and untrusted inputs, attacks fail if the agent has no way to transmit stolen data Implement egress firewall: allow only specific domains/methods, strip/hash content in o",
-    "problem": "Even with private-data access and untrusted inputs, attacks fail if the agent has no way to transmit stolen data. Many real-world fixes simply removed outbound channels.",
-    "solution": "Implement egress firewall: allow only specific domains/methods, strip/hash content in outbound calls, forbid dynamic link generation, run external comms in separate worker without private data access.",
+    "description": "Even with private-data access and untrusted inputs, attacks fail if the agent has **no way to transmit stolen data** Implement an **egress firewall** for agent tools:\n\n- Allow only specific domains, m",
+    "problem": "Even with private-data access and untrusted inputs, attacks fail if the agent has **no way to transmit stolen data**. This pattern implements the Bell-LaPadula model's \"no write down\" property: high-privilege subjects cannot write to low-trust destinations. Many real-world fixes simply removed or filtered outbound channels.",
+    "solution": "Implement an **egress firewall** for agent tools:\n\n- Allow only specific domains, methods, or payload sizes.\n- Strip or hash content in any permitted outbound call.\n- Forbid dynamic link generation (e.g., `attacker.example/exfil?q=REDACTED`).\n- Where external communication is essential, run it in a separate \"dumb\" worker that cannot see private data.\n\n```bash\n# Docker file example\nRUN iptables -P OUTPUT DROP       # default-deny\nRUN iptables -A OUTPUT -d api.mycompany.internal -j ACCEPT\n\n# For L7-aware filtering: eBPF/XDP (Linux 4.19+) or Cilium\n```",
     "when_to_use": [
-      "Agents processing untrusted data",
-      "Enterprise security requirements",
-      "High-value data environments"
+      "Place the agent inside a sandboxed VM or container with outbound rules",
+      "Provide needed APIs via an internal proxy; audit that proxy's request schema",
+      "Apply seccomp profiles or AppArmor policies to block network syscalls directly",
+      "Log any DROP events for forensic follow-up"
     ],
     "pros": [
       "Drastically reduces high-impact leaks",
-      "Easy to reason about",
-      "Defense in depth"
+      "Easy to reason about"
     ],
     "cons": [
       "Breaks legitimate integrations",
