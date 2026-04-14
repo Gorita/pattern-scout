@@ -4,29 +4,59 @@
   "title_ko": "3단계 인식 아키텍처",
   "category": "Orchestration & Control",
   "status": "established",
-  "original_url": "https://www.oreilly.com/library/view/software-architecture-patterns/9781491971437/",
+  "original_url": "https://arxiv.org/abs/2210.03629",
   "problem": {
-    "en": "Complex AI agents struggle with unstructured inputs. Without clear separation of concerns, agents become monolithic and difficult to debug, extend, or scale independently.",
-    "ko": "복잡한 AI 에이전트는 비구조화된 입력으로 어려움을 겪습니다. 명확한 관심사 분리 없이는 에이전트가 모놀리식이 되어 디버그, 확장, 독립적 스케일링이 어려워집니다."
+    "en": "Complex AI agents often struggle with unstructured inputs and need a systematic way to process information before taking action. Without a clear separation of concerns, agents can become monolithic and difficult to debug, extend, or optimize. Additionally, mixing perception, processing, and action logic makes it hard to swap out components or scale different parts of the system independently.",
+    "ko": "복잡한 AI 에이전트는 비구조화된 입력으로 어려움을 겪으며 행동을 취하기 전에 정보를 체계적으로 처리하는 방법이 필요합니다. 명확한 관심사 분리가 없으면 에이전트가 모놀리식이 되어 디버그, 확장, 최적화가 어려워집니다. 또한 인식, 처리, 행동 로직이 혼재되면 컴포넌트 교체나 시스템 각 부분의 독립적 스케일링이 어려워집니다."
   },
   "solution": {
-    "en": "Implement three-stage pipeline: Perception (input gathering/normalization), Processing (reasoning/decision-making), Action (execution in environment).",
-    "ko": "3단계 파이프라인 구현: 인식(입력 수집/정규화), 처리(추론/의사결정), 행동(환경에서 실행)."
+    "en": "Implement a three-stage pipeline architecture that cleanly separates an agent's workflow into distinct phases:\n\n1. **Perception Stage**: Handles all input gathering and normalization—receives raw inputs (text, images, audio, structured data), performs initial processing (OCR, speech-to-text, format conversion), and normalizes data into a common internal representation.\n\n2. **Processing Stage**: Performs reasoning and decision-making—analyzes normalized inputs using appropriate models, applies business logic and reasoning, makes decisions about what actions to take, and can involve multiple sub-agents or reasoning steps.\n\n3. **Action Stage**: Executes decisions in the environment—translates decisions into concrete actions, interfaces with external systems and APIs, handles error recovery and retries, and reports results back to the system.",
+    "ko": "에이전트의 워크플로우를 명확한 단계로 분리하는 3단계 파이프라인 아키텍처를 구현합니다:\n\n1. **인식 단계**: 모든 입력 수집과 정규화를 처리합니다—원시 입력(텍스트, 이미지, 오디오, 구조화된 데이터)을 수신하고, 초기 처리(OCR, 음성-텍스트 변환, 형식 변환)를 수행하며, 데이터를 공통 내부 표현으로 정규화합니다.\n\n2. **처리 단계**: 추론과 의사결정을 수행합니다—적절한 모델을 사용하여 정규화된 입력을 분석하고, 비즈니스 로직과 추론을 적용하며, 어떤 행동을 취할지 결정하고, 여러 서브 에이전트나 추론 단계를 포함할 수 있습니다.\n\n3. **행동 단계**: 환경에서 결정을 실행합니다—결정을 구체적인 행동으로 변환하고, 외부 시스템 및 API와 인터페이스하며, 오류 복구와 재시도를 처리하고, 결과를 시스템에 보고합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────────┐\n│         PERCEPTION STAGE           │\n│  Raw Input → Type Detection →      │\n│  Normalization → Feature Extract   │\n└─────────────────┬───────────────────┘\n                  │\n┌─────────────────▼───────────────────┐\n│         PROCESSING STAGE           │\n│  Reasoning Engine → Analysis →     │\n│  Decision Making → Validation      │\n└─────────────────┬───────────────────┘\n                  │\n┌─────────────────▼───────────────────┐\n│           ACTION STAGE             │\n│  Executor Selection → Execute →    │\n│  Error Handling → Results          │\n└─────────────────────────────────────┘",
   "mermaid_diagram": "flowchart LR\n    subgraph Perception\n        A[Raw Input] --> B[Type Detection]\n        B --> C[Normalization]\n        C --> D[Feature Extraction]\n    end\n    subgraph Processing\n        D --> E[Reasoning Engine]\n        E --> F[Decision Making]\n        F --> G[Validation]\n    end\n    subgraph Action\n        G --> H[Executor Selection]\n        H --> I[Action Execution]\n        I --> J[Results]\n    end",
   "code_example": "class ThreeStageAgent:\n    def __init__(self):\n        self.perception = PerceptionPipeline()\n        self.processor = ProcessingPipeline()\n        self.action = ActionPipeline()\n    \n    async def run(self, raw_input):\n        # Stage 1: Perception\n        perceived_data = await self.perception.process(raw_input)\n        \n        # Stage 2: Processing\n        decisions = await self.processor.analyze(perceived_data)\n        \n        # Stage 3: Action\n        results = await self.action.execute(decisions)\n        \n        return results",
   "when_to_use": {
-    "en": ["Multi-modal input handling", "Complex agent systems", "Team-based development"],
-    "ko": ["다중 모달 입력 처리", "복잡한 에이전트 시스템", "팀 기반 개발"]
+    "en": [
+      "Use this when tasks need explicit control flow between planning, execution, and fallback.",
+      "Start with one high-volume workflow before applying it across all agent lanes.",
+      "Define ownership for each phase so failures can be routed and recovered quickly."
+    ],
+    "ko": [
+      "계획, 실행, 폴백 간 명시적 제어 흐름이 필요한 작업 시 사용",
+      "모든 에이전트 레인에 적용하기 전 하나의 고볼륨 워크플로우부터 시작",
+      "각 단계의 소유권을 정의하여 실패 시 빠르게 라우팅하고 복구"
+    ]
   },
   "pros": {
-    "en": ["Modularity", "Easier debugging", "Independent scaling per stage"],
-    "ko": ["모듈성", "쉬운 디버깅", "단계별 독립적 스케일링"]
+    "en": [
+      "Clean separation of concerns",
+      "Easier to maintain and extend",
+      "Better error isolation",
+      "Enables specialized optimization per stage",
+      "Facilitates team collaboration (different teams per stage)"
+    ],
+    "ko": [
+      "깔끔한 관심사 분리",
+      "유지보수 및 확장 용이",
+      "향상된 오류 격리",
+      "단계별 특화 최적화 가능",
+      "팀 협업 촉진 (단계별 다른 팀 담당)"
+    ]
   },
   "cons": {
-    "en": ["Additional complexity for simple tasks", "Latency from stage transitions", "Interface design overhead"],
-    "ko": ["단순 작업에 추가 복잡성", "단계 전환으로 인한 지연", "인터페이스 설계 오버헤드"]
+    "en": [
+      "Additional complexity for simple tasks",
+      "Potential latency from stage transitions",
+      "Requires careful interface design between stages",
+      "May introduce overhead for data transformation between stages"
+    ],
+    "ko": [
+      "단순 작업에 추가 복잡성",
+      "단계 전환으로 인한 잠재적 지연",
+      "단계 간 신중한 인터페이스 설계 필요",
+      "단계 간 데이터 변환 오버헤드 발생 가능"
+    ]
   },
   "tags": ["architecture", "perception", "processing", "action", "pipeline", "modular-design"]
 }

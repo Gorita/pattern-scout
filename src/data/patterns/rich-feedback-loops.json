@@ -10,23 +10,31 @@
     "ko": "단일 프롬프트를 다듬는 것만으로는 모든 엣지 케이스를 처리할 수 없습니다. 에이전트는 자기 교정을 위해 실제 결과가 필요합니다. 또한 에이전트는 세션 품질을 시간에 따라 개선하기 위해 인간 피드백(긍정적 피드백과 교정 피드백)을 통합해야 합니다. 사용자 피드백에 더 잘 반응하는 프로젝트가 더 적은 수정과 더 나은 결과를 보입니다."
   },
   "solution": {
-    "en": "Expose iterative, machine-readable feedback (compiler errors, test failures, linter output, screenshots) after every tool call. Integrate human feedback patterns: recognize positive feedback to reinforce working patterns, learn from corrections to avoid repeating mistakes, adapt based on user communication style, and track what works for specific users. Evidence from 88 sessions shows projects with more positive feedback had better outcomes (nibzard-web: 80% success with 8 positive vs awesome-agentic-patterns: 17% with 1 positive).",
-    "ko": "모든 도구 호출 후 반복적이고 기계가 읽을 수 있는 피드백(컴파일러 오류, 테스트 실패, 린터 출력, 스크린샷)을 제공합니다. 인간 피드백 패턴을 통합합니다: 긍정적 피드백을 인식하여 효과적인 패턴을 강화하고, 수정에서 학습하여 실수 반복을 방지하고, 사용자 소통 스타일에 맞게 적응하며, 특정 사용자에게 효과적인 것을 추적합니다. 88개 세션 분석에서 긍정적 피드백이 더 많은 프로젝트가 더 나은 결과를 보였습니다 (nibzard-web: 긍정 8회로 80% 성공 vs awesome-agentic-patterns: 긍정 1회로 17%)."
+    "en": "Expose **iterative, machine-readable feedback**—compiler errors, test failures, linter output, screenshots—after every tool call. The agent uses diagnostics to plan the next step, leading to emergent self-debugging.\n\n**Integrate human feedback patterns:**\n- **Recognize positive feedback** to reinforce patterns that work—positive signals are training data, not politeness\n- **Learn from corrections** to avoid repeating mistakes\n- **Adapt based on user communication style** and preferences\n- **Track what works** for specific users over time\n\n**Tool design matters:** Structured outputs (JSON, exit codes, error objects) are more effective than natural language for agent self-correction.\n\n**Key insight**: Projects with more positive feedback had better outcomes. Reinforcement works—it's training data that teaches the agent what *to* do, whereas corrections only teach what *not* to do.\n\nModern models like Claude Sonnet 4.5 are increasingly proactive in creating their own feedback loops by writing and executing short scripts and tests, even for seemingly simple verification tasks.",
+    "ko": "모든 도구 호출 후 **반복적이고 기계가 읽을 수 있는 피드백**—컴파일러 오류, 테스트 실패, 린터 출력, 스크린샷—을 제공합니다. 에이전트는 진단 결과를 사용하여 다음 단계를 계획하며, 이는 자발적인 셀프 디버깅으로 이어집니다.\n\n**인간 피드백 패턴 통합:**\n- **긍정적 피드백 인식**으로 효과적인 패턴을 강화—긍정 신호는 예의가 아닌 학습 데이터\n- **수정에서 학습**하여 실수 반복 방지\n- **사용자 소통 스타일**과 선호도에 맞게 적응\n- 시간이 지남에 따라 **특정 사용자에게 효과적인 것을 추적**\n\n**도구 설계가 중요합니다:** 구조화된 출력(JSON, 종료 코드, 에러 객체)이 자연어보다 에이전트 자기 교정에 더 효과적입니다.\n\n**핵심 인사이트**: 긍정적 피드백이 더 많은 프로젝트가 더 나은 결과를 보였습니다. 강화는 에이전트에게 무엇을 *해야 하는지* 가르치는 학습 데이터이며, 수정은 무엇을 *하지 말아야 하는지*만 가르칩니다.\n\nClaude Sonnet 4.5 같은 최신 모델은 단순한 검증 작업에서도 짧은 스크립트와 테스트를 작성하고 실행하여 자체 피드백 루프를 만드는 데 점점 더 적극적입니다."
   },
   "ascii_diagram": "┌──────────────────────┐\n│ Instead of:          │\n│ Perfect Prompt ────? │\n│                      │\n│ Do this:             │\n│ Agent ──▶ Tests      │\n│       ──▶ Linter     │\n│       ──▶ CI         │\n│       ──▶ Improve    │\n└──────────────────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Agent Output] --> B[Tests]\n    A --> C[Linter]\n    A --> D[CI]\n    B & C & D --> E[Feedback]\n    E --> F[Improve]",
   "code_example": "# Don't: spend hours on perfect prompt\n# Do: build feedback systems\nresult = agent.execute(task)\nfeedback = [\n    tests.run(result),\n    linter.check(result),\n    ci.validate(result)\n]\nagent.improve_from(feedback)",
   "when_to_use": {
-    "en": ["Coding agents", "Quality-critical tasks", "Iterative development"],
-    "ko": ["코딩 에이전트", "품질 중요 작업", "반복 개발"]
+    "en": [
+      "Use this when agent quality improves only after iterative critique or retries.",
+      "Start with one objective metric and one feedback loop trigger.",
+      "Record failure modes so each loop produces reusable learning artifacts."
+    ],
+    "ko": [
+      "반복적인 비평이나 재시도 후에만 에이전트 품질이 개선되는 경우 사용",
+      "하나의 객관적 메트릭과 하나의 피드백 루프 트리거부터 시작",
+      "실패 모드를 기록하여 각 루프가 재사용 가능한 학습 아티팩트를 생성하도록 함"
+    ]
   },
   "pros": {
-    "en": ["Robustness", "Continuous improvement", "Real-world validation"],
-    "ko": ["견고함", "지속적 개선", "실제 검증"]
+    "en": ["Turns repeated failures into measurable improvements over time"],
+    "ko": ["반복된 실패를 시간이 지남에 따라 측정 가능한 개선으로 전환"]
   },
   "cons": {
-    "en": ["Infrastructure required", "Initial setup costs"],
-    "ko": ["인프라 필요", "초기 설정 비용"]
+    "en": ["Can increase runtime and operational cost due to iterative passes"],
+    "ko": ["반복 실행으로 인한 런타임 및 운영 비용 증가 가능"]
   },
   "tags": ["feedback", "testing", "reliability", "user-feedback", "positive-reinforcement", "corrections"]
 }

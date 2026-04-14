@@ -6,27 +6,27 @@
   "status": "best-practice",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "When building agent products, it's difficult to know which features will have real product-market fit before investing significant engineering effort. Traditional feature development relies on user interviews which may not reveal how users would actually adapt tools.",
-    "ko": "에이전트 제품을 구축할 때 상당한 엔지니어링 노력을 투자하기 전에 어떤 기능이 실제 제품-시장 적합성을 가질지 알기 어렵습니다. 전통적인 기능 개발은 사용자가 실제로 도구를 어떻게 적응시킬지 드러내지 않을 수 있는 사용자 인터뷰에 의존합니다."
+    "en": "When building agent products, it's difficult to know which features will have real product-market fit before investing significant engineering effort. Traditional feature development relies on user interviews and surveys, which may not reveal how users would actually adapt tools to their needs.",
+    "ko": "에이전트 제품을 구축할 때 상당한 엔지니어링 노력을 투자하기 전에 어떤 기능이 실제 제품-시장 적합성을 가질지 알기 어렵습니다. 전통적인 기능 개발은 사용자가 실제로 도구를 어떻게 적응시킬지 드러내지 않을 수 있는 사용자 인터뷰와 설문조사에 의존합니다."
   },
   "solution": {
-    "en": "Build products that are intentionally hackable and extensible, then observe how power users 'abuse' features for unintended use cases. This reveals latent demand - real user needs demonstrated through behavior. Once patterns emerge, productize them for all users.",
-    "ko": "의도적으로 해킹 가능하고 확장 가능한 제품을 구축한 다음, 파워 유저들이 의도하지 않은 사용 사례를 위해 기능을 '남용'하는 방법을 관찰합니다. 이는 잠재 수요 - 행동을 통해 입증된 실제 사용자 요구를 드러냅니다. 패턴이 나타나면 모든 사용자를 위해 제품화합니다."
+    "en": "Build products that are intentionally **hackable and extensible**, then observe how power users \"abuse\" or repurpose features for unintended use cases. This reveals latent demand—real user needs demonstrated through behavior rather than stated preferences. Once you identify these patterns, productize them for all users.\n\n**Key principles:**\n\n1. **Make extension points**: Provide hooks, plugins, slash commands, configuration files that users can customize\n2. **Monitor creative usage**: Watch for patterns where users hack features for purposes beyond original intent\n3. **Quantify the signal**: Measure how many users are doing the \"unintended\" behavior\n4. **Productize validated demand**: Build proper features for behaviors that show strong adoption",
+    "ko": "의도적으로 **해킹 가능하고 확장 가능한** 제품을 구축한 다음, 파워 유저들이 의도하지 않은 사용 사례를 위해 기능을 \"남용\"하거나 재활용하는 방법을 관찰합니다. 이는 잠재 수요, 즉 명시된 선호가 아닌 행동을 통해 입증된 실제 사용자 요구를 드러냅니다. 이러한 패턴을 식별하면 모든 사용자를 위해 제품화합니다.\n\n**핵심 원칙:**\n\n1. **확장 포인트 제공**: 사용자가 커스터마이즈할 수 있는 훅, 플러그인, 슬래시 명령, 구성 파일 제공\n2. **창의적 사용 모니터링**: 원래 의도를 넘어선 목적으로 기능을 해킹하는 패턴 관찰\n3. **신호 정량화**: \"의도하지 않은\" 행동을 하는 사용자 수 측정\n4. **검증된 수요 제품화**: 강한 채택을 보이는 행동에 대해 적절한 기능 구축"
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   Build Hackable Product        │\n├─────────────────────────────────┤\n│ • Extension APIs                │\n│ • Hooks & Plugins               │\n│ • Configuration files           │\n│ • Slash commands                │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Power Users \"Abuse\" Features  │\n│   (Unintended Use Cases)        │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Monitor & Quantify Patterns   │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Productize Validated Demand   │\n└─────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Build Extensible Product] --> B[Provide Extension Points]\n    B --> C[Power Users Customize]\n    C --> D[Monitor Creative Usage]\n    D --> E{Pattern Emerges?}\n    E -->|Yes| F[Quantify Adoption]\n    E -->|No| C\n    F --> G{Strong Signal?}\n    G -->|Yes| H[Productize for All]\n    G -->|No| C",
   "code_example": "# Examples of latent demand discovery:\n\n# 1. Facebook Dating Discovery\n# Analytics: 60% of profile views were opposite-gender non-friends\n# Insight: Clear dating behavior on platform\n# Action: Launched Facebook Dating\n\n# 2. Facebook Marketplace Discovery\n# Analytics: 40% of group posts were buy-sell transactions\n# Insight: Users treating groups as marketplaces\n# Action: Launched dedicated Marketplace\n\n# 3. Claude Code Hooks Discovery\n# Request: Users wanted Slack notifications for permission prompts\n# Action: Built general hooks system\n# Result: Users implemented Slack integration themselves",
   "when_to_use": {
-    "en": ["Building new agent products", "Feature prioritization decisions", "Understanding power user needs", "Reducing feature development risk"],
-    "ko": ["새 에이전트 제품 구축", "기능 우선순위 결정", "파워 유저 요구 이해", "기능 개발 위험 감소"]
+    "en": ["Design core functionality with clear extension APIs", "Make configuration and customization easy for power users", "Monitor analytics and user feedback for unexpected usage patterns", "Look for behaviors that multiple independent users discover", "Prioritize building features for high-frequency \"hacks\""],
+    "ko": ["명확한 확장 API로 핵심 기능 설계", "파워 유저를 위한 쉬운 구성 및 커스터마이즈", "예기치 않은 사용 패턴에 대한 분석 및 사용자 피드백 모니터링", "여러 독립 사용자가 발견하는 행동 탐색", "고빈도 '핵'에 대한 기능 구축 우선순위 설정"]
   },
   "pros": {
-    "en": ["Validates demand through behavior, not speculation", "Reduces risk of unwanted features", "Power users innovate on your behalf", "Features come with proof of concept"],
-    "ko": ["추측이 아닌 행동을 통해 수요 검증", "원치 않는 기능의 위험 감소", "파워 유저가 대신 혁신", "기능이 개념 증명과 함께 제공"]
+    "en": ["Validates real demand through behavior, not speculation", "Reduces risk of building unwanted features", "Empowers power users to innovate on your behalf", "Creates tight feedback loop between usage and development", "Features come with built-in proof of concept"],
+    "ko": ["추측이 아닌 행동을 통해 실제 수요 검증", "원치 않는 기능 구축 위험 감소", "파워 유저가 대신 혁신할 수 있도록 역량 부여", "사용과 개발 간 긴밀한 피드백 루프 생성", "기능이 내장된 개념 증명과 함께 제공"]
   },
   "cons": {
-    "en": ["Requires building extensibility upfront", "May delay 'obvious' features", "Power user behavior may not represent mainstream", "Can lead to feature bloat"],
-    "ko": ["사전에 확장성 구축 필요", "'명백한' 기능 지연 가능", "파워 유저 행동이 주류를 대표하지 않을 수 있음", "기능 비대화로 이어질 수 있음"]
+    "en": ["Requires building extensibility infrastructure upfront", "May delay shipping \"obvious\" features while waiting for signal", "Power user behavior may not represent mainstream needs", "Requires analytics and monitoring systems to detect patterns", "Can lead to feature bloat if every hack becomes a product"],
+    "ko": ["사전에 확장성 인프라 구축 필요", "신호를 기다리는 동안 '명백한' 기능 출시 지연 가능", "파워 유저 행동이 주류 요구를 대표하지 않을 수 있음", "패턴 감지를 위한 분석 및 모니터링 시스템 필요", "모든 핵이 제품이 되면 기능 비대화로 이어질 수 있음"]
   },
   "tags": ["product-discovery", "extensibility", "hackable-products", "power-users", "latent-demand"]
 }
