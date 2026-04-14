@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://www.sourcegraph.com",
   "problem": {
-    "en": "Most developer tools, CLIs, and logs are designed for human consumption with color-coded, multi-line outputs that are difficult for AI agents to parse reliably.",
-    "ko": "대부분의 개발자 도구, CLI, 로그는 인간 소비를 위해 설계되어 AI 에이전트가 안정적으로 파싱하기 어려운 컬러 코딩, 다중 라인 출력을 사용합니다."
+    "en": "Most developer tools, CLIs, and application logs are designed for human consumption. They use color-coded, multi-line, or summarized outputs that are easy for a person to scan but can be difficult for an AI agent to parse reliably. This \"human-centric\" design creates noise and ambiguity, forcing the agent to waste tokens and effort on interpreting output rather than acting on it.",
+    "ko": "대부분의 개발자 도구, CLI, 애플리케이션 로그는 인간 소비를 위해 설계되어 있습니다. 컬러 코딩, 다중 라인, 요약된 출력은 사람이 훑어보기에는 쉽지만 AI 에이전트가 안정적으로 파싱하기 어렵습니다. 이러한 \"인간 중심\" 설계는 노이즈와 모호성을 만들어 에이전트가 행동 대신 출력 해석에 토큰과 노력을 낭비하게 합니다."
   },
   "solution": {
-    "en": "Design tooling and logging to be 'agent-first': unified logging to single source, verbose JSON-structured output, and agent-aware CLI flags (--for-agent).",
-    "ko": "'에이전트 우선'으로 도구 및 로깅 설계: 단일 소스로 통합 로깅, 상세한 JSON 구조 출력, 에이전트 인식 CLI 플래그(--for-agent)."
+    "en": "Consciously design and adapt tooling and logging to be \"agent-first,\" prioritizing machine-readability over human ergonomics. The environment should cater to the agent's need for clear, structured, and unambiguous information.\n\n- **Unified Logging:** Instead of multiple log streams (client, server, database), consolidate them into a single, unified log. This gives the agent a single source of truth to monitor.\n- **Verbose, Structured Output:** Prefer verbose, structured formats like JSON lines over concise, human-readable text. Use schemas like Pydantic (Python) or Zod (TypeScript) for type-safe structured outputs.\n- **Agent-Aware CLIs:** Design new tools or add flags to existing tools (`--for-agent`, `--json`) that modify their output to be more explicit and less ambiguous for an AI.\n- **Standardized Tool Protocol:** Use the Model Context Protocol (MCP) as the standard interface for agent-tool communication.\n- **Code-First Tool Interface:** For complex workflows, LLMs generate code that calls tools rather than invoking them directly. This provides 10-100x token reduction by keeping intermediate results in the execution environment rather than model context.",
+    "ko": "도구 및 로깅을 \"에이전트 우선\"으로 의식적으로 설계하고 적응시켜, 인간 편의성보다 기계 가독성을 우선시합니다. 환경은 에이전트의 명확하고 구조화되며 모호하지 않은 정보 요구를 충족해야 합니다.\n\n- **통합 로깅:** 여러 로그 스트림(클라이언트, 서버, 데이터베이스) 대신 단일 통합 로그로 통합합니다. 에이전트에게 모니터링할 단일 진실 소스를 제공합니다.\n- **상세한 구조화 출력:** 간결한 인간 가독 텍스트 대신 JSON lines 같은 상세하고 구조화된 형식을 선호합니다. Pydantic(Python)이나 Zod(TypeScript)로 타입 안전한 구조화 출력을 사용합니다.\n- **에이전트 인식 CLI:** 새 도구를 설계하거나 기존 도구에 플래그(`--for-agent`, `--json`)를 추가하여 AI에게 더 명확하고 모호하지 않은 출력을 제공합니다.\n- **표준화된 도구 프로토콜:** Model Context Protocol(MCP)을 에이전트-도구 통신의 표준 인터페이스로 사용합니다.\n- **코드 우선 도구 인터페이스:** 복잡한 워크플로우에서 LLM이 도구를 직접 호출하는 대신 도구를 호출하는 코드를 생성합니다. 중간 결과를 모델 컨텍스트가 아닌 실행 환경에 유지하여 10-100배 토큰 감소를 제공합니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│  Agent Request  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ CLI --for-agent │\n│     --json      │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ System Services │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Unified Logger  │\n│ (JSON Lines)    │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│  Agent Parses   │\n│  Structured     │\n└─────────────────┘",
   "mermaid_diagram": "sequenceDiagram\n    participant Agent\n    participant CLI as CLI Tool\n    participant Logger as Unified Logger\n    participant System as System Services\n\n    Agent->>CLI: command --for-agent --json\n    CLI->>System: Execute operation\n    System->>Logger: Write structured log entry\n    Logger->>Agent: JSON log stream\n    Note over Agent: Parses structured data easily",
   "code_example": "# Agent-friendly CLI invocation\ncli_output = subprocess.run(\n    ['myapp', '--for-agent', '--json', 'status'],\n    capture_output=True, text=True\n)\n\n# Parse structured JSON output\nresult = json.loads(cli_output.stdout)\n# {\"status\": \"healthy\", \"errors\": [], \"metrics\": {...}}\n\n# Unified logging - single source of truth\n# Instead of: client.log, server.log, db.log\n# Use: unified.jsonl with all events",
   "when_to_use": {
-    "en": ["Building agent-operated systems", "CLI tools for automation", "Log aggregation for AI analysis"],
-    "ko": ["에이전트 운영 시스템 구축", "자동화용 CLI 도구", "AI 분석을 위한 로그 집계"]
+    "en": ["Audit current tools and identify those producing human-centric output; find agent-friendly alternatives or add structured output flags", "Implement unified logging by consolidating multiple log sources into a single, structured stream", "Create agent-aware APIs that prioritize machine-readable output formats and clear, unambiguous responses", "Default to JSON, YAML, or other structured formats instead of free-form text output"],
+    "ko": ["현재 도구 감사 및 인간 중심 출력 도구 식별; 에이전트 친화적 대안 또는 구조화 출력 플래그 추가", "여러 로그 소스를 단일 구조화 스트림으로 통합하여 통합 로깅 구현", "기계 가독 출력 형식과 명확하고 모호하지 않은 응답을 우선시하는 에이전트 인식 API 생성", "자유 형식 텍스트 대신 JSON, YAML 또는 기타 구조화 형식을 기본으로 사용"]
   },
   "pros": {
-    "en": ["Improves agent parsing accuracy", "Reduces token waste", "Single source of truth"],
-    "ko": ["에이전트 파싱 정확도 향상", "토큰 낭비 감소", "단일 진실 소스"]
+    "en": ["Dramatically improves agent parsing accuracy and speed", "Reduces token waste on output interpretation", "Enables more reliable automation and decision-making", "Single source of truth for system state"],
+    "ko": ["에이전트 파싱 정확도와 속도 대폭 향상", "출력 해석에 대한 토큰 낭비 감소", "더 신뢰할 수 있는 자동화 및 의사결정 지원", "시스템 상태에 대한 단일 진실 소스"]
   },
   "cons": {
-    "en": ["May sacrifice human readability", "Requires tooling modifications", "Dual interface maintenance"],
-    "ko": ["인간 가독성 희생 가능", "도구 수정 필요", "이중 인터페이스 유지"]
+    "en": ["May sacrifice human readability and debugging convenience", "Requires investment in tooling modifications", "Teams need to maintain both human and agent interfaces (dual-interface pattern)", "Learning curve for developers used to human-centric tools", "Code-first patterns require additional infrastructure (sandboxed execution)"],
+    "ko": ["인간 가독성 및 디버깅 편의성 희생 가능", "도구 수정에 대한 투자 필요", "팀이 인간 및 에이전트 인터페이스 모두 유지 필요 (이중 인터페이스 패턴)", "인간 중심 도구에 익숙한 개발자의 학습 곡선", "코드 우선 패턴에 추가 인프라 필요 (샌드박스 실행)"]
   },
-  "tags": ["tool-design", "logging", "machine-readable", "observability", "agent-environment"]
+  "tags": ["tool-design", "logging", "machine-readable", "observability", "agent-environment", "mcp", "structured-output"]
 }

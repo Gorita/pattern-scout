@@ -6,27 +6,27 @@
   "status": "established",
   "original_url": "https://www.nibzard.com/claude-code",
   "problem": {
-    "en": "While layered config files provide good baseline context, agents often need specific information on-demand during sessions. Constantly editing static config files or pasting large text chunks into prompts is inefficient.",
-    "ko": "계층화된 구성 파일이 좋은 기본 컨텍스트를 제공하지만, 에이전트는 종종 세션 중 특정 정보를 온디맨드로 필요로 합니다. 정적 구성 파일을 지속적으로 편집하거나 큰 텍스트 청크를 프롬프트에 붙여넣는 것은 비효율적입니다."
+    "en": "While layered configuration files provide good baseline context, agents often need specific pieces of information (e.g., contents of a particular file, output of a script, predefined complex prompt) on-demand during an interactive session. Constantly editing static context files or pasting large chunks of text into prompts is inefficient.",
+    "ko": "계층화된 구성 파일이 좋은 기본 컨텍스트를 제공하지만, 에이전트는 대화형 세션 중에 특정 정보(예: 특정 파일의 내용, 스크립트 출력, 사전 정의된 복잡한 프롬프트)를 온디맨드로 필요로 하는 경우가 많습니다. 정적 컨텍스트 파일을 지속적으로 편집하거나 큰 텍스트 청크를 프롬프트에 붙여넣는 것은 비효율적입니다."
   },
   "solution": {
-    "en": "Implement mechanisms for dynamic context injection during sessions: File/Folder at-mentions (@path/to/file), custom slash commands (/user:command) that load predefined prompts from files. Provides targeted context exactly when needed.",
-    "ko": "세션 중 동적 컨텍스트 주입 메커니즘 구현: 파일/폴더 @멘션(@path/to/file), 파일에서 사전 정의된 프롬프트를 로드하는 사용자 정의 슬래시 명령(/user:command). 필요한 시점에 정확히 대상 컨텍스트를 제공합니다."
+    "en": "Implement mechanisms for users to dynamically inject context into the agent's working memory during a session. Common approaches include:\n\n- **File/Folder At-Mentions:** Allowing users to type a special character (e.g., `@`) followed by a file or folder path (e.g., `@src/components/Button.tsx` or `@app/tests/`). The agent then ingests the content of the specified file or a summary of the folder into its current context for the ongoing task.\n- **Custom Slash Commands:** Enabling users to define reusable, named prompts or instructions in separate files (e.g., in `~/.claude/commands/foo.md`). These can be invoked with a slash command (e.g., `/user:foo`), causing their content to be loaded into the agent's context. This is useful for frequently used complex instructions or context snippets.\n\nThese methods allow for a more fluid and efficient way to provide targeted context exactly when needed.",
+    "ko": "세션 중 사용자가 에이전트의 작업 메모리에 동적으로 컨텍스트를 주입하는 메커니즘을 구현합니다. 일반적인 접근 방식은 다음과 같습니다:\n\n- **파일/폴더 @멘션:** 사용자가 특수 문자(예: `@`)와 파일 또는 폴더 경로(예: `@src/components/Button.tsx` 또는 `@app/tests/`)를 입력합니다. 에이전트는 지정된 파일의 내용이나 폴더의 요약을 현재 작업의 컨텍스트에 주입합니다.\n- **커스텀 슬래시 명령:** 사용자가 별도의 파일(예: `~/.claude/commands/foo.md`)에 재사용 가능한 이름이 지정된 프롬프트나 지침을 정의합니다. 슬래시 명령(예: `/user:foo`)으로 호출하면 해당 내용이 에이전트의 컨텍스트에 로드됩니다. 자주 사용하는 복잡한 지침이나 컨텍스트 스니펫에 유용합니다.\n\n이러한 방법을 통해 필요한 시점에 정확히 대상 컨텍스트를 유동적이고 효율적으로 제공할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   User Working on Task          │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│  @src/components/Button.tsx     │\n│  (At-mention file)              │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│       File System               │\n│   Read Button.tsx contents      │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│  /user:deployment               │\n│  (Slash command)                │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Command Store                 │\n│ ~/.claude/commands/deployment.md│\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Agent with Enriched Context   │\n└─────────────────────────────────┘",
   "mermaid_diagram": "sequenceDiagram\n    participant User\n    participant Agent\n    participant FS as File System\n    participant Commands as Command Store\n    User->>Agent: Working on task...\n    User->>Agent: @src/components/Button.tsx\n    Agent->>FS: Read Button.tsx\n    FS-->>Agent: File contents\n    Agent->>Agent: Inject into context\n    User->>Agent: /user:deployment\n    Agent->>Commands: Load ~/.claude/commands/deployment.md\n    Commands-->>Agent: Deployment instructions\n    Agent->>Agent: Inject into context\n    Agent-->>User: Continue with enriched context",
   "code_example": "# At-mention for files\n# User types: @src/components/Button.tsx\n# Agent reads and injects file contents into context\n\n# At-mention for folders\n# User types: @app/tests/\n# Agent reads folder summary into context\n\n# Custom slash commands\n# File: ~/.claude/commands/deployment.md\n# Contains: \"When deploying, always run tests first...\"\n# User types: /user:deployment\n# Agent loads and injects deployment.md contents\n\n# Example conversation:\n# User: \"I need to update the Button component\"\n# User: @src/components/Button.tsx\n# Agent: [Now has Button.tsx in context]\n# User: /user:style-guide\n# Agent: [Now also has style guide in context]\n# Agent: \"I see the Button component uses Tailwind. Per your style guide...\"",
   "when_to_use": {
-    "en": ["Need file context without copy-paste", "Frequently used complex instructions", "On-demand codebase exploration", "Interactive session context enrichment"],
-    "ko": ["복사-붙여넣기 없이 파일 컨텍스트 필요", "자주 사용하는 복잡한 지침", "온디맨드 코드베이스 탐색", "대화형 세션 컨텍스트 강화"]
+    "en": ["Use this when model quality depends on selecting or retaining the right context", "Start with strict context budgets and explicit memory retention rules", "Measure relevance and retrieval hit-rate before increasing memory breadth", "Implement security controls: allowlist-based directory access, regex-based credential scanning, file size limits"],
+    "ko": ["모델 품질이 올바른 컨텍스트 선택 또는 유지에 의존할 때", "엄격한 컨텍스트 예산과 명시적 메모리 유지 규칙으로 시작", "메모리 범위를 늘리기 전에 관련성 및 검색 적중률 측정", "보안 제어 구현: 허용 목록 기반 디렉터리 접근, 정규식 기반 자격 증명 스캐닝, 파일 크기 제한"]
   },
   "pros": {
-    "en": ["Fluid context injection", "Reusable slash commands", "No need to edit static configs", "Targeted context exactly when needed"],
-    "ko": ["유동적인 컨텍스트 주입", "재사용 가능한 슬래시 명령", "정적 구성 편집 불필요", "필요한 시점에 정확한 대상 컨텍스트"]
+    "en": ["Raises answer quality by keeping context relevant and reducing retrieval noise"],
+    "ko": ["컨텍스트를 관련성 있게 유지하고 검색 노이즈를 줄여 답변 품질 향상"]
   },
   "cons": {
-    "en": ["Must remember command names", "Large files consume context", "Command files need maintenance", "May inject unnecessary content"],
-    "ko": ["명령 이름 기억 필요", "큰 파일은 컨텍스트 소비", "명령 파일 유지보수 필요", "불필요한 콘텐츠 주입 가능"]
+    "en": ["Requires ongoing tuning of memory policies and indexing quality"],
+    "ko": ["메모리 정책 및 인덱싱 품질의 지속적인 튜닝 필요"]
   },
   "tags": ["context-management", "dynamic-context", "lazy-loading", "slash-commands", "at-mention", "interactive-context"]
 }

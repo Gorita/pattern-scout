@@ -6,27 +6,57 @@
   "status": "emerging",
   "original_url": "https://openai.com/research/gpt-4v-system-card",
   "problem": {
-    "en": "Many real-world tasks require visual information alongside text. Text-only agents miss critical information in images, videos, diagrams, and visual interfaces.",
-    "ko": "많은 실제 작업은 텍스트와 함께 시각 정보가 필요합니다. 텍스트 전용 에이전트는 이미지, 비디오, 다이어그램, 시각적 인터페이스의 중요 정보를 놓칩니다."
+    "en": "Many real-world tasks require understanding and processing visual information alongside text. Traditional text-only agents miss critical information present in images, videos, diagrams, and visual interfaces. This limitation prevents agents from helping with tasks like analyzing screenshots, debugging UI issues, understanding charts, processing security footage, or working with visual documentation.",
+    "ko": "많은 실제 작업은 텍스트와 함께 시각 정보를 이해하고 처리해야 합니다. 기존의 텍스트 전용 에이전트는 이미지, 비디오, 다이어그램, 시각적 인터페이스에 존재하는 중요한 정보를 놓칩니다. 이 제한으로 인해 스크린샷 분석, UI 이슈 디버깅, 차트 이해, 보안 영상 처리, 시각적 문서 작업 같은 작업에서 에이전트의 도움을 받을 수 없습니다."
   },
   "solution": {
-    "en": "Integrate large multimodal models (LMMs) for visual understanding: accept images/videos as input, analyze visual content, combine visual and textual reasoning, take actions based on visual understanding.",
-    "ko": "시각적 이해를 위해 대형 멀티모달 모델(LMM) 통합: 이미지/비디오를 입력으로 받고, 시각적 콘텐츠 분석, 시각적 및 텍스트 추론 결합, 시각적 이해에 기반한 행동 수행."
+    "en": "Integrate large multimodal models (LMMs) into agent architectures to enable visual understanding capabilities. This pattern involves:\n\n1. **Visual Input Handling**: Accept images, videos, or screenshots as input alongside text. Images are typically resized and base64-encoded or provided via URL. Video may require frame extraction (except Gemini which supports native video processing).\n\n2. **Visual Analysis**: Use multimodal models to extract information, identify objects, read text (OCR), understand spatial relationships, and interpret diagrams or charts.\n\n3. **Cross-Modal Reasoning**: Combine visual and textual information for comprehensive understanding, enabling tasks like UI debugging from screenshots or data extraction from charts.\n\n4. **Visual-Guided Actions**: Take actions based on visual understanding (clicking UI elements, describing scenes, counting objects).\n\n**Provider Selection**: Different providers excel at different tasks—Anthropic Claude for UI understanding and code generation, Google Gemini for native video processing, OpenAI GPT-4o for general-purpose tasks, Meta LLaVA for open-source needs.",
+    "ko": "에이전트 아키텍처에 대형 멀티모달 모델(LMM)을 통합하여 시각적 이해 능력을 부여합니다. 이 패턴은 다음을 포함합니다:\n\n1. **시각적 입력 처리**: 텍스트와 함께 이미지, 비디오, 스크린샷을 입력으로 받습니다. 이미지는 일반적으로 리사이즈 후 base64 인코딩하거나 URL로 제공합니다. 비디오는 프레임 추출이 필요합니다(네이티브 비디오 처리를 지원하는 Gemini 제외).\n\n2. **시각적 분석**: 멀티모달 모델을 사용하여 정보를 추출하고, 객체를 식별하고, 텍스트를 읽고(OCR), 공간 관계를 이해하고, 다이어그램이나 차트를 해석합니다.\n\n3. **교차 모달 추론**: 시각적 정보와 텍스트 정보를 결합하여 포괄적인 이해를 가능하게 합니다. 스크린샷에서 UI 디버깅이나 차트에서 데이터 추출 같은 작업이 가능합니다.\n\n4. **시각 기반 행동**: 시각적 이해에 기반하여 행동을 수행합니다(UI 요소 클릭, 장면 설명, 객체 카운팅).\n\n**프로바이더 선택**: 프로바이더마다 강점이 다릅니다—Anthropic Claude는 UI 이해와 코드 생성, Google Gemini는 네이티브 비디오 처리, OpenAI GPT-4o는 범용 작업, Meta LLaVA는 오픈소스 용도에 적합합니다."
   },
   "ascii_diagram": "┌──────────────────────┐\n│User Query + Visual   │\n└──────────┬───────────┘\n           │\n┌──────────▼───────────┐\n│    Input Type?       │\n├──────────────────────┤\n│Image│Video│Screenshot│\n└──┬────┬────┬─────────┘\n   │    │    │\n   ▼    ▼    ▼\n┌──────────────────────┐\n│  Visual Analysis     │\n├──────────────────────┤\n│• Object Detection    │\n│• OCR/Text Extract    │\n│• Spatial Relations   │\n└──────────┬───────────┘\n           │\n┌──────────▼───────────┐\n│Multimodal Integration│\n└──────────┬───────────┘\n           │\n┌──────────▼───────────┐\n│   Task Solution      │\n└──────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Query + Visual Input] --> B{Input Type}\n    B -->|Image| C[Image Analysis]\n    B -->|Video| D[Video Processing]\n    B -->|Screenshot| E[UI Analysis]\n    C --> F[Object Detection]\n    C --> G[OCR/Text Extraction]\n    D --> H[Key Frame Extraction]\n    H --> I[Temporal Reasoning]\n    E --> J[Element Identification]\n    F & G & I & J --> K[Multimodal Integration]\n    K --> L[Task Solution]",
   "code_example": "class VisualAIAgent:\n    async def process_visual_task(self, task, visual_inputs):\n        # Analyze each visual input\n        analyses = []\n        for visual in visual_inputs:\n            analysis = await self.mm_llm.analyze(\n                prompt=f'Task: {task}\\nAnalyze this {visual.type}',\n                image=visual.data\n            )\n            analyses.append(analysis)\n        \n        # Combine visual analyses with task\n        return await self.solve_with_visual_context(\n            task, analyses\n        )\n\n# Use cases: UI debugging, document processing,\n# video analysis, security monitoring",
   "when_to_use": {
-    "en": ["UI/UX debugging", "Document processing with charts", "Video analysis", "Security monitoring"],
-    "ko": ["UI/UX 디버깅", "차트가 있는 문서 처리", "비디오 분석", "보안 모니터링"]
+    "en": [
+      "Use when tasks require visual understanding—UI debugging, document processing, image analysis, video comprehension, or code generation from screenshots.",
+      "Choose provider by use case: Anthropic Claude for UI understanding and screenshot-to-code; Google Gemini for native video processing; OpenAI GPT-4o for general-purpose tasks; Meta LLaVA for open-source/self-hosted needs; Mistral for EU/GDPR compliance.",
+      "Optimize for costs: Resize images to minimum viable size, use appropriate detail levels (low for general understanding, high for OCR), and consider cascading approaches (smaller models first, escalate when needed)."
+    ],
+    "ko": [
+      "시각적 이해가 필요한 작업—UI 디버깅, 문서 처리, 이미지 분석, 비디오 이해, 스크린샷에서 코드 생성 시 사용",
+      "용도별 프로바이더 선택: Anthropic Claude는 UI 이해와 스크린샷-투-코드; Google Gemini는 네이티브 비디오 처리; OpenAI GPT-4o는 범용 작업; Meta LLaVA는 오픈소스/자체 호스팅; Mistral은 EU/GDPR 준수",
+      "비용 최적화: 이미지를 최소 실용 크기로 리사이즈, 적절한 디테일 수준 사용(일반 이해는 low, OCR은 high), 캐스케이딩 접근법 고려(작은 모델 먼저, 필요시 에스컬레이션)"
+    ]
   },
   "pros": {
-    "en": ["Enables new task categories", "More natural interaction", "Better accuracy for visual tasks"],
-    "ko": ["새로운 작업 카테고리 활성화", "더 자연스러운 상호작용", "시각적 작업에 더 나은 정확도"]
+    "en": [
+      "Enables entirely new categories of tasks",
+      "More natural interaction (users can show rather than describe)",
+      "Better accuracy for visual tasks",
+      "Can handle complex multimodal reasoning"
+    ],
+    "ko": [
+      "완전히 새로운 작업 카테고리 활성화",
+      "더 자연스러운 상호작용 (사용자가 설명 대신 보여줄 수 있음)",
+      "시각적 작업에 더 나은 정확도",
+      "복잡한 멀티모달 추론 처리 가능"
+    ]
   },
   "cons": {
-    "en": ["Higher computational costs", "Larger model requirements", "Privacy concerns with visual data"],
-    "ko": ["높은 계산 비용", "더 큰 모델 요구사항", "시각적 데이터의 프라이버시 우려"]
+    "en": [
+      "Higher computational costs for visual processing",
+      "Larger model requirements",
+      "Potential privacy concerns with visual data",
+      "May require specialized infrastructure for video processing",
+      "Quality depends on visual model capabilities"
+    ],
+    "ko": [
+      "시각적 처리의 높은 계산 비용",
+      "더 큰 모델 요구사항",
+      "시각적 데이터의 잠재적 프라이버시 우려",
+      "비디오 처리를 위한 특수 인프라 필요 가능",
+      "품질이 비주얼 모델 역량에 의존"
+    ]
   },
-  "tags": ["multimodal", "vision", "video", "image-processing", "visual-understanding"]
+  "tags": ["multimodal", "vision", "video", "image-processing", "visual-understanding", "agent-capabilities"]
 }

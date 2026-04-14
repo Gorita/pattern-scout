@@ -6,27 +6,49 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2506.08837",
   "problem": {
-    "en": "Processing multiple untrusted items in one context risks cross-contamination and prompt injection propagation.",
-    "ko": "하나의 컨텍스트에서 여러 신뢰할 수 없는 항목을 처리하면 교차 오염과 프롬프트 인젝션 전파 위험이 있습니다."
+    "en": "When many untrusted documents are processed in a single reasoning context, one malicious item can influence global conclusions. This creates cross-document contamination where a single poisoned input affects unrelated items and final decisions.",
+    "ko": "여러 신뢰할 수 없는 문서를 단일 추론 컨텍스트에서 처리하면, 하나의 악의적 항목이 전체 결론에 영향을 미칠 수 있습니다. 이는 하나의 오염된 입력이 관련 없는 항목과 최종 결정에 영향을 주는 교차 문서 오염을 초래합니다."
   },
   "solution": {
-    "en": "Process each item in an isolated sub-agent (map), then aggregate results in a trusted context (reduce).",
-    "ko": "각 항목을 격리된 서브 에이전트에서 처리(맵)한 다음, 신뢰할 수 있는 컨텍스트에서 결과를 집계(리듀스)합니다."
+    "en": "Adopt a **map-reduce workflow**:\n\n- **Map:** Spawn lightweight, *sandboxed* LLMs—each ingests one untrusted chunk and emits a constrained output (boolean, JSON schema, enum).\n- **Reduce:** Aggregate validated summaries via deterministic code (count, filter, majority-vote) or a privileged LLM that sees only sanitized fields.\n\nIsolation is the core control: each map worker handles one item with constrained output contracts, so contamination cannot spread laterally. The reducer consumes validated summaries only, which preserves scalability and reduces injection blast radius.",
+    "ko": "**맵-리듀스 워크플로우**를 채택합니다:\n\n- **맵:** 경량의 *샌드박스된* LLM을 생성합니다—각각 하나의 신뢰할 수 없는 청크를 수집하고 제한된 출력(불리언, JSON 스키마, 열거형)을 내보냅니다.\n- **리듀스:** 결정적 코드(카운트, 필터, 다수결)나 정제된 필드만 보는 권한 있는 LLM을 통해 검증된 요약을 집계합니다.\n\n격리가 핵심 제어입니다: 각 맵 워커는 제한된 출력 계약으로 하나의 항목을 처리하므로 오염이 횡방향으로 확산될 수 없습니다. 리듀서는 검증된 요약만 소비하여 확장성을 유지하고 인젝션 영향 범위를 줄입니다."
   },
   "ascii_diagram": "┌─────────────┐\n│  Items[]    │\n└──────┬──────┘\n       │ map\n   ┌───┼───┐\n   ▼   ▼   ▼\n┌───┐┌───┐┌───┐\n│S1 ││S2 ││S3 │ (isolated)\n└─┬─┘└─┬─┘└─┬─┘\n  │    │    │\n  └────┼────┘\n       │ reduce\n┌──────▼──────┐\n│   Trusted   │\n│   Context   │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Items Array] -->|Map| B[Sub-Agent 1]\n    A -->|Map| C[Sub-Agent 2]\n    A -->|Map| D[Sub-Agent N]\n    B & C & D -->|Reduce| E[Trusted Aggregator]",
   "code_example": "# Map: process each item in isolation\nresults = []\nfor item in untrusted_items:\n    isolated_agent = spawn_quarantined_agent()\n    result = isolated_agent.process(item)\n    results.append(result)\n\n# Reduce: aggregate in trusted context\nfinal = trusted_agent.aggregate(results)",
   "when_to_use": {
-    "en": ["Email processing", "Document analysis", "Web scraping"],
-    "ko": ["이메일 처리", "문서 분석", "웹 스크래핑"]
+    "en": [
+      "File triage, document summarization, resume filters, code migration verification—any N-to-1 decision where each item's influence should stay local.",
+      "Best fit when: N >= 10 items, processing time > 30s/item, items are independent, and aggregation is needed."
+    ],
+    "ko": [
+      "파일 분류, 문서 요약, 이력서 필터링, 코드 마이그레이션 검증—각 항목의 영향이 로컬에 머물러야 하는 모든 N-to-1 결정",
+      "최적 조건: N >= 10 항목, 처리 시간 > 30초/항목, 항목이 독립적이며 집계가 필요한 경우"
+    ]
   },
   "pros": {
-    "en": ["Isolation", "Parallel processing", "Contamination prevention"],
-    "ko": ["격리", "병렬 처리", "오염 방지"]
+    "en": [
+      "A malicious item can't taint others",
+      "Scalable parallelism",
+      "Smaller contexts reduce cost"
+    ],
+    "ko": [
+      "악의적 항목이 다른 항목을 오염시킬 수 없음",
+      "확장 가능한 병렬 처리",
+      "더 작은 컨텍스트로 비용 절감"
+    ]
   },
   "cons": {
-    "en": ["Overhead", "Coordination complexity"],
-    "ko": ["오버헤드", "조정 복잡"]
+    "en": [
+      "Requires strict output validation",
+      "Extra orchestration overhead",
+      "Loses cross-item context"
+    ],
+    "ko": [
+      "엄격한 출력 검증 필요",
+      "추가 오케스트레이션 오버헤드",
+      "항목 간 컨텍스트 손실"
+    ]
   },
-  "tags": ["map-reduce", "sub-agents", "isolation", "untrusted-data", "security"]
+  "tags": ["map-reduce", "sub-agents", "isolation", "untrusted-data"]
 }
