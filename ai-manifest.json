@@ -258,29 +258,28 @@
     "title": "Episodic Memory Retrieval & Injection",
     "title_ko": "일화적 메모리 검색 및 주입",
     "category": "Context & Memory",
-    "description": "Agents lack persistent memory across sessions, forgetting relevant past experiences and decisions Store episodic memories in vector databases and retrieve relevant ones based on semantic similarity to",
-    "problem": "Agents lack persistent memory across sessions, forgetting relevant past experiences and decisions.",
-    "solution": "Store episodic memories in vector databases and retrieve relevant ones based on semantic similarity to current context.",
+    "description": "Stateless request handling causes agents to repeatedly rediscover decisions, constraints, and prior failures Add a **vector-backed episodic memory store**:\n\n1",
+    "problem": "Stateless request handling causes agents to repeatedly rediscover decisions, constraints, and prior failures. Over multi-session workflows this leads to redundant work, inconsistent behavior, and shallow planning because each turn lacks durable historical context.",
+    "solution": "Add a **vector-backed episodic memory store**:\n\n1. After every episode, write a short \"memory blob\" (event, outcome, rationale) to the DB.\n2. On new tasks, embed the prompt, retrieve top-k similar memories, and inject as *hints* in the context.\n3. Apply TTL or decay scoring to prune stale memories.\n\nDesign memory writes as structured records (decision, evidence, outcome, confidence) rather than raw transcripts. Structured memory reduces repetitive outputs and improves reasoning (ParamMem 2026). At retrieval time, filter by task scope and recency so injected memories improve reasoning quality instead of introducing retrieval noise. Episodic memory with self-reflection achieved 91% pass@1 on HumanEval vs 80% baseline (Reflexion, NeurIPS 2023).",
     "when_to_use": [
-      "Long-running projects",
-      "Personalized assistants",
-      "Repetitive tasks"
+      "Multi-session coding agents, support copilots, and long-running research workflows",
+      "Start with a small top-k and strict metadata filters (task, repo, owner, timestamp)",
+      "Add memory quality review jobs to remove low-value or contradictory memories",
+      "Track whether retrieved memories improved outcomes versus baseline"
     ],
     "pros": [
-      "Cross-session continuity",
-      "Relevant context retrieval",
-      "Learning effect"
+      "Richer continuity across sessions",
+      "Fewer repeated mistakes"
     ],
     "cons": [
-      "Vector DB management",
-      "Retrieval quality variance",
-      "Privacy concerns"
+      "Retrieval noise if memories aren't curated",
+      "Storage cost"
     ],
     "tags": [
       "episodic-memory",
       "vector-db",
       "retrieval-augmented",
-      "persistence"
+      "context-hint"
     ],
     "related": []
   },
@@ -804,27 +803,34 @@
     "title": "Graph of Thoughts (GoT)",
     "title_ko": "생각의 그래프 (GoT)",
     "category": "Feedback Loops",
-    "description": "Tree structures cannot represent thought aggregation or cycles in reasoning processes Model reasoning as a graph where thoughts can merge, aggregate, and form cycles for complex problem solving",
-    "problem": "Tree structures cannot represent thought aggregation or cycles in reasoning processes.",
-    "solution": "Model reasoning as a graph where thoughts can merge, aggregate, and form cycles for complex problem solving.",
+    "description": "Linear reasoning approaches like Chain-of-Thought (CoT) and even tree-based methods like Tree-of-Thoughts (ToT) have limitations when dealing with problems that require complex interdependencies betwe",
+    "problem": "Linear reasoning approaches like Chain-of-Thought (CoT) and even tree-based methods like Tree-of-Thoughts (ToT) have limitations when dealing with problems that require complex interdependencies between reasoning steps. Many real-world problems involve reasoning paths that merge, split, and recombine in ways that don't fit neatly into linear or tree structures. These problems need a more flexible approach that can represent arbitrary relationships between thoughts.",
+    "solution": "Graph of Thoughts (GoT) extends reasoning frameworks by representing the thought process as a directed graph. GoT provides a general framework that subsumes Chain-of-Thought (linear) and Tree-of-Thoughts (branching) as special cases, with aggregation as the key enabling operation.\n\nIn GoT:\n\n- **Nodes** represent individual thoughts or reasoning states\n- **Edges** represent transformations or reasoning steps between thoughts\n- **Multiple paths** can lead to and from each node\n- **Aggregation operations** can combine multiple thoughts\n- **Backtracking** allows revisiting and refining previous thoughts\n\nThis enables operations like:\n1. **Branching**: Generate multiple thoughts from one\n2. **Aggregation**: Combine insights from multiple reasoning paths\n3. **Refinement**: Improve thoughts based on later insights\n4. **Looping**: Revisit and refine thoughts iteratively",
     "when_to_use": [
-      "Complex problem solving",
-      "Multi-perspective integration",
-      "Iterative reasoning"
+      "Complex problems with interdependent reasoning steps that need merging",
+      "Problems where early decisions may need revision based on later insights",
+      "Multi-perspective integration requiring aggregation of reasoning paths",
+      "Cases where LangGraph-like workflows with cycles and backtracking are beneficial"
     ],
     "pros": [
-      "Flexible reasoning structure",
-      "Thought aggregation possible",
-      "Supports cyclic reasoning"
+      "Handles complex problems with interdependent reasoning steps",
+      "Can discover non-obvious connections between ideas",
+      "Supports iterative refinement and backtracking",
+      "More expressive than linear or tree-based approaches"
     ],
     "cons": [
-      "High implementation complexity",
-      "Difficult to track reasoning paths"
+      "Significantly higher computational cost (5-20x vs. linear reasoning)",
+      "Complex to implement and debug",
+      "May generate many redundant thoughts",
+      "Requires sophisticated scoring and path-finding algorithms",
+      "Can be overkill for simple problems"
     ],
     "tags": [
       "reasoning",
       "graph-based",
       "problem-solving",
+      "thought-exploration",
+      "backtracking",
       "aggregation"
     ],
     "related": []
@@ -1087,21 +1093,23 @@
     "title": "Tool Use Incentivization via Reward Shaping",
     "title_ko": "보상 설계를 통한 도구 사용 인센티브",
     "category": "Feedback Loops",
-    "description": "Coding agents often underutilize specialized tools, defaulting to thinking tokens instead of invoking compilers, linters, or test runners Provide dense, shaped rewards for every intermediate tool invo",
-    "problem": "Coding agents often underutilize specialized tools, defaulting to thinking tokens instead of invoking compilers, linters, or test runners.",
-    "solution": "Provide dense, shaped rewards for every intermediate tool invocation that contributes toward final code correctness.",
+    "description": "Coding agents often underutilize specialized tools (e Provide **dense, shaped rewards** for every intermediate tool invocation that contributes toward final code correctness",
+    "problem": "Coding agents often underutilize specialized tools (e.g., compilers, linters, test runners) when left to optimize only for final task success. They default to \"thinking\" tokens—generating internal chain-of-thought—instead of invoking external tools, which can slow down development and lead to suboptimal code outputs. Models like R1 use their think tokens almost exclusively rather than calling tools unless explicitly rewarded for tool use. Without intermediate incentives, the agent has no incentive to write code, compile, or run tests until the very end. Sparse final rewards provide insufficient signal for learning optimal tool-use patterns across multi-step episodes.",
+    "solution": "Provide **dense, shaped rewards** for every intermediate tool invocation that contributes toward final code correctness. Key components:\n\n**1. Define Tool-Specific Reward Signals**\n- **Compile Reward:** +1 if code compiles without errors.\n- **Lint Reward:** +0.5 if linter returns zero issues.\n- **Test Reward:** +2 if test suite passes a new test case.\n- **Documentation Reward:** +0.2 for adding or correcting docstrings.\n- **Efficiency Reward:** +0.1 for parallelizing independent tool calls; -0.05 for redundant invocations.\n- **Format Reward:** +0.2 for proper tool invocation schema compliance.\n\n**2. Episode-Level Aggregation**\n- Sum intermediate rewards to form a cumulative \"coding progress\" score.\n- Combine with final reward (e.g., full test suite pass or PR merge) to guide policy updates.\n- Use turn-level credit assignment to attribute rewards correctly across multi-step tool sequences.\n\n**3. Policy Update Mechanism**\n- Use Proximal Policy Optimization (PPO), Advantage Actor-Critic (A2C), or GRPO with these shaped rewards.\n- During each RL rollout, track `(state, action, tool_result, local_reward)` tuples.\n\n```python\n# Pseudo-code: at each RL step, after tool call:\nif action == \"compile\":\n    local_reward = 1 if compile_success else -0.5\nelif action == \"run_tests\":\n    local_reward = 2 if new_tests_passed else 0\nelif action == \"parallel_tool_batch\":\n    local_reward = 0.1  # efficiency bonus\n\n# Check for redundant calls\nif is_redundant_call(action, history):\n    local_reward -= 0.05\n\ntrajectory.append((state, action, tool_output, local_reward))\n```",
     "when_to_use": [
-      "RL-based agent training",
-      "Tool utilization improvement",
-      "Coding agent development"
+      "Instrumentation: Wrap tool calls with functions that return a binary or graded success signal",
+      "Hyperparameter tuning to prevent overfitting to one tool",
+      "Curriculum design starting with simpler tasks to collect early positive signals",
+      "Multi-criteria grading with weighted combinations of correctness, format, tool-use quality, and efficiency",
+      "RLAIF for scalable, cost-effective reward signal generation"
     ],
     "pros": [
-      "Denser feedback guiding step-by-step",
-      "Encourages tool adoption"
+      "Denser feedback guiding the agent step by step, reducing reliance on sparse final success signals",
+      "Encourages the agent to learn how and when to invoke compilers and test runners"
     ],
     "cons": [
-      "Reward engineering overhead",
-      "Potential overfitting to intermediate rewards"
+      "Reward engineering overhead: requires careful design and maintenance of reward functions for each tool",
+      "Potential overfitting: the agent may game intermediate rewards (e.g., repeatedly running lint without changing code)"
     ],
     "tags": [
       "tool-use",
@@ -2161,30 +2169,32 @@
     "title": "Iterative Multi-Agent Brainstorming",
     "title_ko": "반복적 다중 에이전트 브레인스토밍",
     "category": "Orchestration & Control",
-    "description": "A single AI agent instance might get stuck in a local optimum or fail to explore a diverse range of solutions for complex problems or creative ideation Spawn multiple independent agent instances with ",
-    "problem": "A single AI agent instance might get stuck in a local optimum or fail to explore a diverse range of solutions for complex problems or creative ideation.",
-    "solution": "Spawn multiple independent agent instances with the same task or varied perspectives, work in parallel, then synthesize outputs through a coordinator or human review.",
+    "description": "For complex problems or creative ideation, a single AI agent instance might get stuck in a local optimum or fail to explore a diverse range of solutions Employ a multi-agent approach for brainstorming",
+    "problem": "For complex problems or creative ideation, a single AI agent instance might get stuck in a local optimum or fail to explore a diverse range of solutions. Generating a breadth of ideas can be challenging for a sequential, monolithic process.",
+    "solution": "Employ a multi-agent approach for brainstorming and idea generation. This involves:\n1. Defining a core problem or task.\n2. Spawning multiple independent (or semi-independent) AI agent instances.\n3. Assigning each agent the same initial task or slightly varied perspectives on the task.\n4. Allowing each agent to work in parallel to generate ideas, solutions, or approaches.\n5. Collecting the outputs from all agents.\n6. Optionally, a coordinating agent or a human user can then synthesize these diverse outputs, identify common themes, or select the most promising ideas for further development.\n\nThis pattern leverages parallelism to explore a wider solution space and can lead to more creative or robust outcomes than a single agent might produce alone.",
     "when_to_use": [
-      "Complex problem exploration",
-      "Creative ideation",
-      "Architecture decisions needing diverse views"
+      "When you need diverse perspectives or want to avoid local optimum trapping",
+      "Assign distinct roles or perspectives to each agent (e.g., critic, optimist, technical realist)",
+      "Limit to 2-4 agents for manageable coordination; more than 6 adds exponential overhead",
+      "Use a coordinating agent or human to synthesize and deduplicate outputs"
     ],
     "pros": [
-      "Wider solution space exploration",
-      "Diverse perspectives",
-      "Can lead to creative breakthroughs"
+      "Explores wider solution space",
+      "Reduces local optimum trapping",
+      "Enables diverse perspective exploration"
     ],
     "cons": [
-      "Higher token costs (multiple agents)",
-      "Requires synthesis step",
-      "May produce conflicting ideas"
+      "Adds orchestration complexity",
+      "Coordination overhead increases with agent count",
+      "Requires synthesis mechanisms"
     ],
     "tags": [
       "multi-agent",
       "brainstorming",
-      "parallel-processing",
-      "idea-generation",
-      "collaborative-ideation"
+      "parallel processing",
+      "idea generation",
+      "sub-agents",
+      "collaborative ideation"
     ],
     "related": []
   },
@@ -2293,30 +2303,31 @@
     "title": "Multi-Model Orchestration for Complex Edits",
     "title_ko": "복잡한 편집을 위한 다중 모델 오케스트레이션",
     "category": "Orchestration & Control",
-    "description": "A single large language model may not be optimally suited for all sub-tasks in complex operations like multi-file code editing Employ a pipeline of multiple specialized models: retrieval model for con",
-    "problem": "A single large language model may not be optimally suited for all sub-tasks in complex operations like multi-file code editing. Tasks like context retrieval, code generation, and edit application have different requirements.",
-    "solution": "Employ a pipeline of multiple specialized models: retrieval model for context gathering, large generation model for code modifications, custom models for applying edits accurately.",
+    "description": "A single large language model, even if powerful, may not be optimally suited for all sub-tasks involved in a complex operation like multi-file code editing Employ a pipeline or orchestration of multip",
+    "problem": "A single large language model, even if powerful, may not be optimally suited for all sub-tasks involved in a complex operation like multi-file code editing. Tasks such as understanding broad context, generating precise code, and applying edits might benefit from specialized model capabilities.",
+    "solution": "Employ a pipeline or orchestration of multiple AI models, each specialized for different parts of a complex task. Different models excel at different cognitive tasks—specialization beats generalization. For code editing, this could involve:\n\n1. A **retrieval model** to gather relevant context from the codebase.\n2. A **large, intelligent generation model** (e.g., Claude 3.5 Sonnet) to understand the user's intent and generate the primary code modifications based on the retrieved context.\n3. Potentially other **custom or smaller models** to assist in applying these generated edits accurately across multiple files or performing fine-grained adjustments.\n\nPass only distilled conclusions between models, not full conversation histories. This reduces token costs and maintains clean phase boundaries. This approach leverages the strengths of different models in a coordinated fashion to achieve a more robust and effective outcome for complex operations than a single model might achieve alone.",
     "when_to_use": [
-      "Multi-file code editing",
-      "Complex codebase modifications",
-      "Tasks needing specialized capabilities"
+      "When tasks need explicit control flow between planning, execution, and fallback",
+      "Start with one high-volume workflow before applying it across all agent lanes",
+      "Define ownership for each phase so failures can be routed and recovered quickly",
+      "Pass only distilled conclusions between model phases, not full conversation histories"
     ],
     "pros": [
-      "Leverages specialized model strengths",
-      "More robust outcomes",
-      "Efficient resource usage"
+      "Improves coordination across multi-step workflows",
+      "Reduces hidden control flow",
+      "Enables cost optimization through right-sized model selection"
     ],
     "cons": [
-      "Increased complexity",
-      "Model coordination overhead",
-      "Latency from multiple calls"
+      "Adds orchestration complexity",
+      "More states to debug"
     ],
     "tags": [
       "multi-model",
       "code-generation",
       "code-editing",
       "retrieval",
-      "pipeline"
+      "pipeline",
+      "complex-tasks"
     ],
     "related": []
   },
@@ -3420,30 +3431,35 @@
     "title": "RLAIF (Reinforcement Learning from AI Feedback)",
     "title_ko": "RLAIF (AI 피드백으로부터의 강화 학습)",
     "category": "Reliability & Eval",
-    "description": "Traditional RLHF requires expensive human annotation ($1+ per label) which is slow and hard to scale Use AI models to generate preference feedback and evaluation data, reducing costs to <$0",
-    "problem": "Traditional RLHF requires expensive human annotation ($1+ per label) which is slow and hard to scale.",
-    "solution": "Use AI models to generate preference feedback and evaluation data, reducing costs to <$0.01 per annotation.",
+    "description": "Traditional Reinforcement Learning from Human Feedback (RLHF) requires extensive human annotation for preference data, which is expensive (often $1+ per annotation), time-consuming, and difficult to s",
+    "problem": "Traditional Reinforcement Learning from Human Feedback (RLHF) requires extensive human annotation for preference data, which is expensive (often $1+ per annotation), time-consuming, and difficult to scale. This creates a bottleneck in training aligned AI systems, especially when dealing with complex or specialized domains where human expertise is scarce or costly.",
+    "solution": "RLAIF replaces human annotators with a supervisory AI model that generates preference labels, which train a reward model that optimizes the policy via PPO (or similar RL algorithms). The approach involves:\n\n1. **AI-Generated Critiques**: Use a language model to evaluate outputs based on a set of principles or constitution\n2. **Preference Data Generation**: Have the AI model compare pairs of responses and select the better one according to specified criteria\n3. **Synthetic Training Data**: Generate high-quality training examples using the AI's own capabilities\n4. **Constitutional Principles**: Guide the feedback process with explicit rules rather than implicit human preferences\n\nThis technique forms the foundation of Constitutional AI. Most production systems use hybrid approaches combining RLAIF (for scale) with RLHF (for quality validation).",
     "when_to_use": [
-      "Reward model training",
-      "Alignment at scale",
-      "Constitutional AI"
+      "Scalable feedback for alignment training beyond human annotation capacity",
+      "Starting with a well-aligned supervisory model capable of evaluating the target domain",
+      "Hybrid RLAIF/RLHF for critical applications where human validation is important",
+      "Constitutional principles for explicit control over evaluation criteria"
     ],
     "pros": [
-      "100x cheaper than human feedback",
-      "Scales with compute",
-      "More consistent"
+      "Cost efficiency: 100x cheaper than human feedback ($0.01 vs $1+)",
+      "Scalability: can generate unlimited feedback data without human bottlenecks",
+      "Consistency: AI feedback is more consistent than varying human annotators",
+      "Speed: near-instantaneous feedback generation"
     ],
     "cons": [
-      "May amplify biases",
-      "Limited novelty in feedback",
-      "Principle design needed"
+      "Bias amplification: may reinforce existing model biases",
+      "Alignment dependency: inherits alignment properties of the supervisory model",
+      "Chicken-and-egg problem: requires a capable supervisory model to train frontier models",
+      "Principle design: requires careful crafting of constitutional principles"
     ],
     "tags": [
       "rlhf",
       "rlaif",
       "constitutional-ai",
       "synthetic-data",
-      "alignment"
+      "feedback",
+      "alignment",
+      "evaluation"
     ],
     "related": []
   },
@@ -3517,6 +3533,35 @@
       "schema",
       "validation",
       "reliability"
+    ],
+    "related": []
+  },
+  {
+    "id": "subagent-compilation-checker",
+    "title": "Subagent Compilation Checker",
+    "title_ko": "서브에이전트 컴파일 검사기",
+    "category": "Reliability & Eval",
+    "description": "Large coding tasks often involve multiple independent components (e Spawn **specialized \"Compilation Subagents\"** to independently build and verify each code submodule, reporting back only:\n\n**1",
+    "problem": "Large coding tasks often involve multiple independent components (e.g., microservices, libraries). Having the main agent handle compilation and error checking for every component in-context:\n\n- **Blows Up Context Length:** Including entire build logs or bytecode in the prompt is impractical.\n- **Slows Down Inference:** Sending full build commands and parsing verbose output in-context uses excessive tokens.\n\nAdditionally, when the agent's single \"compile-and-run\" step fails, it's hard to pinpoint which submodule caused the error without a more granular approach.",
+    "solution": "Spawn **specialized \"Compilation Subagents\"** to independently build and verify each code submodule, reporting back only:\n\n**1. Error Summary:** File paths, line numbers, and error messages.\n**2. Binary Artifacts (if needed):** Reference IDs (e.g., paths to compiled object files) rather than raw binaries.\n\n**Workflow:**\n- **Main Agent Request:** \"Compile module `auth-service`.\"\n- **Spawn `CompileSubagent(auth-service)`**\n  - Subagent runs `mvn clean install` or `go build ./auth-service`.\n  - Returns a structured error list or location of compiled artifact.\n- **Main Agent:** Updates its context with the **concise error report** (e.g., `[{file: \"auth_controller.go\", line: 85, error: \"undefined: UserModel\"}]`).",
+    "when_to_use": [
+      "Subagent as a lightweight container or process with appropriate runtime (e.g., JVM for Java, Node for JavaScript)",
+      "Integration in RL loop treating each subagent invocation as a tool call",
+      "Error-driven reward assigning negative reward proportional to error count"
+    ],
+    "pros": [
+      "Modular isolation: main agent never needs to load entire build logs into context",
+      "Parallel builds: multiple subagents can compile different modules simultaneously, speeding up end-to-end workflow"
+    ],
+    "cons": [
+      "Infrastructure overhead: requires mechanism to spin up and tear down multiple build environments",
+      "Subagent synchronization: if one module depends on another's build artifact, coordination policies must ensure correct build order"
+    ],
+    "tags": [
+      "subagent",
+      "compilation",
+      "modularity",
+      "error-isolation"
     ],
     "related": []
   },
@@ -4486,21 +4531,23 @@
     "title": "Patch Steering via Prompted Tool Selection",
     "title_ko": "프롬프트 도구 선택을 통한 패치 조정",
     "category": "Tool Use & Environment",
-    "description": "Agents with multiple patching tools may choose suboptimal ones without explicit guidance, leading to inconsistent results Steer the agent's tool selection through explicit natural language instruction",
-    "problem": "Agents with multiple patching tools may choose suboptimal ones without explicit guidance, leading to inconsistent results.",
-    "solution": "Steer the agent's tool selection through explicit natural language instructions in the prompt.",
+    "description": "Coding agents with access to multiple patching or refactoring tools (e **Steer** the agent's tool selection and patch approach through **explicit natural language instructions** in the prompt",
+    "problem": "Coding agents with access to multiple patching or refactoring tools (e.g., text-based apply_patch, AST-based refactoring, semantic migration) may choose suboptimal tools if not explicitly guided. This leads to unnecessary complexity, inconsistent results hampering reproducibility, and safety risks where text-based patching on refactoring tasks can break imports, miss references, or introduce syntax errors.",
+    "solution": "**Steer** the agent's tool selection and patch approach through **explicit natural language instructions** in the prompt. Techniques include:\n\n**1. Direct Tool Invocation**\n- Prepend: \"Use the `apply_patch` tool to insert a new function `validate_input` in `auth_service.py`.\"\n\n**2. Tool Usage Teaching**\n- Provide a mini-manual in the context describing the tool's input schema and when to use it.\n\n**3. Implicit Shorthands**\n- Introduce domain-specific abbreviations that map to specific tools under the hood.\n\n**4. Reason-Encouraging Phrases**\n- Add: \"Think about type safety before choosing a patch tool.\" to promote deeper reasoning.\n\n**5. Negative Constraints**\n- Specify what NOT to use: \"Do NOT use text-based patching for function signature changes (will break imports).\" Explicit anti-patterns prevent unsafe tool selections more effectively than positive instructions alone.",
     "when_to_use": [
-      "Multi-tool agents",
-      "Code refactoring tasks",
-      "Consistent behavior requirements"
+      "Expose tool metadata (name, usage example, input schema, capabilities/limitations) in the agent's initialization context with use_when and avoid_when criteria",
+      "Create reusable prompt templates with placeholders for task description and preferred tool",
+      "Include fallback handling directives: specify fallback chains (semantic -> AST -> text)",
+      "When agents have access to multiple patching or refactoring tools"
     ],
     "pros": [
-      "Predictable behavior",
-      "Higher code quality with semantic tools"
+      "Predictable behavior: reduces variance in tool usage for the same task",
+      "Higher code quality: ensures the agent uses semantically safe tools over string-based replacements",
+      "Appropriate tool selection: guides agents to match tool capabilities to task requirements"
     ],
     "cons": [
-      "Prompt length increases",
-      "Template maintenance needed"
+      "Prompt length: excessive tool documentation in the prompt can consume valuable tokens",
+      "Maintenance: as new patching tools emerge, templates and tool registry need periodic updates"
     ],
     "tags": [
       "patching",
@@ -4612,36 +4659,6 @@
       "api-design",
       "well-known",
       "tool-discovery"
-    ],
-    "related": []
-  },
-  {
-    "id": "subagent-compilation-checker",
-    "title": "Subagent Compilation Checker",
-    "title_ko": "서브에이전트 컴파일 검사기",
-    "category": "Tool Use & Environment",
-    "description": "Large coding tasks with multiple components blow up context length when main agent handles all compilation Spawn specialized Compilation Subagents to independently build and verify each module, report",
-    "problem": "Large coding tasks with multiple components blow up context length when main agent handles all compilation. Build logs in prompts are impractical and slow down inference.",
-    "solution": "Spawn specialized Compilation Subagents to independently build and verify each module, reporting back only concise error summaries (file, line, error message) or artifact references.",
-    "when_to_use": [
-      "Multi-module projects",
-      "Long build processes",
-      "Parallel compilation needed"
-    ],
-    "pros": [
-      "Modular isolation",
-      "Parallel builds possible",
-      "Context length preserved"
-    ],
-    "cons": [
-      "Infrastructure overhead for build environments",
-      "Subagent synchronization needed"
-    ],
-    "tags": [
-      "subagent",
-      "compilation",
-      "modularity",
-      "error-isolation"
     ],
     "related": []
   },
@@ -4954,26 +4971,24 @@
     "title": "Democratization of Tooling via Agents",
     "title_ko": "에이전트를 통한 도구화 민주화",
     "category": "UX & Collaboration",
-    "description": "Many individuals in non-software engineering roles (sales, marketing, operations) could benefit from custom software tools tailored to their workflows, but lack traditional programming skills to build",
-    "problem": "Many individuals in non-software engineering roles (sales, marketing, operations) could benefit from custom software tools tailored to their workflows, but lack traditional programming skills to build them.",
-    "solution": "Empower non-programmers to create or modify software using AI agents. Users describe desired tools in natural language, agents generate necessary code, and users iteratively refine with agent help. This democratizes software development to domain experts.",
+    "description": "Many individuals in non-software engineering roles (e Empower a broader range of users, including those without deep coding expertise, to create or modify software solutions for their own needs using ",
+    "problem": "Many individuals in non-software engineering roles (e.g., sales, marketing, operations, communications) could benefit from custom software tools, scripts, or dashboards tailored to their specific workflows, but lack the traditional programming skills to build them.",
+    "solution": "Empower a broader range of users, including those without deep coding expertise, to create or modify software solutions for their own needs using AI agents. With an AI agent as an assistant, these users can:\n1. Describe their desired tool or functionality in natural language.\n2. Have the agent generate the necessary code (e.g., for a dashboard, a script to automate a task, a simple web application).\n3. Iteratively refine the tool with the agent's help.\n4. Even perform simple bug fixes or modifications to existing tools or codebases.\n\nThis pattern lowers the barrier to software creation, allowing domain experts in various fields to build their own productivity tools, thereby \"democratizing\" software development to some extent.",
     "when_to_use": [
-      "Domain experts need custom tools",
-      "Business users want automation",
-      "Simple bug fixes by non-engineers",
-      "Rapid prototyping of internal tools"
+      "Domain experts need custom tools but lack programming expertise",
+      "Iterative refinement with quick results and user feedback",
+      "Hiding technical complexity while maintaining capability",
+      "Approval workflows for destructive operations to build trust with non-technical users"
     ],
     "pros": [
-      "Domain experts build own tools",
+      "Enables domain experts to build their own tools",
       "Reduces engineering bottlenecks",
-      "Faster iteration on business needs",
-      "Enables citizen development"
+      "Creates learning feedback loops where users develop technical intuition through exposure"
     ],
     "cons": [
-      "Quality and security concerns",
-      "May create unmaintainable code",
-      "Support burden on engineering",
-      "Not suitable for complex systems"
+      "Generated code may have reliability issues that non-technical users cannot detect",
+      "Production deployment remains challenging",
+      "Quality and security require guardrails rather than training"
     ],
     "tags": [
       "no-code",
@@ -4981,7 +4996,8 @@
       "citizen-developer",
       "tool-creation",
       "business-users",
-      "automation"
+      "automation",
+      "custom-software"
     ],
     "related": []
   },
@@ -5287,28 +5303,31 @@
     "title": "Verbose Reasoning Transparency",
     "title_ko": "상세 추론 투명성",
     "category": "UX & Collaboration",
-    "description": "Black-box agent outputs are hard to debug, verify, and trust without visibility into reasoning Expose detailed reasoning chains and decision steps for debugging, verification, and user understanding",
-    "problem": "Black-box agent outputs are hard to debug, verify, and trust without visibility into reasoning.",
-    "solution": "Expose detailed reasoning chains and decision steps for debugging, verification, and user understanding.",
+    "description": "AI agents, especially those using complex models or multiple tools, can sometimes behave like \"black boxes Implement a feature that allows users to inspect the agent's internal \"thought process\" or re",
+    "problem": "AI agents, especially those using complex models or multiple tools, can sometimes behave like \"black boxes.\" Users may not understand why an agent made a particular decision, chose a specific tool, or generated a certain output. This lack of transparency can hinder debugging, trust, and the ability to effectively guide the agent.",
+    "solution": "Implement a feature that allows users to inspect the agent's internal \"thought process\" or reasoning steps on demand. This could be triggered by a keybinding (e.g., `Ctrl+R` in Claude Code) or a command.\n\nWhen activated, the verbose output might reveal:\n\n- The agent's interpretation of the user's prompt.\n- Alternative actions or tools it considered.\n- The specific tool(s) it selected and why (if available).\n- Intermediate steps or sub-tasks it performed.\n- Confidence scores or internal states.\n- Raw outputs from tools before they are processed or summarized.\n\nThis transparency helps users understand the agent's decision-making process, identify issues if the agent is stuck or producing incorrect results, and learn how to prompt more effectively.",
     "when_to_use": [
-      "Debugging sessions",
-      "Trust building",
-      "Learning/training purposes"
+      "Debugging agents that produce incorrect or unexpected outputs",
+      "Learning how to prompt more effectively by studying agent reasoning patterns",
+      "Building trust in high-stakes scenarios where understanding \"why\" matters",
+      "Complementing human-in-the-loop approval workflows with transparency"
     ],
     "pros": [
-      "Transparency",
-      "Easy debugging",
-      "Improved trust"
+      "Enables debugging of unexpected agent behavior",
+      "Supports prompt engineering",
+      "Builds trust through explainability"
     ],
     "cons": [
-      "Increased output volume",
-      "Higher token costs"
+      "Adds modest performance overhead (+10-30% tokens)",
+      "Requires careful handling of sensitive information (system prompts, credentials)"
     ],
     "tags": [
       "explainability",
       "debugging",
       "transparency",
-      "verbose-mode"
+      "agent reasoning",
+      "verbose mode",
+      "introspection"
     ],
     "related": []
   }
