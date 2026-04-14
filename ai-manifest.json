@@ -38,14 +38,14 @@
     "title": "Context Window Anxiety Management",
     "title_ko": "컨텍스트 윈도우 불안 관리",
     "category": "Context & Memory",
-    "description": "Models exhibit 'context anxiety' - they become aware of approaching context window limits and proactively summarize or rush to close tasks, even when sufficient context remains Implement context buffe",
-    "problem": "Models exhibit 'context anxiety' - they become aware of approaching context window limits and proactively summarize or rush to close tasks, even when sufficient context remains. This leads to premature completion, shortcuts, and incomplete work.",
-    "solution": "Implement context buffer strategy (enable 1M tokens but cap at 200k), aggressive counter-prompting ('You have plenty of context - do not rush'), and token budget transparency. Override the model's anxiety-driven behaviors with explicit reassurance.",
+    "description": "Models like Claude Sonnet 4 Implement strategic context budget management and aggressive prompting techniques to override anxiety-driven behaviors:\n\n**1",
+    "problem": "Models like Claude Sonnet 4.5 exhibit \"context anxiety\"—they become aware of approaching context window limits and proactively summarize progress or make decisive moves to close tasks, even when sufficient context remains. This leads to:\n\n- Premature task completion and shortcuts\n- Incomplete work despite having adequate context\n- Underestimation of remaining token capacity (consistently incorrect estimates)\n- Self-imposed pressure to \"wrap up\" rather than continue working",
+    "solution": "Implement strategic context budget management and aggressive prompting techniques to override anxiety-driven behaviors:\n\n**1. Context Buffer Strategy**\n- Enable larger context windows (e.g., 1M token beta) but cap actual usage at 200k tokens\n- Provides psychological \"runway\" that mitigates the model's anxiety about running out of space\n\n**2. Aggressive Counter-Prompting**\n- Add explicit reminders at conversation start: \"You have plenty of context remaining—do not rush to complete tasks\"\n- Include end-of-conversation reinforcement: \"Take your time, context is not a constraint\"\n- Override summarization impulses with direct instructions\n\n**3. Token Budget Transparency**\n- Explicitly state available token budget in prompts\n- Provide regular reassurance about remaining capacity\n- Counter the model's tendency to underestimate available space\n\n```pseudo\n# Context anxiety mitigation approach\ndef setup_context_anxiety_management():\n    context_buffer = enable_large_context(1M_tokens)\n    actual_limit = cap_usage_at(200k_tokens)\n    \n    prompt_prefix = \"\"\"\n    CONTEXT GUIDANCE: You have abundant context space (200k+ tokens available).\n    Do NOT rush to complete tasks or summarize prematurely.\n    Work thoroughly and completely on each step.\n    \"\"\"\n    \n    prompt_suffix = \"\"\"\n    Remember: Context is NOT a constraint. Take your time and be thorough.\n    \"\"\"\n    \n    return enhanced_prompt(prefix + user_input + suffix)\n```",
     "when_to_use": [
-      "Long coding sessions",
-      "Multi-step analysis requiring sustained attention",
-      "Complex planning tasks",
-      "When model mentions space constraints"
+      "Long development work sessions where premature completion hurts quality",
+      "Multi-step research and analysis requiring sustained attention",
+      "Complex planning tasks needing thorough exploration before conclusions",
+      "When monitoring for signs of context anxiety: sudden summarization, rushed decisions, or explicit mentions of 'running out of space'"
     ],
     "pros": [
       "Prevents premature task abandonment",
@@ -437,25 +437,28 @@
     "title": "Prompt Caching via Exact Prefix Preservation",
     "title_ko": "정확한 프리픽스 보존을 통한 프롬프트 캐싱",
     "category": "Context & Memory",
-    "description": "Long-running agent conversations suffer from quadratic performance degradation: growing JSON payloads, expensive re-computation without caching, and ZDR constraints preventing server-side state Mainta",
-    "problem": "Long-running agent conversations suffer from quadratic performance degradation: growing JSON payloads, expensive re-computation without caching, and ZDR constraints preventing server-side state.",
-    "solution": "Maintain prompt cache efficiency through exact prefix preservation - always append new messages rather than modifying existing ones. Order messages by stability: static content first (system, tools, instructions), variable content last (user messages, tool results).",
+    "description": "Long-running agent conversations with many tool calls can suffer from quadratic performance degradation: growing JSON payloads where each iteration sends the entire conversation history to the API, ex",
+    "problem": "Long-running agent conversations with many tool calls can suffer from quadratic performance degradation: growing JSON payloads where each iteration sends the entire conversation history to the API, expensive re-computation without caching where the model re-processes the same static content repeatedly, ZDR (Zero Data Retention) constraints that prevent server-side state ruling out previous_response_id optimization, and configuration changes that can break cache efficiency mid-conversation. As conversations grow, inference costs and latency increase quadratically without proper caching strategies.",
+    "solution": "Maintain prompt cache efficiency through exact prefix preservation - always append new messages rather than modifying existing ones, and carefully order messages to maximize cache hits.\n\nCore insight: Prompt caches only work on exact prefix matches. If the first N tokens of a request match a previous request, the cached computation can be reused. Caching operates at the token level, not message level.\n\nMessage ordering strategy:\n1. Static content first (cached across all requests): System message, Tool definitions (consistent order), Developer instructions, User/project instructions\n2. Variable content last (changes per request): User message, Assistant messages, Tool call results (appended iteratively)\n\nConfiguration change via insertion: When configuration changes mid-conversation, insert a new message rather than modifying an existing one to preserve the exact prefix.\n\nWhat breaks cache hits: Changing available tools (position-sensitive), reordering messages, modifying existing message content, changing the model.\n\nProvider variations: OpenAI uses automatic caching on exact prefix matches. Anthropic uses explicit cache-control headers with TTL-based invalidation (up to 5 minutes) and 90% discount on cached tokens.\n\nStateless design for ZDR: Avoid previous_response_id to support Zero Data Retention. Rely on prompt caching for linear performance instead.",
     "when_to_use": [
-      "Multi-turn agent conversations",
-      "Tool-heavy workflows",
-      "ZDR-compliant deployments"
+      "Multi-turn agent conversations with many tool calls",
+      "Tool-heavy workflows with growing conversation history",
+      "ZDR-compliant deployments requiring stateless design",
+      "Long-running agent sessions where inference costs grow quadratically"
     ],
     "pros": [
-      "Linear sampling cost with caching",
-      "ZDR-compatible stateless design",
-      "No server state required",
-      "Simple conceptual model"
+      "Linear sampling cost - prompt caching makes repeated inference linear rather than quadratic",
+      "ZDR-compatible - stateless design supports Zero Data Retention policies",
+      "No server state - avoids previous_response_id complexity",
+      "Simple conceptual model - exact prefix matching is easy to reason about",
+      "Production-validated savings - 43% cost reduction demonstrated at scale (HyperAgent, 9.4B tokens/month)"
     ],
     "cons": [
-      "Quadratic network traffic still exists",
-      "Cache fragility with mid-conversation changes",
-      "Disciplined message ordering required",
-      "MCP server dynamic tool limitations"
+      "Quadratic network traffic - JSON payload size still grows quadratically (only sampling is cached)",
+      "Cache fragility - mid-conversation changes (tools, model) break prefix matching",
+      "Disciplined ordering required - all static content must come before variable content",
+      "Tool enumeration complexity - must maintain consistent tool ordering",
+      "MCP server limitations - dynamic tool changes can cause cache misses"
     ],
     "tags": [
       "prompt-caching",
@@ -463,6 +466,7 @@
       "performance",
       "stateless",
       "zero-data-retention",
+      "message-ordering",
       "optimization"
     ],
     "related": []
@@ -1581,34 +1585,36 @@
     "title": "Burn the Boats",
     "title_ko": "배를 불태워라 (레거시 제거)",
     "category": "Orchestration & Control",
-    "description": "In fast-moving AI development, holding onto features or workflows that are 'working fine' prevents teams from fully embracing new paradigms Intentionally kill features and workflows to force evolution",
-    "problem": "In fast-moving AI development, holding onto features or workflows that are 'working fine' prevents teams from fully embracing new paradigms. The comfort of existing functionality becomes an anchor that holds back innovation—even when the old approach is obsolete.",
-    "solution": "Intentionally kill features and workflows to force evolution and prevent being stuck on old paradigms. Set hard deadlines for feature removal to create urgency and commitment to the new way. Accept user churn as a natural consequence—you're selecting for frontier users, not laggers.",
+    "description": "In fast-moving AI development, holding onto features or workflows that are \"working fine\" prevents teams from fully embracing new paradigms Burn the boats: intentionally kill features and workflows to",
+    "problem": "In fast-moving AI development, holding onto features or workflows that are \"working fine\" prevents teams from fully embracing new paradigms. The comfort of existing functionality becomes an anchor that holds back innovation - even when you know the old approach is obsolete.",
+    "solution": "Burn the boats: intentionally kill features and workflows to force evolution and prevent being stuck on old paradigms. Set hard deadlines for feature removal to create urgency and commitment to the new way.\n\nHistorical context: The earliest documented instance is Xiang Yu (207 BC) at the Battle of Julu, who sank boats and broke cauldrons to force victory against superior Qin forces. The phrase is popularly associated with Hernan Cortes (1519 AD), who destroyed his ships upon arriving in Mexico.\n\nAcademic foundation: Thomas Schelling's The Strategy of Conflict (1960) formalized this as \"credible commitment\" - restricting options makes threats believable and creates strategic commitment.\n\nIn AI product development: This means removing features that still work - features users still love - to prevent being stuck on the wrong trajectory. Note: Production AI systems typically reject \"no fallback\" approaches in favor of bounded autonomy with human oversight. This pattern is most relevant as a product/organizational strategy, not a technical agent safety pattern.",
     "when_to_use": [
-      "The paradigm has fundamentally shifted",
-      "Existing features limit users from better ways of working",
-      "Maintaining old features splits team focus",
-      "Future target users won't need the old feature"
+      "The paradigm has shifted - the fundamental approach has changed (e.g., assistant to factory)",
+      "It limits your users - the feature holds users back from better ways of working",
+      "It splits your focus - maintaining it distracts from the truly important work",
+      "Your future users won't use it - the 1% of frontier users don't need it",
+      "You're only keeping it for comfort - not because it's strategically important"
     ],
     "pros": [
-      "Forces internal innovation with no safety net",
-      "Signals commitment to users and team",
-      "Avoids split focus on obsolete features",
-      "Selects for frontier users",
-      "Prevents stagnation"
+      "Forces internal innovation - no safety net, must build the new way",
+      "Signals commitment - shows users and team you're serious",
+      "Avoids split focus - no resources diverted to maintaining obsolete features",
+      "Selects for the right users - frontier users stay, laggers leave (or upgrade)",
+      "Prevents stagnation - can't get comfortable resting on laurels"
     ],
     "cons": [
-      "User churn from feature removal",
-      "Short-term revenue impact",
-      "Risk of being wrong about the new direction",
-      "Team morale impact from killing their work",
-      "Competitive vulnerability during transition"
+      "User churn - some users will leave (or stay on old versions)",
+      "Revenue impact - short-term revenue may decrease",
+      "Risk of being wrong - what if the new way isn't actually better?",
+      "Team morale - some team members may resist killing their work",
+      "Competitive vulnerability - competitors may support the \"old way\" longer"
     ],
     "tags": [
       "feature-killing",
       "forced-evolution",
       "courage",
       "focus",
+      "self-destruct",
       "obsolescence",
       "product-strategy"
     ],
@@ -1619,28 +1625,34 @@
     "title": "Conditional Parallel Tool Execution",
     "title_ko": "조건부 병렬 도구 실행",
     "category": "Orchestration & Control",
-    "description": "Executing all tools strictly sequentially causes delays, while parallel execution without consideration risks race conditions Classify tools as read-only or state-modifying, executing read-only tools ",
-    "problem": "Executing all tools strictly sequentially causes delays, while parallel execution without consideration risks race conditions.",
-    "solution": "Classify tools as read-only or state-modifying, executing read-only tools in parallel and state-modifying tools sequentially.",
+    "description": "When an AI agent decides to use multiple tools in a single reasoning step, executing them strictly sequentially can lead to significant delays, especially if many tools are read-only and could be run ",
+    "problem": "When an AI agent decides to use multiple tools in a single reasoning step, executing them strictly sequentially can lead to significant delays, especially if many tools are read-only and could be run concurrently. Conversely, executing all tools in parallel without consideration can cause race conditions, data corruption, or unpredictable behavior if some tools modify state (e.g., write to files, change system settings).",
+    "solution": "Implement a conditional execution strategy for batches of tools based on their operational nature:\n\n1. **Tool Classification**: Each tool must declare whether it is read-only (e.g., `FileRead`, `GrepTool`, `GlobTool`) or state-modifying (e.g., `FileEditTool`, `FileWriteTool`, `BashTool`).\n\n2. **Execution Orchestration**: When the agent requests a batch of tools:\n   - If all tools in the batch are read-only: execute all tools concurrently to maximize speed\n   - If any tool in the batch is state-modifying: execute all tools sequentially in the order requested\n\n3. **Result Aggregation**: After execution, collect all tool results and present them in a consistent order matching the agent's original request sequence.\n\nThis strategy balances performance through parallelism for safe operations with safety through serialization for state-modifying operations. More advanced implementations may use dependency graph analysis to identify which tools can safely execute in parallel based on resource access patterns.",
     "when_to_use": [
-      "Multi-tool agents",
-      "Performance optimization",
-      "File system operations"
+      "Each tool in the agent's toolkit has a clearly defined isReadOnly property",
+      "Agent's core execution loop processes tool_use requests involving multiple tools",
+      "Default concurrency limit configured for parallel execution to avoid overwhelming system resources",
+      "Parallel results need re-sorting to match the agent's original requested order before passing back to the LLM"
     ],
     "pros": [
-      "Significant performance improvement for reads",
-      "Safety for writes",
-      "Simpler than dependency graphs"
+      "Significantly improves performance for sequences of read-only tool calls; 40-50% latency reduction is typical",
+      "Maintains safety and prevents race conditions by serializing state-modifying operations",
+      "Simpler to implement than full dependency graph analysis while still offering substantial benefits",
+      "Model Behavior Alignment: Some models (e.g., Claude Sonnet 4.5) naturally exhibit parallel tool execution behavior"
     ],
     "cons": [
-      "Single write in batch forces serialization",
-      "Requires accurate tool classification"
+      "If a batch contains mostly read-only but includes a single state-modifying operation, the entire batch is executed sequentially",
+      "Effectiveness relies on accurate classification of tools as read-only or state-modifying",
+      "Context Consumption: Parallel execution burns through context windows faster as multiple results return simultaneously"
     ],
     "tags": [
       "parallel-execution",
       "tool-orchestration",
-      "concurrency",
-      "safety"
+      "read-only-tools",
+      "stateful-tools",
+      "agent-efficiency",
+      "concurrency-control",
+      "task-scheduling"
     ],
     "related": []
   },
@@ -1649,30 +1661,39 @@
     "title": "Continuous Autonomous Task Loop Pattern",
     "title_ko": "연속 자율 작업 루프 패턴",
     "category": "Orchestration & Control",
-    "description": "Traditional development workflows require constant human intervention: manual task selection, context switching, rate limit handling, and repetitive git operations Implement a continuous loop with fre",
-    "problem": "Traditional development workflows require constant human intervention: manual task selection, context switching, rate limit handling, and repetitive git operations.",
-    "solution": "Implement a continuous loop with fresh context per iteration, autonomous task selection via subagents, automated git management, and intelligent rate limit handling.",
+    "description": "Traditional development workflows require constant human intervention for task management:\n\n- **Manual Task Selection**: Developers spend time deciding what to work on next from todo lists\n- **Context",
+    "problem": "Traditional development workflows require constant human intervention for task management:\n\n- **Manual Task Selection**: Developers spend time deciding what to work on next from todo lists\n- **Context Switching Overhead**: Moving between different types of tasks interrupts flow state\n- **Rate Limit Interruptions**: API rate limits break development momentum and require manual waiting\n- **Repetitive Git Operations**: Each task completion requires manual staging, committing, and status checking\n- **Error Recovery**: Failed tasks need manual diagnosis and restart\n\nThis manual orchestration reduces overall productivity and prevents developers from focusing on higher-level problem solving.",
+    "solution": "Implement a continuous autonomous loop that handles task selection, execution, and completion without human intervention. This pattern operationalizes the **ReAct paradigm** (Thought → Action → Observation) as a continuous execution cycle:\n\n1. **Fresh Context Per Iteration**: Each task starts with a clean context to avoid contamination\n2. **Autonomous Task Selection**: Use specialized subagents to pick the next appropriate task\n3. **Automated Git Management**: Handle commits and status updates through dedicated subagents\n4. **Intelligent Rate Limit Handling**: Detect rate limits and implement exponential backoff\n5. **Stream-Based Progress Tracking**: Real-time feedback through JSON streaming\n6. **Configurable Execution Limits**: Safety bounds to prevent runaway execution\n\nThe pattern operates in a continuous loop until stopped manually or reaching iteration limits.",
     "when_to_use": [
-      "Batch task processing",
-      "Overnight automation",
-      "Repetitive development tasks"
+      "CLI agent tool with autonomous execution capabilities available",
+      "Git repository with TODO.md or similar task file",
+      "Batch processing of discrete, well-defined tasks",
+      "Overnight or unattended automation scenarios",
+      "Repetitive development tasks requiring fresh context each time"
     ],
     "pros": [
-      "Complete autonomy",
-      "Continuous progress",
-      "Fresh context per task"
+      "Complete Autonomy: Eliminates manual task orchestration overhead",
+      "Continuous Progress: Maintains development momentum without human intervention",
+      "Fresh Context: Each task gets clean reasoning context",
+      "Intelligent Error Handling: Automated recovery from common failure modes",
+      "Git Automation: Maintains clean commit history automatically",
+      "Rate Limit Resilience: Handles API constraints gracefully"
     ],
     "cons": [
-      "Reduced human oversight",
-      "Runaway risk",
-      "Requires well-defined tasks"
+      "Reduced Human Oversight: Less control over individual task decisions",
+      "Permission Requirements: Needs elevated execution permissions for autonomy",
+      "Runaway Risk: Potential for unintended extensive execution",
+      "Task Quality Dependency: Effectiveness depends on well-structured task definitions",
+      "Limited Complex Problem Solving: Best for discrete, well-defined tasks",
+      "Resource Consumption: Continuous execution uses computational resources"
     ],
     "tags": [
       "autonomous-execution",
       "task-loop",
       "rate-limiting",
       "git-automation",
-      "cli-driven"
+      "cli-driven",
+      "stream-processing"
     ],
     "related": []
   },
@@ -2204,24 +2225,26 @@
     "title": "Lane-Based Execution Queueing",
     "title_ko": "레인 기반 실행 큐잉",
     "category": "Orchestration & Control",
-    "description": "Traditional agent systems serialize all operations through a single queue, creating bottlenecks Isolated execution lanes with independent queues and configurable concurrency per lane",
-    "problem": "Traditional agent systems serialize all operations through a single queue, creating bottlenecks. Concurrent execution causes interleaving hazards, race conditions, and deadlock risks.",
-    "solution": "Isolated execution lanes with independent queues and configurable concurrency per lane. Each lane is a named queue with its own concurrency limit, drained independently. Hierarchical composition prevents deadlocks through structured queuing.",
+    "description": "Traditional agent systems serialize all operations through a single execution queue, creating bottlenecks that limit throughput Isolated execution lanes with independent queues and configurable concur",
+    "problem": "Traditional agent systems serialize all operations through a single execution queue, creating bottlenecks that limit throughput. Concurrent execution is desirable but risky:\n\n- **Interleaving hazards**: Multiple commands writing to stdin/stdout simultaneously corrupt user-facing output\n- **Race conditions**: Shared state access without proper synchronization causes data corruption\n- **Deadlock risks**: Naive concurrent queuing can create circular dependencies between operations\n\nAgentic systems need parallelism to remain responsive (e.g., background tasks shouldn't block user interactions), but must preserve isolation guarantees.",
+    "solution": "Isolated execution lanes with independent queues and configurable concurrency per lane. Each lane is a named queue with its own concurrency limit, drained independently without interference.\n\n**Core concepts:**\n\n- **Session lanes**: Per-conversation queues prevent message interleaving. Each user session gets an isolated lane (e.g., `session:telegram:user123`).\n- **Global lanes**: Background tasks (cron jobs, health checks) execute in dedicated lanes (e.g., `cron`, `subagent`) without blocking session lanes.\n- **Hierarchical composition**: Operations can nest lanes (session → global) via queue chaining. The outer lane waits for the inner lane, preventing deadlocks through structured queuing.\n- **Configurable concurrency**: Each lane supports `maxConcurrent` workers (default 1). High-throughput lanes can run parallel tasks; serial lanes preserve ordering.\n- **Wait-time warnings**: Tasks that sit queued too long trigger warnings and callbacks, surfacing performance issues.",
     "when_to_use": [
-      "Multi-user agent systems",
-      "Background task isolation",
-      "Mixed serial/parallel workloads"
+      "Identify isolation boundaries: group operations that must not interleave (e.g., per-user, per-channel)",
+      "Define lane names using a hierarchy (e.g., session:telegram:user123) for scoping",
+      "Set concurrency limits: serial lanes use maxConcurrent=1; parallel lanes use higher values",
+      "Compose hierarchically: when a queued task must spawn work in another lane, await the inner enqueue from the outer task",
+      "Track per-lane metrics (queue depth, active count, wait times) to detect backpressure and starvation"
     ],
     "pros": [
-      "Isolation guarantees between lanes",
-      "Flexible parallelism per lane",
-      "Simple hierarchical composition",
-      "Lane-level observability"
+      "Isolation guarantees: No interleaving between lanes; each lane preserves ordering",
+      "Flexible parallelism: Concurrency per lane allows mixed workloads (serial UI, parallel background)",
+      "Simple mental model: Hierarchical composition maps to structured programming patterns",
+      "Observability: Lane-level metrics (queue depth, active count, wait times) aid debugging"
     ],
     "cons": [
-      "Memory overhead for many lanes",
-      "Concurrency tuning required",
-      "Not a full-featured scheduler"
+      "Memory overhead: Each lane maintains a queue; thousands of idle lanes may waste memory",
+      "Tuning required: Concurrency limits need calibration based on workload characteristics",
+      "Not a general scheduler: No priority queues, deadlines, or work stealing; use a proper scheduler for complex needs"
     ],
     "tags": [
       "queueing",
@@ -2473,27 +2496,27 @@
     "title": "Planner-Worker Separation for Long-Running Agents",
     "title_ko": "장기 실행 에이전트를 위한 플래너-워커 분리",
     "category": "Orchestration & Control",
-    "description": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges Separate agent roles into a hierarchical planner-worker structure: (1) Planners cont",
-    "problem": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges. Flat structures lead to conflicts and duplicated work. Dynamic coordination through shared files with locking becomes a bottleneck. Equal-status agents become risk-averse, avoiding difficult tasks. No agent takes ownership of hard problems or overall project direction.",
-    "solution": "Separate agent roles into a hierarchical planner-worker structure: (1) Planners continuously explore the codebase and create tasks, can spawn sub-planners for specific areas making planning parallel and recursive; (2) Workers pick up tasks and focus entirely on completing them without coordinating with other workers; (3) A Judge determines whether to continue or if the goal is achieved. This creates an iterative cycle where each iteration starts fresh, combating drift and tunnel vision.",
+    "description": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges Separate agent roles into a hierarchical planner-worker structure:\n\n- **Planners**: ",
+    "problem": "Running multiple AI agents in parallel for complex, multi-week projects creates significant coordination challenges. Flat structures lead to conflicts, duplicated work, and agents stepping on each other. Dynamic coordination through shared files with locking becomes a bottleneck - most agents spend time waiting rather than working. Equal status agents become risk-averse, avoiding difficult tasks and making only small, safe changes instead of tackling end-to-end implementation. No agent takes ownership of hard problems or overall project direction.",
+    "solution": "Separate agent roles into a hierarchical planner-worker structure:\n\n- **Planners**: Continuously explore the codebase and create tasks. They can spawn sub-planners for specific areas, making planning itself parallel and recursive.\n- **Workers**: Pick up tasks and focus entirely on completing them. They don't coordinate with other workers or worry about the big picture. They grind on their assigned task until done, then push changes.\n- **Judge**: At the end of each cycle, determines whether to continue or if the goal is achieved.\n\nThis creates an iterative cycle where each iteration starts fresh, combating drift and tunnel vision.\n\nKey insights: (1) Model choice matters - different models excel at different roles. (2) Remove complexity rather than add it - an initial \"integrator\" role created more bottlenecks than it solved. (3) The right amount of structure is in the middle - too little and agents conflict, too much creates fragility.",
     "when_to_use": [
       "Massive codebases (1M+ lines of code, 1000+ files)",
-      "Ambitious goals - building complex systems from scratch",
-      "Large-scale migrations (e.g., framework migrations)",
-      "Performance optimization - complete rewrites in different languages"
+      "Ambitious goals - building complex systems from scratch (web browser, Windows emulator, Excel clone)",
+      "Large-scale migrations - in-place framework migrations (Solid to React, Java LSP implementation)",
+      "Performance optimization - complete rewrites in different languages for speed (C++ to Rust)"
     ],
     "pros": [
-      "Scalability - hundreds of agents can work concurrently for weeks",
-      "Clear ownership - planners own big picture, workers own task completion",
+      "Scalability - hundreds of agents can work concurrently on a single codebase for weeks",
+      "Clear ownership - planners own the big picture, workers own task completion",
       "Parallel planning - planning itself scales through sub-planner spawning",
       "Reduced coordination overhead - workers don't need to coordinate with each other",
       "Combats tunnel vision - iterative cycles with fresh starts prevent drift"
     ],
     "cons": [
-      "System complexity - requires orchestration infrastructure for role separation",
-      "Prompt engineering difficulty - coordination behavior requires extensive experimentation",
+      "System complexity - requires orchestration infrastructure for role separation and task distribution",
+      "Prompt engineering difficulty - coordination behavior requires extensive prompt experimentation",
       "Cost - running hundreds of concurrent agents for weeks is expensive",
-      "Not perfectly efficient - significant token waste, but more effective than expected",
+      "Not perfectly efficient - significant token waste, but far more effective than expected",
       "Still evolving - planners should wake up when tasks complete; agents sometimes run too long"
     ],
     "tags": [
@@ -2773,8 +2796,8 @@
     "title_ko": "작업 위임을 위한 제목 위생 관리",
     "category": "Orchestration & Control",
     "description": "When delegating work to subagents via the Task tool, empty or generic task subjects make conversations untraceable, unreferencable, and confusing Enforce clear, specific task subjects for every Task t",
-    "problem": "When delegating work to subagents via the Task tool, empty or generic task subjects make conversations untraceable, unreferencable, and confusing. Multiple subagents with empty subjects are indistinguishable. From 48 Task invocations across 88 sessions, empty task subjects were identified as a major pain point.",
-    "solution": "Enforce clear, specific task subjects for every Task tool invocation. A good subject should not be empty, be specific and descriptive, be reference-able, and follow naming conventions using imperative mood with a clear target.",
+    "problem": "When delegating work to subagents via the Task tool, empty or generic task subjects make conversations untraceable, unreferencable, and confusing. Multiple subagents with empty subjects are indistinguishable. From 48 Task invocations across 88 sessions, empty task subjects were identified as a major pain point. This pattern has strong academic foundations in multi-agent communication standards (FIPA ACL, KQML) and distributed systems naming principles (REST, MapReduce).",
+    "solution": "Enforce clear, specific task subjects for every Task tool invocation. This is a meta-pattern that enables the effectiveness of all sub-agent delegation patterns (parallel spawning, factory over assistant, planner-worker). A good subject should: (1) Not be empty (baseline requirement), (2) Be specific and descriptive (what is being done), (3) Be reference-able (can be discussed later), (4) Follow naming conventions (imperative mood, clear target).\n\nTemplate for good subjects: [Action Verb] + [Target/Scope] + [Optional Context]\n\nExamples:\n- \"Explore newsletter component implementation\"\n- \"Search for dark mode patterns in codebase\"\n- \"Analyze error handling in API routes\"\n- \"Find all OAuth configuration files\"",
     "when_to_use": [
       "Parallel subagent delegations (2+ agents)",
       "Complex research tasks requiring multiple subagents",
@@ -2911,14 +2934,16 @@
     "title": "Tool Selection Guide",
     "title_ko": "도구 선택 가이드",
     "category": "Orchestration & Control",
-    "description": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows Encode data-driven tool selection patterns from analysis of 88 real-world sessions",
-    "problem": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows. Common anti-patterns include using Write when Edit would be more appropriate, launching subagents for simple exploration tasks, skipping build verification after code changes, and performing sequential exploration when parallel would be faster. These inefficiencies compound across long sessions.",
-    "solution": "Encode data-driven tool selection patterns from analysis of 88 real-world sessions. Match task type to optimal tool: exploration tasks use Read/Grep/Glob, code modification uses Edit (not Write), verification uses Bash, and delegation uses Task with clear subjects. Key rules: prefer Edit over Write for modifications (3.4:1 ratio observed), always Read before Edit, run Bash verification after changes, and use parallel delegation for independent tasks.",
+    "description": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows Encode data-driven tool selection patterns that emerged from analysis of 88 real-world Claude con",
+    "problem": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows. Common anti-patterns include:\n\n- Using `Write` when `Edit` would be more appropriate\n- Launching subagents for simple exploration tasks\n- Skipping build verification after code changes\n- Performing sequential exploration when parallel would be faster\n\nThese inefficiencies compound across long sessions, resulting in wasted tokens, slower completion, and more user corrections.",
+    "solution": "Encode data-driven tool selection patterns that emerged from analysis of 88 real-world Claude conversation sessions. By matching task type to optimal tool, agents can follow proven workflows.\n\n**Tool preference patterns from actual usage data:**\n\n| Task Type | Recommended Tool | Evidence |\n|-----------|-----------------|----------|\n| Codebase exploration | Read → Grep → Glob | Consistent pattern across all projects |\n| Code modification | Edit (not Write) | 3.4:1 Edit:Write ratio in nibzard-web |\n| New file creation | Write | Appropriate use case |\n| Build verification | Bash | 324 uses in nibzard-web, 276 in patterns |\n| Research delegation | Task (with clear subject) | 48 invocations across sessions |\n\n**Key selection criteria:**\n\n1. **Exploration tasks**: Start with `Glob` for file discovery, use `Grep` for content search, use `Read` for targeted file inspection\n2. **Code modification tasks**: Prefer `Edit` over `Write` (saves ~66% tokens), only use `Write` for new files or when changing >50% of a file, always `Read` the file before editing\n3. **Verification tasks**: Use `Bash` for build commands, test runners, and linting; run verification after every Edit/Write operation\n4. **Delegation tasks**: Use `Task` tool for subagent delegation with clear task subjects; prefer parallel over sequential for independent exploration (10x+ speedup possible)",
     "when_to_use": [
-      "Codebase exploration requiring file and content search",
-      "Code modification of existing files",
-      "Build and test verification after changes",
-      "Delegating parallel research tasks to subagents"
+      "Before using any tool, mentally categorize: 'Am I discovering, changing, checking, or delegating?'",
+      "Codebase exploration requiring file and content search (Exploration toolkit)",
+      "Code modification of existing files (Edit after Read)",
+      "Build and test verification after changes (Bash verification)",
+      "Delegating parallel research tasks to subagents (Task with clear subject)",
+      "Anti-pattern prevention: don't use Write for modifications, don't skip Read before Edit, don't claim complete without Bash verification"
     ],
     "pros": [
       "Data-driven from 88 real sessions",
@@ -3291,22 +3316,22 @@
     "title": "Lethal Trifecta Threat Model",
     "title_ko": "치명적 삼중 위협 모델",
     "category": "Reliability & Eval",
-    "description": "Agents with access to untrusted data, tools, and egress channels are vulnerable to prompt injection attacks Identify and break the lethal trifecta by removing at least one of: untrusted data access, t",
-    "problem": "Agents with access to untrusted data, tools, and egress channels are vulnerable to prompt injection attacks.",
-    "solution": "Identify and break the lethal trifecta by removing at least one of: untrusted data access, tool access, or exfiltration channels.",
+    "description": "Combining three agent capabilities - (1) Access to private data, (2) Exposure to untrusted content, (3) Ability to externally communicate - creates a straightforward path for prompt-injection attacker",
+    "problem": "Combining three agent capabilities - (1) Access to private data, (2) Exposure to untrusted content, (3) Ability to externally communicate - creates a straightforward path for prompt-injection attackers to steal sensitive information. LLMs cannot reliably distinguish \"good\" instructions from malicious ones once they appear in the same context window.",
+    "solution": "Adopt a Trifecta Threat Model:\n\n- Audit every tool an agent can call and classify it against the three capabilities.\n- Guarantee that at least one circle is missing in any execution path. Options include:\n  - Remove external network access (no exfiltration)\n  - Deny direct file/database reads (no private data)\n  - Sanitize or segregate untrusted inputs (no hostile instructions)\n- Enforce this at orchestration time, not with brittle prompt guardrails.\n\n```python\n# pseudo-policy\nif tool.can_externally_communicate and\n   tool.accesses_private_data and\n   input_source == \"untrusted\":\n       raise SecurityError(\"Lethal trifecta detected\")\n```",
     "when_to_use": [
-      "Agent security design",
-      "Threat analysis",
-      "Architecture review"
+      "Maintain a machine-readable capability matrix for every tool",
+      "Add a pre-execution policy check in your agent runner",
+      "Fail closed: if capability metadata is missing, treat the tool as high-risk"
     ],
     "pros": [
-      "Clear threat model",
-      "Defense prioritization",
-      "Design guidance"
+      "Simple mental model - eliminates entire attack class",
+      "Disciplined capability tagging provides clear threat model",
+      "Design guidance for secure agent architectures"
     ],
     "cons": [
-      "May limit functionality",
-      "Doesn't cover all threats"
+      "Limits powerful \"all-in-one\" agents",
+      "Requires disciplined capability tagging"
     ],
     "tags": [
       "security",
