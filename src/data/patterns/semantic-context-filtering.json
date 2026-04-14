@@ -6,27 +6,61 @@
   "status": "emerging",
   "original_url": "https://github.com/hyperbrowserai/HyperAgent",
   "problem": {
-    "en": "Raw data sources are too verbose and noisy for effective LLM consumption, wasting tokens and confusing reasoning.",
-    "ko": "원시 데이터 소스가 LLM이 효과적으로 소비하기에 너무 장황하고 노이즈가 많아 토큰을 낭비하고 추론을 혼란스럽게 합니다."
+    "en": "Raw data sources are too verbose and noisy for effective LLM consumption. Full representations include invisible elements, implementation details, and irrelevant information that bloat context and confuse reasoning. Research on boilerplate detection shows that 40-80% of web page content is typically navigation, footers, ads, and other boilerplate that should be filtered before semantic processing. This creates several problems: token explosion where raw data exceeds context limits or becomes prohibitively expensive, poor signal-to-noise where LLM wastes reasoning capacity on irrelevant details, slower inference with more tokens meaning slower generation and higher costs, and confused reasoning where noise leads to hallucinations or wrong conclusions. The issue appears across domains including web scraping (full HTML DOM with scripts, styles, tracking iframes), API responses (JSON with nested metadata, internal fields, debug info), document processing (headers, footers, navigation, boilerplate text), and code analysis (comments, whitespace, boilerplate code).",
+    "ko": "원시 데이터 소스가 LLM이 효과적으로 소비하기에 너무 장황하고 노이즈가 많습니다. 전체 표현에는 보이지 않는 요소, 구현 세부사항, 관련 없는 정보가 포함되어 컨텍스트를 부풀리고 추론을 혼란스럽게 합니다. 보일러플레이트 탐지 연구에 따르면 웹 페이지 콘텐츠의 40-80%가 일반적으로 내비게이션, 푸터, 광고 및 의미론적 처리 전에 필터링해야 하는 기타 보일러플레이트입니다. 이로 인해 여러 문제가 발생합니다: 원시 데이터가 컨텍스트 제한을 초과하거나 비용이 과도해지는 토큰 폭발, LLM이 관련 없는 세부사항에 추론 능력을 낭비하는 낮은 신호 대 노이즈 비, 더 많은 토큰으로 인한 느린 추론과 높은 비용, 노이즈가 환각이나 잘못된 결론으로 이어지는 혼란스러운 추론이 있습니다. 이 문제는 웹 스크래핑(스크립트, 스타일, 추적 iframe이 포함된 전체 HTML DOM), API 응답(중첩된 메타데이터, 내부 필드, 디버그 정보가 있는 JSON), 문서 처리(헤더, 푸터, 내비게이션, 보일러플레이트 텍스트), 코드 분석(주석, 공백, 보일러플레이트 코드) 등 여러 도메인에 걸쳐 나타납니다."
   },
   "solution": {
-    "en": "Extract only semantic, interactive, or relevant elements from raw data, providing clean abstractions to the LLM.",
-    "ko": "원시 데이터에서 의미론적, 대화형 또는 관련 요소만 추출하여 LLM에 깨끗한 추상화를 제공합니다."
+    "en": "Extract only the semantic, interactive, or relevant elements from raw data. Filter out noise and provide the LLM with a clean representation that captures what matters for reasoning.\n\n**Core Principle: Don't send raw data to the LLM. Send semantic abstractions.**\n\nThis approach is validated across production systems including browser automation tools (Puppeteer/Playwright accessibility trees), RAG frameworks (LangChain, LlamaIndex semantic chunking), and code analysis tools (Aider's AST-based repo-map).\n\nKey techniques:\n1. **Browser Accessibility Tree**: Extract interactive elements only (100-200 tokens vs 10,000+ tokens for full HTML)\n2. **API Response Filtering**: Strip internal metadata, debug info, and internal fields to keep only business data\n3. **Document Section Extraction**: Skip headers, footers, navigation, legal disclaimers to keep only actual content (~20% of original size)\n4. **Maintain Reference Mapping**: Keep filtered-to-original mappings for execution",
+    "ko": "원시 데이터에서 의미론적, 대화형 또는 관련 요소만 추출합니다. 노이즈를 필터링하고 추론에 중요한 것을 포착하는 깨끗한 표현을 LLM에 제공합니다.\n\n**핵심 원칙: 원시 데이터를 LLM에 보내지 마십시오. 의미론적 추상화를 보내십시오.**\n\n이 접근 방식은 브라우저 자동화 도구(Puppeteer/Playwright 접근성 트리), RAG 프레임워크(LangChain, LlamaIndex 의미론적 청킹), 코드 분석 도구(Aider의 AST 기반 repo-map)를 포함한 프로덕션 시스템에서 검증되었습니다.\n\n핵심 기법:\n1. **브라우저 접근성 트리**: 대화형 요소만 추출 (전체 HTML의 10,000+ 토큰 대비 100-200 토큰)\n2. **API 응답 필터링**: 내부 메타데이터, 디버그 정보, 내부 필드를 제거하고 비즈니스 데이터만 유지\n3. **문서 섹션 추출**: 헤더, 푸터, 내비게이션, 법적 면책 조항을 건너뛰고 실제 콘텐츠만 유지 (원본 크기의 약 20%)\n4. **참조 매핑 유지**: 실행을 위한 필터링-원본 매핑 유지"
   },
   "ascii_diagram": "┌─────────────┐\n│ Raw HTML    │\n│ (10K tokens)│\n└──────┬──────┘\n       │ filter\n┌──────▼──────┐\n│ Accessibility│\n│    Tree     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Clean JSON  │\n│ (200 tokens)│\n└─────────────┘",
   "mermaid_diagram": "flowchart LR\n    A[Raw Data Source] --> B[Semantic Filter]\n    B --> C[Interactive Elements]\n    B --> D[Relevant Fields]\n    B --> E[Content Sections]\n    C & D & E --> F[Clean Context for LLM]",
   "code_example": "# Instead of full HTML DOM (10,000+ tokens)\n# Extract accessibility tree (100-200 tokens)\ntree = await page.accessibility.snapshot(\n    interestingOnly=True  # Only interactive elements\n)\n\n# Result: Clean semantic representation\n# {\n#   \"role\": \"button\",\n#   \"name\": \"Login\",\n#   \"xpath\": \"/html/body/main/button\"\n# }",
   "when_to_use": {
-    "en": ["Web scraping agents", "Document processing", "API response handling"],
-    "ko": ["웹 스크래핑 에이전트", "문서 처리", "API 응답 처리"]
+    "en": [
+      "Identify semantic elements for your domain (web: interactive elements, API: business data, documents: content sections)",
+      "Build a filter layer that extracts only relevant data",
+      "Apply filtering before every LLM call",
+      "Maintain reference mapping from filtered to original data for execution"
+    ],
+    "ko": [
+      "도메인에 맞는 의미론적 요소 식별 (웹: 대화형 요소, API: 비즈니스 데이터, 문서: 콘텐츠 섹션)",
+      "관련 데이터만 추출하는 필터 계층 구축",
+      "모든 LLM 호출 전에 필터링 적용",
+      "실행을 위한 필터링-원본 데이터 참조 매핑 유지"
+    ]
   },
   "pros": {
-    "en": ["10-100x token reduction", "Better LLM reasoning", "Lower costs and latency"],
-    "ko": ["10-100배 토큰 감소", "더 나은 LLM 추론", "낮은 비용과 지연"]
+    "en": [
+      "Dramatic token reduction: 10-100x smaller context",
+      "Better LLM reasoning: Focus on signal, not noise",
+      "Lower costs: Fewer tokens = cheaper",
+      "Faster inference: Smaller context = faster generation",
+      "Higher reliability: Less confusion and hallucination"
+    ],
+    "ko": [
+      "극적인 토큰 감소: 10-100배 더 작은 컨텍스트",
+      "더 나은 LLM 추론: 노이즈가 아닌 신호에 집중",
+      "비용 절감: 적은 토큰 = 저렴한 비용",
+      "빠른 추론: 작은 컨텍스트 = 빠른 생성",
+      "높은 신뢰성: 혼란과 환각 감소"
+    ]
   },
   "cons": {
-    "en": ["Filter complexity", "Potential information loss", "Domain-specific filters needed"],
-    "ko": ["필터 복잡성", "잠재적 정보 손실", "도메인별 필터 필요"]
+    "en": [
+      "Filter complexity: Need to build and maintain filter logic",
+      "Information loss: May remove context that matters",
+      "Domain-specific: Filters need to be tailored per use case",
+      "Mapping overhead: Need to track filtered-to-original references",
+      "Potential bugs: Filter might remove important elements"
+    ],
+    "ko": [
+      "필터 복잡성: 필터 로직 구축 및 유지 필요",
+      "정보 손실: 중요한 컨텍스트를 제거할 수 있음",
+      "도메인 특화: 사용 사례별 필터 맞춤 필요",
+      "매핑 오버헤드: 필터링-원본 참조 추적 필요",
+      "잠재적 버그: 필터가 중요한 요소를 제거할 수 있음"
+    ]
   },
   "tags": ["context-filtering", "token-optimization", "semantic-extraction", "noise-reduction"]
 }

@@ -6,25 +6,27 @@
   "status": "emerging",
   "original_url": "https://engineering.ramp.com/post/why-we-built-our-background-agent",
   "problem": {
-    "en": "Off-the-shelf coding agents are either too generic (not integrated with company-specific environments), vendor-locked (tied to one model provider), or have limited context (can't access internal infrastructure). Companies need coding agents that work within their specific development environment, iterate with closed feedback loops, provide real-time visibility, and are model-agnostic.",
-    "ko": "기성 코딩 에이전트는 너무 일반적이거나(회사별 환경과 통합되지 않음), 특정 벤더에 종속되어 있거나(하나의 모델 제공자에 묶임), 제한된 컨텍스트를 가지고 있습니다(내부 인프라에 접근 불가). 기업은 특정 개발 환경에서 작동하고, 폐쇄 피드백 루프로 반복하고, 실시간 가시성을 제공하며, 모델에 구애받지 않는 코딩 에이전트가 필요합니다."
+    "en": "Off-the-shelf coding agents (e.g., Devin, Claude Code, Cursor) are either:\n\n- **Too generic** - Not deeply integrated with company-specific dev environments, tools, and workflows\n- **Vendor-locked** - Tightly coupled to one model provider, limiting flexibility and creating dependency\n- **Limited context** - Cannot access internal infrastructure, private repos, or company-specific tooling\n\nCompanies need coding agents that:\n\n- Work within their specific development environment\n- Can iterate with closed feedback loops (compiler, linter, tests)\n- Provide real-time visibility into agent progress\n- Are model-agnostic to switch providers as needed",
+    "ko": "기성 코딩 에이전트(예: Devin, Claude Code, Cursor)는 다음 중 하나에 해당합니다:\n\n- **너무 일반적** - 회사별 개발 환경, 도구, 워크플로우와 깊이 통합되지 않음\n- **벤더 종속** - 하나의 모델 제공자에 강하게 결합되어 유연성이 제한되고 종속성 생성\n- **제한된 컨텍스트** - 내부 인프라, 프라이빗 저장소, 회사별 도구에 접근 불가\n\n기업은 다음과 같은 코딩 에이전트가 필요합니다:\n\n- 특정 개발 환경 내에서 작동\n- 폐쇄 피드백 루프(컴파일러, 린터, 테스트)로 반복 가능\n- 에이전트 진행 상황에 대한 실시간 가시성 제공\n- 필요에 따라 제공자를 전환할 수 있는 모델 중립성"
   },
   "solution": {
-    "en": "Build a custom background agent that runs in a sandboxed environment identical to developers. Key components include: (1) Sandboxed execution environment using Modal or similar for ephemeral dev environments, (2) Real-time communication layer via WebSockets for streaming stdout/stderr, (3) Closed feedback loop with compiler errors, linter warnings, and test failures guiding iterations, (4) Model-agnostic architecture supporting multiple frontier models, (5) Company-specific integration with internal tooling and workflows.",
-    "ko": "개발자와 동일한 샌드박스 환경에서 실행되는 커스텀 백그라운드 에이전트를 구축합니다. 주요 구성 요소: (1) Modal 또는 유사 도구를 사용한 임시 개발 환경의 샌드박스 실행 환경, (2) stdout/stderr 스트리밍을 위한 WebSocket 기반 실시간 통신 레이어, (3) 컴파일러 에러, 린터 경고, 테스트 실패가 반복을 안내하는 폐쇄 피드백 루프, (4) 여러 프론티어 모델을 지원하는 모델 중립적 아키텍처, (5) 내부 도구 및 워크플로우와의 회사별 통합."
+    "en": "Build a **custom background agent** that runs in a sandboxed environment identical to developers, with:\n\n**1. Sandboxed Execution Environment**\n- Use infrastructure like Modal for ephemeral, sandboxed dev environments\n- Agent runs with same context: codebase, dependencies, dev tools\n- Isolated from production but mirroring development setup\n\n**2. Real-Time Communication Layer**\n- WebSocket connection streams stdout/stderr to client\n- User sees agent progress in real-time (not polling)\n- Two-way communication for prompts and status updates\n\n**3. Closed Feedback Loop**\n- Agent iterates autonomously with machine-readable feedback\n- Compiler errors, linter warnings, test failures guide iterations\n- Not 1-shot implementation - but iterative refinement\n\n**4. Model-Agnostic Architecture**\n- Support multiple frontier models via pluggable interface\n- Switch between providers without rewriting infrastructure\n- Leverage best model for specific task type\n\n**5. Company-Specific Integration**\n- Deep integration with internal tooling, scripts, and workflows\n- Access to private repos, internal APIs, documentation\n- Customized to team's specific development practices\n\n**6. Security Best Practices**\n- Network isolation with egress lockdown (default-deny outbound rules)\n- Tool authorization with pattern-based allow/deny lists\n- Execution limits: timeouts, resource caps, privilege restrictions\n- Comprehensive audit logging for all agent actions",
+    "ko": "개발자와 동일한 샌드박스 환경에서 실행되는 **커스텀 백그라운드 에이전트**를 구축합니다:\n\n**1. 샌드박스 실행 환경**\n- Modal과 같은 인프라를 사용한 임시 샌드박스 개발 환경\n- 에이전트가 동일한 컨텍스트에서 실행: 코드베이스, 의존성, 개발 도구\n- 프로덕션과 격리되지만 개발 환경을 미러링\n\n**2. 실시간 통신 레이어**\n- WebSocket 연결로 stdout/stderr를 클라이언트에 스트리밍\n- 사용자가 에이전트 진행 상황을 실시간으로 확인 (폴링 아님)\n- 프롬프트와 상태 업데이트를 위한 양방향 통신\n\n**3. 폐쇄 피드백 루프**\n- 에이전트가 기계 판독 가능한 피드백으로 자율적 반복\n- 컴파일러 에러, 린터 경고, 테스트 실패가 반복을 안내\n- 1회성 구현이 아닌 반복적 개선\n\n**4. 모델 중립적 아키텍처**\n- 플러그인 인터페이스를 통해 여러 프론티어 모델 지원\n- 인프라를 다시 작성하지 않고 제공자 간 전환\n- 특정 작업 유형에 최적 모델 활용\n\n**5. 회사별 통합**\n- 내부 도구, 스크립트, 워크플로우와 깊은 통합\n- 프라이빗 저장소, 내부 API, 문서에 접근\n- 팀의 특정 개발 관행에 맞춤화\n\n**6. 보안 모범 사례**\n- 이그레스 잠금을 통한 네트워크 격리 (기본 거부 아웃바운드 규칙)\n- 패턴 기반 허용/거부 목록을 통한 도구 인가\n- 실행 제한: 타임아웃, 리소스 한도, 권한 제한\n- 모든 에이전트 작업에 대한 포괄적 감사 로깅"
   },
   "when_to_use": {
     "en": [
       "Need deep integration with company-specific tools and workflows",
       "Want model flexibility without vendor lock-in",
       "Require real-time visibility into agent progress",
-      "Agent needs same development context as human developers"
+      "Agent needs same development context as human developers",
+      "Off-the-shelf agents (Devin, Cursor) work for generic tasks but can't deeply integrate with company infrastructure"
     ],
     "ko": [
       "회사별 도구 및 워크플로우와 깊은 통합 필요",
       "벤더 종속 없는 모델 유연성 필요",
       "에이전트 진행 상황 실시간 가시성 필요",
-      "에이전트가 개발자와 동일한 개발 컨텍스트 필요"
+      "에이전트가 개발자와 동일한 개발 컨텍스트 필요",
+      "기성 에이전트(Devin, Cursor)가 일반 작업에는 적합하지만 회사 인프라와 깊은 통합이 불가할 때"
     ]
   },
   "pros": {
@@ -46,9 +48,9 @@
   "cons": {
     "en": [
       "Engineering overhead - requires building and maintaining infrastructure",
-      "Security considerations - agent needs access to repos and credentials",
+      "Security considerations - agent needs access to repos, credentials",
       "Ongoing maintenance - unlike SaaS solutions, you own the ops burden",
-      "Requires DevOps expertise - sandbox management, WebSocket scaling"
+      "Requires devops expertise - sandbox management, websocket scaling"
     ],
     "ko": [
       "엔지니어링 오버헤드 - 인프라 구축 및 유지보수 필요",
@@ -57,6 +59,6 @@
       "DevOps 전문성 필요 - 샌드박스 관리, WebSocket 스케일링"
     ]
   },
-  "mermaid_diagram": "flowchart TD\n    subgraph Client[\"Developer's Machine\"]\n        UI[Web UI / CLI]\n    end\n\n    subgraph Infrastructure[\"Company Infrastructure\"]\n        Svc[Agent Service]\n        Sandbox[Sandboxed Dev Environment]\n        VCS[Git / Version Control]\n    end\n\n    UI -->|\"WebSocket: Send Prompt\"| Svc\n    UI <-->|\"WebSocket: Real-time Stream\"| Svc\n    Svc -->|\"Spin up sandbox\"| Sandbox\n    Sandbox <-->|\"Read/Write Files\"| VCS\n    Sandbox -->|\"Compiler/Linter/Test Feedback\"| Sandbox\n    Sandbox -->|\"Final PR/Result\"| Svc\n    Svc -->|\"Notification\"| UI",
+  "mermaid_diagram": "flowchart TD\n    subgraph Client[\"Developer's Machine\"]\n        UI[Web UI / CLI]\n    end\n\n    subgraph Infrastructure[\"Company Infrastructure\"]\n        Svc[Agent Service]\n        Sandbox[Sandboxed Dev Environment<br/>Modal / OpenCode]\n        VCS[Git / Version Control]\n    end\n\n    UI -->|\"WebSocket: Send Prompt\"| Svc\n    UI <-->|\"WebSocket: Real-time Stream<br/>stdout/stderr\"| Svc\n    Svc -->|\"Spin up sandbox\"| Sandbox\n    Sandbox <-->|\"Read/Write Files\"| VCS\n    Sandbox -->|\"Compiler/Linter/Test Feedback\"| Sandbox\n    Sandbox -->|\"Final PR/Result\"| Svc\n    Svc -->|\"Notification\"| UI",
   "tags": ["background-agent", "sandboxed", "model-agnostic", "real-time", "websocket", "custom-infra", "iterative"]
 }

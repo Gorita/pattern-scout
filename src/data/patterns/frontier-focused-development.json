@@ -6,55 +6,61 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=2wjnV6F2arc",
   "problem": {
-    "en": "AI capabilities are advancing so rapidly that products optimized for today's models will be obsolete in months. Many teams waste time solving problems that new models already solve, or build products tied to specific models that won't stay competitive.",
-    "ko": "AI 능력이 매우 빠르게 발전하여 오늘의 모델에 최적화된 제품은 몇 달 안에 구식이 됩니다. 많은 팀이 새 모델이 이미 해결하는 문제를 해결하느라 시간을 낭비하거나, 경쟁력을 유지하지 못할 특정 모델에 묶인 제품을 만듭니다."
+    "en": "AI capabilities advance rapidly along predictable scaling laws—products optimized for today's models become obsolete in months. Many teams waste time solving problems that frontier models already solve, or build products tied to specific models that won't stay competitive.",
+    "ko": "AI 능력은 예측 가능한 스케일링 법칙에 따라 빠르게 발전하여, 오늘의 모델에 최적화된 제품은 몇 달 안에 구식이 됩니다. 많은 팀이 프론티어 모델이 이미 해결하는 문제를 해결하느라 시간을 낭비하거나, 경쟁력을 유지하지 못할 특정 모델에 묶인 제품을 만듭니다."
   },
   "solution": {
-    "en": "Always target the frontier—the state-of-the-art models—and design products that can rapidly evolve. Key principles: no model selector (pick the best model per use case), frontier or nothing (only build features that push boundaries), rapid evolution (expect complete product changes every 3 months), and avoid subscription tie-ins to specific models.",
-    "ko": "항상 프론티어(최첨단 모델)를 목표로 하고 빠르게 진화할 수 있는 제품을 설계합니다. 핵심 원칙: 모델 선택기 없이(사용 사례별 최적 모델 선택), 프론티어 아니면 하지 않기(경계를 넓히는 기능만 구축), 빠른 진화(3개월마다 제품 완전 변경 예상), 특정 모델에 대한 구독 종속 회피입니다."
+    "en": "**Always target the frontier**—the state-of-the-art models—and design products that can rapidly evolve as the frontier moves. Don't optimize for older, cheaper models, and don't offer model selectors that trap users in the past.\n\n**Core principles:**\n\n1. **No model selector**: Pick the best model for each use case, don't let users choose\n2. **Frontier or nothing**: Only build features that push boundaries and generate learning\n3. **Rapid evolution**: Expect to completely change your product every 3 months (AI product lifecycle research confirms quarterly cycles are necessary to remain competitive)\n4. **Subscription resistance**: Avoid being tied to one model's pricing structure\n\n**The problem with optimizing for cost:**\n\nEmergent abilities research shows some capabilities appear suddenly at scale and cannot be predicted or engineered around in smaller models. Cost optimization against today's models solves problems that frontier models will soon solve inherently.\n\n**Why no model selector?**\n\n1. **Learning**: Can't learn how users interact if everyone uses different models (research shows focused single-model products learn faster)\n2. **Focus**: One way to use the product means everyone benefits from improvements\n3. **Evolution**: Not beholden to models that were popular 3-6 months ago\n4. **Quality**: Can optimize specifically for the best model's capabilities\n\n**The risk of subscription models:**\n\nWhen you offer a subscription (like Claude Max), you become tied to that model:\n- Can't switch if a better model emerges\n- Price changes become user-hostile\n- Roadmap decisions dictated by one company",
+    "ko": "**항상 프론티어를 목표로** 합니다—최첨단 모델을 타겟으로 하고, 프론티어가 이동함에 따라 빠르게 진화할 수 있는 제품을 설계합니다. 구형의 저렴한 모델에 최적화하거나, 사용자를 과거에 가두는 모델 선택기를 제공하지 않습니다.\n\n**핵심 원칙:**\n\n1. **모델 선택기 없음**: 사용 사례별 최적 모델을 선택하고, 사용자에게 선택권을 주지 않습니다\n2. **프론티어 아니면 하지 않기**: 경계를 넓히고 학습을 생성하는 기능만 구축합니다\n3. **빠른 진화**: 3개월마다 제품을 완전히 변경할 것을 예상합니다 (AI 제품 수명주기 연구에서 분기별 주기가 경쟁력 유지에 필요하다고 확인)\n4. **구독 저항**: 하나의 모델 가격 구조에 묶이는 것을 피합니다\n\n**비용 최적화의 문제:**\n\n창발적 능력 연구에 따르면 일부 능력은 스케일에서 갑자기 나타나며, 작은 모델에서 예측하거나 우회할 수 없습니다. 오늘의 모델에 대한 비용 최적화는 프론티어 모델이 곧 본질적으로 해결할 문제를 해결하는 것입니다.\n\n**모델 선택기가 없는 이유:**\n\n1. **학습**: 모든 사용자가 다른 모델을 사용하면 사용자 상호작용을 학습할 수 없습니다\n2. **집중**: 제품 사용 방식이 하나이면 모든 사용자가 개선의 혜택을 받습니다\n3. **진화**: 3~6개월 전에 인기 있던 모델에 종속되지 않습니다\n4. **품질**: 최고 모델의 능력에 특화하여 최적화할 수 있습니다\n\n**구독 모델의 위험:**\n\n구독(예: Claude Max)을 제공하면 해당 모델에 묶이게 됩니다:\n- 더 나은 모델이 나와도 전환 불가\n- 가격 변경이 사용자에게 적대적으로 작용\n- 로드맵 결정이 한 회사에 의해 좌우"
   },
   "when_to_use": {
     "en": [
       "Targeting early adopters and frontier users",
-      "Products where AI capability is the core differentiator",
+      "Building for developers who value speed over cost",
       "Small teams that can pivot quickly",
-      "Building for developers who value speed over cost"
+      "Products where AI capability is the core differentiator",
+      "Users who want to be on the cutting edge"
     ],
     "ko": [
       "얼리 어답터와 프론티어 사용자를 타겟으로 할 때",
-      "AI 능력이 핵심 차별화 요소인 제품",
+      "비용보다 속도를 중시하는 개발자를 위한 제품",
       "빠르게 방향 전환할 수 있는 소규모 팀",
-      "비용보다 속도를 중시하는 개발자를 위한 제품"
+      "AI 능력이 핵심 차별화 요소인 제품",
+      "최첨단에 있고 싶은 사용자"
     ]
   },
   "pros": {
     "en": [
-      "Always at the frontier as models improve",
-      "Rapid learning from focused usage",
-      "Future-proof with instant model switching capability",
-      "Quality focus on best capabilities"
+      "Always at the frontier: your product improves as models improve",
+      "Rapid learning: focused usage generates clear insights",
+      "Future-proof: can switch models instantly when something better emerges",
+      "Quality focus: optimize for best capabilities, not lowest common denominator",
+      "Innovation: positioned to discover what's possible with frontier models"
     ],
     "ko": [
-      "모델 개선에 따라 항상 프론티어 유지",
-      "집중된 사용에서의 빠른 학습",
-      "즉각적 모델 전환 기능으로 미래 대비",
-      "최고 기능에 대한 품질 집중"
+      "항상 프론티어 유지: 모델이 개선되면 제품도 개선",
+      "빠른 학습: 집중된 사용이 명확한 인사이트 생성",
+      "미래 대비: 더 나은 모델이 나오면 즉시 전환 가능",
+      "품질 집중: 최저 공통분모가 아닌 최고 능력에 최적화",
+      "혁신: 프론티어 모델로 가능한 것을 발견할 위치 확보"
     ]
   },
   "cons": {
     "en": [
-      "Higher costs with frontier models",
-      "Smaller market excluding cost-sensitive users",
-      "Rapid product changes every 3 months",
-      "Exclusionary to 'median' users wanting stability"
+      "Higher costs: frontier models are more expensive (for now)",
+      "Smaller market: some users won't pay for frontier performance",
+      "Rapid change: product may look completely different in 3 months",
+      "Exclusionary: not building for 'median' users who want stability",
+      "Uncertainty: constantly reinventing rather than stabilizing"
     ],
     "ko": [
-      "프론티어 모델의 높은 비용",
-      "비용 민감 사용자를 제외한 작은 시장",
-      "3개월마다 급격한 제품 변경",
-      "안정성을 원하는 '중간' 사용자에게 배타적"
+      "높은 비용: 프론티어 모델이 더 비쌈 (현재로서는)",
+      "작은 시장: 일부 사용자는 프론티어 성능에 비용을 지불하지 않음",
+      "급격한 변화: 3개월 후 제품이 완전히 달라질 수 있음",
+      "배타적: 안정성을 원하는 '중간' 사용자를 위해 구축하지 않음",
+      "불확실성: 안정화보다 끊임없는 재발명"
     ]
   },
-  "mermaid_diagram": "graph TD\n    A[New Model Released] --> B{At the Frontier?}\n    B -->|Yes| C[Adopt Immediately]\n    B -->|No, Older| D[Ignore]\n    C --> E[Learn from Usage]\n    E --> F[Product Evolves]\n    F --> A\n    D --> G[Wasted Effort]\n    G --> H[Stale Product]",
-  "tags": ["frontier", "state-of-the-art", "model-selection", "product-strategy", "learning", "innovation"]
+  "mermaid_diagram": "graph TD\n    A[New Model Released] --> B{At the Frontier?}\n    B -->|Yes| C[Adopt Immediately]\n    B -->|No, Cheaper/Older| D[Ignore - Will Be Obsolete]\n\n    C --> E[Learn from Usage]\n    E --> F[Product Evolves]\n    F --> A\n\n    D --> G[Wasted Effort]\n    G --> H[Stale Product in 6 Months]",
+  "tags": ["frontier", "state-of-the-art", "model-selection", "product-strategy", "learning", "innovation", "no-selector"]
 }
