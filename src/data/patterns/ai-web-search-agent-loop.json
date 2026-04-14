@@ -6,27 +6,61 @@
   "status": "emerging",
   "original_url": "https://www.amplifypartners.com/blog-posts/how-ai-web-search-works",
   "problem": {
-    "en": "LLMs have training cutoffs and need to decide when to search, translate conversational context into effective queries, find diverse results, iterate based on findings, and cite sources properly.",
-    "ko": "LLM은 훈련 컷오프가 있으며 언제 검색할지 결정하고, 대화 컨텍스트를 효과적인 쿼리로 번역하고, 다양한 결과를 찾고, 발견에 따라 반복하고, 소스를 적절히 인용해야 합니다."
+    "en": "Traditional LLMs have a training cutoff date, meaning they don't know recent facts or real-time information. Simply connecting a model to a search API isn't enough - the model needs to: decide when searching is necessary versus using internal knowledge, translate conversational context into effective search queries, find diverse long-tail results rather than just popular pages, iterate and refine searches based on intermediate results, and cite sources properly to build user trust and reduce hallucination concerns.",
+    "ko": "기존 LLM은 훈련 컷오프 날짜가 있어 최근 사실이나 실시간 정보를 알지 못합니다. 단순히 모델을 검색 API에 연결하는 것만으로는 충분하지 않습니다. 모델은 내부 지식 사용 대비 검색이 필요한 시점을 판단하고, 대화 컨텍스트를 효과적인 검색 쿼리로 변환하고, 인기 페이지뿐 아니라 다양한 롱테일 결과를 찾고, 중간 결과를 기반으로 검색을 반복 개선하며, 사용자 신뢰 구축과 환각 우려 감소를 위해 소스를 적절히 인용해야 합니다."
   },
   "solution": {
-    "en": "Implement iterative web search with coordinating agent managing parallel workers: search decision layer, query translation, parallel worker spawning, iterative refinement, and citation indexing.",
-    "ko": "병렬 워커를 관리하는 조정 에이전트로 반복적 웹 검색 구현: 검색 결정 레이어, 쿼리 번역, 병렬 워커 생성, 반복적 개선, 인용 인덱싱."
+    "en": "Implement an iterative web search agent loop where a coordinating agent manages multiple parallel worker agents to comprehensively research a topic.\n\nCore components:\n1. **Search Decision Layer**: A trained classifier that determines when web search is appropriate (using SFT, RLHF, or RL training)\n2. **Query Translation**: Convert conversational context into effective search queries and operators - keyword extraction (SERP APIs have 32 keyword limits), domain-specific searches, temporal operators, query rewriting\n3. **Parallel Worker Agent Spawning**: The coordinating agent creates multiple specialized worker agents that search different domains/angles simultaneously, use different operators and query variations, and aggregate results back to the coordinator\n4. **Iterative Refinement**: Based on initial results, the coordinator identifies new questions raised by findings, spawns additional workers with more specific searches, and repeats until satisfied with result quality\n5. **Citation & Indexing**: Maintain an ephemeral index per search session with proper source attribution",
+    "ko": "조정 에이전트가 여러 병렬 워커 에이전트를 관리하여 주제를 포괄적으로 조사하는 반복적 웹 검색 에이전트 루프를 구현합니다.\n\n핵심 구성요소:\n1. **검색 결정 레이어**: 웹 검색이 적절한 시점을 판단하는 훈련된 분류기 (SFT, RLHF 또는 RL 훈련 사용)\n2. **쿼리 변환**: 대화 컨텍스트를 효과적인 검색 쿼리와 연산자로 변환 - 키워드 추출(SERP API 32개 키워드 제한), 도메인별 검색, 시간 연산자, 쿼리 재작성\n3. **병렬 워커 에이전트 생성**: 조정 에이전트가 다양한 도메인/각도에서 동시에 검색하고, 서로 다른 연산자와 쿼리 변형을 사용하며, 결과를 조정자에게 집계하는 전문화된 워커 에이전트를 생성합니다\n4. **반복적 개선**: 초기 결과를 기반으로 조정자가 새로운 질문을 식별하고, 더 구체적인 검색으로 추가 워커를 생성하며, 결과 품질에 만족할 때까지 반복합니다\n5. **인용 및 인덱싱**: 검색 세션별 임시 인덱스를 적절한 소스 귀속과 함께 유지합니다"
   },
   "ascii_diagram": "┌──────────────┐\n│  User Query  │\n└──────┬───────┘\n       │\n┌──────▼───────┐\n│Search Needed?│\n└──────┬───────┘\n       │ Yes\n┌──────▼───────┐\n│Query Translate│\n└──────┬───────┘\n       │\n┌──────▼───────┐\n│ Coordinator  │\n└──────┬───────┘\n   ┌───┼───┐\n   ▼   ▼   ▼\n[W1] [W2] [W3]\nReddit News Temporal\n   │   │   │\n   └───┼───┘\n       │\n┌──────▼───────┐\n│  Synthesize  │\n│ + Citations  │\n└──────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Query] --> B{Search Decision}\n    B -->|No search needed| C[Answer from Internal Knowledge]\n    B -->|Search needed| D[Query Translation]\n    D --> E[Coordinating Agent]\n    E --> F1[Worker 1: Reddit]\n    E --> F2[Worker 2: News Sites]\n    E --> F3[Worker 3: Temporal Filter]\n    F1 & F2 & F3 --> G[SERP API]\n    G --> H[Results Aggregation]\n    H --> I{Satisfactory?}\n    I -->|No| J[Refine Queries]\n    J --> E\n    I -->|Yes| K[Synthesize with Citations]",
   "code_example": "class WebSearchAgent:\n    def search(self, query):\n        if not self.needs_search(query):\n            return self.answer_from_knowledge(query)\n        \n        search_queries = self.translate_query(query)\n        \n        # Parallel workers with different strategies\n        workers = [\n            Worker(domain='reddit.com'),\n            Worker(domain='news'),\n            Worker(temporal='last_3_months')\n        ]\n        \n        results = await asyncio.gather(*[\n            w.search(search_queries) for w in workers\n        ])\n        \n        return self.synthesize_with_citations(results)",
   "when_to_use": {
-    "en": ["Real-time information needs", "Factual accuracy with citations", "Diverse long-tail content research"],
-    "ko": ["실시간 정보 필요", "인용이 있는 사실적 정확성", "다양한 롱테일 콘텐츠 리서치"]
+    "en": [
+      "Building AI assistants that need real-time information",
+      "Applications requiring factual accuracy and source attribution",
+      "Research tools that need diverse, long-tail web content",
+      "Reducing hallucination in domain-specific queries"
+    ],
+    "ko": [
+      "실시간 정보가 필요한 AI 어시스턴트 구축",
+      "사실적 정확성과 소스 귀속이 필요한 애플리케이션",
+      "다양한 롱테일 웹 콘텐츠가 필요한 리서치 도구",
+      "도메인 특화 쿼리에서 환각 감소"
+    ]
   },
   "pros": {
-    "en": ["Access to real-time information", "Reduced hallucinations", "Source citations build trust"],
-    "ko": ["실시간 정보 접근", "환각 감소", "소스 인용이 신뢰 구축"]
+    "en": [
+      "Access to real-time information beyond training cutoff",
+      "Reduced hallucinations through source grounding",
+      "Increased user confidence through citations",
+      "Can find niche, long-tail information through iterative search",
+      "Parallelizable for performance"
+    ],
+    "ko": [
+      "훈련 컷오프를 넘어선 실시간 정보 접근",
+      "소스 근거를 통한 환각 감소",
+      "인용을 통한 사용자 신뢰도 향상",
+      "반복적 검색을 통한 니치 롱테일 정보 발견 가능",
+      "성능을 위한 병렬화 가능"
+    ]
   },
   "cons": {
-    "en": ["SERP APIs not optimized for AI", "Complex multi-part system", "Higher latency and cost"],
-    "ko": ["SERP API가 AI에 최적화되지 않음", "복잡한 다중 부분 시스템", "높은 지연 및 비용"]
+    "en": [
+      "SERP APIs are not optimized for AI agents (keyword limits, curation bias)",
+      "Complex system with multiple moving parts and external dependencies",
+      "Higher latency and cost than internal knowledge retrieval",
+      "Requires training models to make reliable tool calls",
+      "Some SERP operators deprecated, limiting refinement options"
+    ],
+    "ko": [
+      "SERP API가 AI 에이전트에 최적화되지 않음 (키워드 제한, 큐레이션 편향)",
+      "여러 이동 부분과 외부 의존성이 있는 복잡한 시스템",
+      "내부 지식 검색보다 높은 지연 시간과 비용",
+      "신뢰할 수 있는 도구 호출을 위한 모델 훈련 필요",
+      "일부 SERP 연산자 지원 중단으로 개선 옵션 제한"
+    ]
   },
-  "tags": ["web-search", "serp-api", "citations", "parallel-agents", "query-translation", "grounding"]
+  "tags": ["web-search", "serp-api", "citations", "parallel-agents", "query-translation", "operators", "grounding"]
 }

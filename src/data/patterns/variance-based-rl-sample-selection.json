@@ -6,27 +6,59 @@
   "status": "validated-in-production",
   "original_url": "https://youtu.be/1s_7RMG4O4U",
   "problem": {
-    "en": "Not all training samples are equally valuable for RL. Zero-variance samples (always correct or always wrong) provide no learning signal, wasting expensive compute.",
-    "ko": "모든 훈련 샘플이 RL에 동등하게 가치 있는 것은 아닙니다. 분산이 0인 샘플(항상 맞거나 항상 틀림)은 학습 신호를 제공하지 않아 비싼 컴퓨팅을 낭비합니다."
+    "en": "Not all training samples are equally valuable for reinforcement learning. This pattern builds on Prioritized Experience Replay (Schaul et al., 2016), which introduced TD-error-based sample prioritization for value learning. Zero-variance samples (model gets same score every time, always correct or always wrong) provide no learning signal. Training on samples where the model has no uncertainty wastes expensive RL exploration. With limited training budgets, you want to maximize learning from each sample. It's hard to know if your dataset will support effective RL training. When Theo ran baseline evaluations on the FinQA benchmark, he discovered that ~85% of samples had zero variance, meaning only ~15% could actually contribute to learning.",
+    "ko": "모든 훈련 샘플이 강화학습에 동등하게 가치 있는 것은 아닙니다. 이 패턴은 가치 학습을 위한 TD-오류 기반 샘플 우선순위화를 도입한 Prioritized Experience Replay(Schaul et al., 2016)를 기반으로 합니다. 분산이 0인 샘플(모델이 매번 같은 점수를 받음, 항상 맞거나 항상 틀림)은 학습 신호를 제공하지 않습니다. 모델이 불확실성이 없는 샘플로 훈련하면 비싼 RL 탐색이 낭비됩니다. 제한된 훈련 예산으로 각 샘플에서 학습을 극대화해야 합니다. 데이터셋이 효과적인 RL 훈련을 지원할 수 있는지 판단하기 어렵습니다. Theo가 FinQA 벤치마크에서 기준선 평가를 실행했을 때 약 85%의 샘플이 분산이 0이었으며, 실제로 학습에 기여할 수 있는 것은 약 15%에 불과했습니다."
   },
   "solution": {
-    "en": "Run multiple baseline evaluations per sample to identify variance, then prioritize high-variance samples (sometimes correct) for training.",
-    "ko": "샘플당 여러 기준선 평가를 실행하여 분산을 식별한 다음, 훈련을 위해 높은 분산 샘플(가끔 맞는 것)을 우선순위화합니다."
+    "en": "Run multiple baseline evaluations per sample to identify variance, then prioritize high-variance samples for training.\n\nThe Variance Plot Methodology:\n1. **Baseline Evaluation**: Run your base model 3-5 times on each sample\n2. **Visualize Variance**: Plot results to identify which samples have variance\n3. **Categorize Samples**: Always correct (variance=0, model already knows), Always incorrect (variance=0, too hard), Sometimes correct (variance>0, prime candidates for RL)\n4. **Focus Training**: Prioritize or exclusively use high-variance samples\n\nCompute multiplier guidance: Low variance (10-15%) use multiplier 2-4 for more exploration, Medium variance (15-30%) use multiplier 1-2, High variance (>30%) multiplier 1 may suffice.",
+    "ko": "샘플당 여러 기준선 평가를 실행하여 분산을 식별한 다음, 훈련을 위해 높은 분산 샘플을 우선순위화합니다.\n\n분산 도표 방법론:\n1. **기준선 평가**: 각 샘플에 대해 기본 모델을 3-5회 실행\n2. **분산 시각화**: 어떤 샘플에 분산이 있는지 결과를 도표로 표시\n3. **샘플 분류**: 항상 맞음(분산=0, 모델이 이미 알고 있음), 항상 틀림(분산=0, 너무 어려움), 가끔 맞음(분산>0, RL의 주요 후보)\n4. **훈련 집중**: 높은 분산 샘플을 우선 사용하거나 독점적으로 사용\n\n컴퓨팅 배수 가이드: 낮은 분산(10-15%)은 더 많은 탐색을 위해 배수 2-4 사용, 중간 분산(15-30%)은 배수 1-2 사용, 높은 분산(>30%)은 배수 1로 충분할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│Run 3-5 Evals    │\n│  Per Sample     │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│Categorize:      │\n├─────────────────┤\n│• Always correct │\n│  (no learning)  │\n│• Always wrong   │\n│  (no learning)  │\n│• Sometimes right│\n│  (LEARN HERE!)  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│Focus Training   │\n│on High-Variance │\n└─────────────────┘",
   "mermaid_diagram": "graph TD\n    A[Dataset] --> B[Run 3-5 Evals Per Sample]\n    B --> C[Calculate Variance]\n    C --> D{Variance > 0?}\n    D -->|Yes| E[Include in Training]\n    D -->|No| F[Skip - No Learning Signal]\n    E --> G[Train with RL]",
   "code_example": "class VarianceAnalyzer:\n    def __init__(self, agent, dataset, n_runs=3):\n        self.results = defaultdict(list)\n        \n    def run_baseline_evals(self):\n        for sample_idx, sample in enumerate(self.dataset):\n            for run in range(self.n_runs):\n                score = self.agent.evaluate(sample)\n                self.results[sample_idx].append(score)\n    \n    def identify_high_variance_samples(self, metrics, threshold=0.01):\n        return [\n            m for m in metrics\n            if m['variance'] > threshold\n            and 0 < m['mean_score'] < 1.0\n        ]\n\n# Usage: Focus RL training on high-variance samples\ntraining_data = [dataset[m['sample_idx']] for m in high_var_samples]",
   "when_to_use": {
-    "en": ["Before expensive RL training", "Limited training budget", "Predicting training potential"],
-    "ko": ["비싼 RL 훈련 전", "제한된 훈련 예산", "훈련 잠재력 예측"]
+    "en": [
+      "Run base model 3-5 times on each sample in training and validation sets before training",
+      "Create variance plot to understand data (X-axis: sample index, Y-axis: score)",
+      "Look for 15-30% high variance samples as good indicator for RL",
+      "Set compute multiplier based on variance level (low: 2-4, medium: 1-2, high: 1)",
+      "Monitor how variance evolves during training (should decrease then stabilize)"
+    ],
+    "ko": [
+      "훈련 전 훈련 및 검증 세트의 각 샘플에 대해 기본 모델을 3-5회 실행",
+      "데이터 이해를 위한 분산 도표 생성(X축: 샘플 인덱스, Y축: 점수)",
+      "RL에 적합한 지표로 15-30%의 높은 분산 샘플 확인",
+      "분산 수준에 따른 컴퓨팅 배수 설정(낮음: 2-4, 중간: 1-2, 높음: 1)",
+      "훈련 중 분산 변화 모니터링(감소 후 안정화되어야 함)"
+    ]
   },
   "pros": {
-    "en": ["Data efficiency", "Predictive of improvement potential", "Guides hyperparameters"],
-    "ko": ["데이터 효율성", "개선 잠재력 예측", "하이퍼파라미터 가이드"]
+    "en": [
+      "Data efficiency: focus training on samples that actually contribute to learning",
+      "Predictive: estimate improvement potential before expensive training",
+      "Diagnostic: understand if your task is suitable for RL",
+      "Guides hyperparameters: informs compute multiplier and training duration decisions"
+    ],
+    "ko": [
+      "데이터 효율성: 실제로 학습에 기여하는 샘플에 훈련 집중",
+      "예측력: 비싼 훈련 전에 개선 잠재력 추정",
+      "진단: 작업이 RL에 적합한지 파악",
+      "하이퍼파라미터 가이드: 컴퓨팅 배수 및 훈련 기간 결정에 정보 제공"
+    ]
   },
   "cons": {
-    "en": ["Upfront evaluation cost (3-5x)", "Noisy with small samples", "Variance changes during training"],
-    "ko": ["초기 평가 비용 (3-5배)", "작은 샘플로 노이즈", "훈련 중 분산 변화"]
+    "en": [
+      "Upfront cost: requires 3-5x baseline evaluations before training",
+      "Small samples: with few samples (<50), variance estimates may be noisy",
+      "Doesn't guarantee success: high variance is necessary but not sufficient",
+      "Dynamic variance: variance changes during training, so initial analysis may not hold"
+    ],
+    "ko": [
+      "초기 비용: 훈련 전 3-5배의 기준선 평가 필요",
+      "작은 샘플: 샘플이 적으면(<50) 분산 추정이 노이즈가 될 수 있음",
+      "성공 보장 불가: 높은 분산은 필요 조건이지만 충분 조건은 아님",
+      "동적 분산: 훈련 중 분산이 변하므로 초기 분석이 유효하지 않을 수 있음"
+    ]
   },
   "tags": ["reinforcement-learning", "sample-efficiency", "variance", "data-quality", "agent-rft"]
 }

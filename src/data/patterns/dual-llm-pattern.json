@@ -6,27 +6,27 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2506.08837",
   "problem": {
-    "en": "A single LLM processing both trusted and untrusted data is vulnerable to prompt injection attacks.",
-    "ko": "신뢰할 수 있는 데이터와 신뢰할 수 없는 데이터를 모두 처리하는 단일 LLM은 프롬프트 인젝션 공격에 취약합니다."
+    "en": "When the same model both reads untrusted content and controls high-privilege tools, a single prompt-injection path can convert benign context into privileged actions. This coupling collapses trust boundaries and makes it hard to reason about where dangerous behavior originated.",
+    "ko": "동일한 모델이 신뢰할 수 없는 콘텐츠를 읽고 높은 권한의 도구를 제어할 때, 단일 프롬프트 인젝션 경로가 무해한 컨텍스트를 권한 있는 작업으로 변환할 수 있습니다. 이러한 결합은 신뢰 경계를 무너뜨리고 위험한 동작의 출처를 추론하기 어렵게 만듭니다."
   },
   "solution": {
-    "en": "Use two LLMs: a privileged one for planning/tools and a quarantined one for processing untrusted data.",
-    "ko": "두 개의 LLM 사용: 계획/도구용 권한 있는 LLM과 신뢰할 수 없는 데이터 처리용 격리된 LLM."
+    "en": "Split roles:\n\n- **Privileged LLM:** Plans and calls tools but **never sees raw untrusted data**.\n- **Quarantined LLM:** Reads untrusted data but **has zero tool access**.\n- Pass data as **symbolic variables** or validated primitives; privileged side only manipulates references.\n\nUse an explicit contract between the two models: the quarantined model may only emit typed values (or opaque handles), while the privileged model may only operate over approved schemas and tools. This preserves capability while preventing raw untrusted text from entering high-authority reasoning paths.\n\n```pseudo\nvar1 = QuarantineLLM(\"extract email\", text)  # returns $VAR1\nPrivLLM.plan(\"send $VAR1 to boss\")           # no raw text exposure\nexecute(plan, subst={ \"$VAR1\": var1 })\n```",
+    "ko": "역할을 분리합니다:\n\n- **권한 있는 LLM:** 계획하고 도구를 호출하지만 **원시 신뢰할 수 없는 데이터를 절대 보지 않습니다**.\n- **격리된 LLM:** 신뢰할 수 없는 데이터를 읽지만 **도구 접근 권한이 전혀 없습니다**.\n- 데이터를 **심볼릭 변수** 또는 검증된 프리미티브로 전달하며, 권한 있는 측은 참조만 조작합니다.\n\n두 모델 간에 명시적 계약을 사용합니다: 격리된 모델은 타입이 지정된 값(또는 불투명 핸들)만 출력할 수 있고, 권한 있는 모델은 승인된 스키마와 도구에 대해서만 작동할 수 있습니다. 이를 통해 원시 신뢰할 수 없는 텍스트가 높은 권한의 추론 경로에 진입하는 것을 방지하면서 기능을 보존합니다."
   },
   "ascii_diagram": "┌─────────────────────────────┐\n│      Privileged LLM         │\n│   (tools, planning)         │\n└──────────────┬──────────────┘\n               │\n      ┌────────┴────────┐\n      ▼                 ▼\n┌──────────┐     ┌──────────┐\n│  Tools   │     │Quarantine│\n│          │     │   LLM    │\n└──────────┘     └────┬─────┘\n                      │\n               ┌──────▼──────┐\n               │  Untrusted  │\n               │    Data     │\n               └─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Privileged LLM] -->|control| B[Tools]\n    A -->|delegate| C[Quarantined LLM]\n    C -->|process| D[Untrusted Data]\n    D -->|sanitized| A",
   "code_example": "# Privileged LLM handles planning\nplan = privileged_llm.plan(task)\n\n# Quarantined LLM handles untrusted data\nsummary = quarantined_llm.process(untrusted_email)\n\n# Privileged LLM uses sanitized result\naction = privileged_llm.decide(summary)",
   "when_to_use": {
-    "en": ["Email/document processing", "Web scraping", "User input handling"],
-    "ko": ["이메일/문서 처리", "웹 스크래핑", "사용자 입력 처리"]
+    "en": ["Email/calendar assistants", "Booking agents", "API-powered chatbots", "Any system handling untrusted user input with privileged actions (e.g., database writes, external API calls, file system operations)"],
+    "ko": ["이메일/캘린더 어시스턴트", "예약 에이전트", "API 기반 챗봇", "권한 있는 작업(예: 데이터베이스 쓰기, 외부 API 호출, 파일 시스템 작업)과 함께 신뢰할 수 없는 사용자 입력을 처리하는 모든 시스템"]
   },
   "pros": {
-    "en": ["Security separation", "Reduced attack surface", "Principle of least privilege"],
-    "ko": ["보안 분리", "공격 표면 축소", "최소 권한 원칙"]
+    "en": ["Clear trust boundary", "Compatible with static analysis"],
+    "ko": ["명확한 신뢰 경계", "정적 분석과 호환"]
   },
   "cons": {
-    "en": ["Complex architecture", "Increased costs", "Latency overhead"],
-    "ko": ["복잡한 아키텍처", "비용 증가", "지연 시간 오버헤드"]
+    "en": ["Complexity", "Debugging across two minds"],
+    "ko": ["복잡성", "두 모델 간 디버깅 어려움"]
   },
-  "tags": ["privilege-separation", "quarantined-llm", "security"]
+  "tags": ["privilege-separation", "quarantined-llm", "symbolic-variables"]
 }
