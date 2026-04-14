@@ -136,28 +136,30 @@
     "title": "Curated Code Context Window",
     "title_ko": "큐레이션된 코드 컨텍스트 윈도우",
     "category": "Context & Memory",
-    "description": "Loading all source files into context overwhelms the model with noise and wastes tokens Maintain minimal, high-signal context using search sub-agents to fetch only relevant code snippets",
-    "problem": "Loading all source files into context overwhelms the model with noise and wastes tokens.",
-    "solution": "Maintain minimal, high-signal context using search sub-agents to fetch only relevant code snippets.",
+    "description": "Loading all source files or dumping entire repositories into the agent's context overwhelms the model, introduces noise, and slows inference Maintain a minimal, high-signal code context (keeping the c",
+    "problem": "Loading all source files or dumping entire repositories into the agent's context overwhelms the model, introduces noise, and slows inference. Coding agents need to focus on only the most relevant modules to efficiently reason about changes or generate new functionality. Including every file biases the agent with irrelevant code, causing it to lose coherence over large contexts. Large contexts also inflate token usage, slowing down multi-turn RL training.",
+    "solution": "Maintain a minimal, high-signal code context (keeping the context \"sterile\") for the main coding agent by:\n\n1. **Context Sterilization**: Exclude unrelated modules (e.g., test utilities when working on a UI component). Automatically identify relevant files via a lightweight search agent that returns top-K matches.\n2. **Helper Subagent for Code Discovery**: Spawn a SearchSubagent (a small LLM, vector-search index, or standard tools like grep/ripgrep) that takes a query and returns a ranked list of file snippets. Only top-3 snippets (each ≤ 150 tokens) are injected into the main agent's context. Use progressive disclosure: fetch file summaries first, then load full content only when needed.\n3. **Context Update Cycle**: Main Agent identifies need → SearchSubagent finds relevant files → Only those files (or their summaries) enter the main agent's window.\n\nModern implementations often skip vector embeddings entirely, using standard tools (grep, find, file traversal) for cleaner deployment and always-current results.",
     "when_to_use": [
-      "Large codebases",
-      "Multi-file refactoring",
-      "Long coding sessions"
+      "Build a simple code index (e.g., with ripgrep, tree-sitter AST parsing, or a vector store) to map function/class names to file paths",
+      "Define SearchSubagent as a function that queries the code index and uses a small LLM to filter and rank matches",
+      "Create a wrapper (e.g., CuratedContextManager) that automatically invokes SearchSubagent when the main agent asks for relevant code"
     ],
     "pros": [
-      "Noise reduction",
-      "Token efficiency",
-      "Clearer reasoning"
+      "Noise reduction keeps the context focused on pertinent code, improving reasoning clarity",
+      "Token efficiency dramatically reduces tokens consumed per step, boosting RL throughput",
+      "Context anxiety mitigation helps prevent context window anxiety by keeping usage well below limits",
+      "Cleaner deployment using standard tools avoids vector embedding infrastructure and always reflects current code state"
     ],
     "cons": [
-      "Index freshness maintenance",
-      "Complex pipeline"
+      "Index freshness: if code changes frequently, the index must be updated to avoid stale results",
+      "Complexity: adds an extra component (SearchSubagent + index) to the training and inference pipeline",
+      "Model adaptation required: different models may have varying tolerance for curated vs. full context approaches"
     ],
     "tags": [
       "context-management",
       "code-agent",
       "file-selection",
-      "search"
+      "noise-reduction"
     ],
     "related": []
   },
@@ -583,9 +585,9 @@
     "title": "Working Memory via TodoWrite",
     "title_ko": "TodoWrite를 통한 작업 기억 관리",
     "category": "Context & Memory",
-    "description": "During complex multi-step tasks, AI agents lose track of what tasks are pending, in progress, or completed, which tasks are blocked by dependencies, verification steps that need to run, and next actio",
-    "problem": "During complex multi-step tasks, AI agents lose track of what tasks are pending, in progress, or completed, which tasks are blocked by dependencies, verification steps that need to run, and next actions after context switches. This leads to redundant work, forgotten tasks, and confused users.",
-    "solution": "Use TodoWrite (or equivalent state externalization) to maintain explicit working memory throughout the session. Track task status (pending, in_progress, completed), blocking relationships, verification steps, and next actions. TodoWrite usage correlates with smoother sessions—it serves as working memory for both agent and user.",
+    "description": "During complex multi-step tasks, AI agents lose track of: what tasks are pending, in progress, or completed; which tasks are blocked by dependencies; verification steps that need to run; and next acti",
+    "problem": "During complex multi-step tasks, AI agents lose track of: what tasks are pending, in progress, or completed; which tasks are blocked by dependencies; verification steps that need to run; and next actions after context switches. This leads to redundant work, forgotten tasks, and confused users.",
+    "solution": "Use `TodoWrite` (or equivalent state externalization) to maintain explicit working memory throughout the session. This serves as both agent and user visibility into session state.\n\nTheoretical foundation: Externalizes working memory per Baddeley's episodic buffer model and Miller's 7±2 capacity limit—humans and LLMs both struggle to track more than a handful of items internally.\n\nWhat to track:\n1. **Task status**: pending, in_progress, completed\n2. **Blocking relationships**: What blocks what\n3. **Verification steps**: Tests or checks needed\n4. **Next actions**: What to do next\n\nKey insights: TodoWrite usage correlates with smoother sessions, it serves as working memory for both agent and user, essential for complex multi-step tasks, and less critical for simple straightforward work.",
     "when_to_use": [
       "Working on complex multi-step tasks",
       "Need to track blocked tasks and dependencies",
@@ -603,7 +605,8 @@
       "Overhead for simple tasks",
       "Requires discipline to maintain",
       "Can become cluttered if overused",
-      "May feel bureaucratic for quick one-offs"
+      "May feel bureaucratic for quick one-offs",
+      "Not needed for simple single-step tasks or tasks that complete in seconds"
     ],
     "tags": [
       "context",
@@ -686,28 +689,32 @@
     "title": "Coding Agent CI Feedback Loop",
     "title_ko": "코딩 에이전트 CI 피드백 루프",
     "category": "Feedback Loops",
-    "description": "Synchronous test runs block agents from parallel work, slowing iteration cycles Run agents asynchronously against CI with iterative patch refinement until all tests pass",
-    "problem": "Synchronous test runs block agents from parallel work, slowing iteration cycles.",
-    "solution": "Run agents asynchronously against CI with iterative patch refinement until all tests pass.",
+    "description": "When a coding agent tackles multi-file refactors or feature additions, running tests and waiting for test feedback **synchronously** ties up compute and prevents the agent from working on parallel tas",
+    "problem": "When a coding agent tackles multi-file refactors or feature additions, running tests and waiting for test feedback **synchronously** ties up compute and prevents the agent from working on parallel tasks. The agent cannot easily improve code if it must halt until the entire suite finishes.\n\n- Traditional CI loops block further edits; the agent \"babysits\" the build until tests pass.\n- Long test suites introduce idle periods, leading to underutilized GPUs and inflated RL training times.",
+    "solution": "Run the coding agent **asynchronously** against CI (local or remote), allowing it to:\n\n**1. Push a Branch & Trigger Tests**\n- When the agent proposes a patch, it commits to a branch and triggers the CI pipeline (e.g., `git push && github_action_run`).\n\n**2. Ingest Partial CI Feedback**\n- As tests begin, the agent periodically polls CI results.\n- **Failed Tests Partial Report:** Receive a small subset of failures (e.g., 10% of failures flagged first).\n\n**3. Iterative Patch Refinement**\n- Use CI outputs as **machine-readable feedback**: test failures, compilation errors, linting issues, type errors, and security scan results.\n- Agent autonomously applies fixes to specific files or functions without human intervention.\n- Enforce a **retry budget** (max attempts + runtime limits) to prevent infinite churn.\n\n**4. Ping on Final Green**\n- When all tests pass, send a notification (e.g., chat or pull request comment) that the PR is ready for review.",
     "when_to_use": [
-      "Large-scale refactoring",
-      "Automated bug fixing",
-      "Test-driven development"
+      "CI Integration: Provide the agent with a CLI or API key to push branches and trigger tests (e.g., via GitHub Actions or Jenkins)",
+      "Error Parsing Modules: Implement a small parser that translates CI logs into structured diagnostics",
+      "Prioritized Test Runs: When re-running, only run tests in files that were patched, to reduce CI time",
+      "Use draft PRs by default for safety",
+      "Enable partial feedback ingestion to start fixing before full CI completes",
+      "Add human-in-the-loop for high-risk changes"
     ],
     "pros": [
-      "Efficient computing",
-      "Fast iteration",
-      "Autonomous correction"
+      "Compute Efficiency: Overlaps code generation and test runs across multiple agents or branches",
+      "Faster Iteration: Agent spends less time waiting and more time generating code",
+      "Autonomy: Reduces need for human intervention until final green"
     ],
     "cons": [
-      "CI instability issues",
-      "Security considerations"
+      "CI Flakiness: Intermittent test failures can mislead the agent into unnecessary patches unless flakiness detection is in place",
+      "Security: Agent requires permission to push and read CI logs, which may expose sensitive data if misconfigured"
     ],
     "tags": [
       "CI",
       "coding-agent",
       "asynchronous",
-      "test-driven"
+      "test-driven",
+      "feedback"
     ],
     "related": []
   },
@@ -847,26 +854,24 @@
     "title": "Inference-Healed Code Review Reward",
     "title_ko": "추론 치유 코드 리뷰 보상",
     "category": "Feedback Loops",
-    "description": "Simple reward functions checking only 'tests passed' fail to capture nuanced code quality (performance regressions, style violations, missing edge cases) Use an inference-healed reward model that: 1) ",
-    "problem": "Simple reward functions checking only 'tests passed' fail to capture nuanced code quality (performance regressions, style violations, missing edge cases). A single binary signal can't guide agents to produce maintainable, high-quality code.",
-    "solution": "Use an inference-healed reward model that: 1) Decomposes quality into subcriteria (correctness, style, performance, security), 2) Runs internal CoT reasoning to explain each score, 3) Aggregates weighted subscores, 4) Generates human-readable feedback.",
+    "description": "Simple reward functions that only check for \"all tests passed\" fail to capture nuanced code quality issues (e Use an **inference-healed reward model**—a code-review critic that:\n\n**1",
+    "problem": "Simple reward functions that only check for \"all tests passed\" fail to capture nuanced code quality issues (e.g., performance regressions, style violations, missing edge-case handling). A single binary signal at the end cannot guide the agent to produce maintainable, high-quality code.\n\n- Verifying **only** final correctness misses suboptimal commits (e.g., a patch that removes error handling but still passes tests).\n- Reward models that produce a single scalar lack **explainability** to tell the agent which aspect of the code needs improvement.",
+    "solution": "Use an **inference-healed reward model**—a code-review critic that:\n\n**1. Decomposes Code Quality into Subcriteria**\n- **Correctness:** Does the code pass all existing and newly added tests?\n- **Style:** Are linters (e.g., ESLint, pylint) satisfied (zero or minimal warnings)?\n- **Performance:** Are there clear performance regressions gauged by simple benchmarks?\n- **Security:** Does a static analyzer (e.g., Bandit, SonarQube) flag no critical issues?\n\n**2. Runs Internal Chain-of-Thought (CoT) Reasoning**\n- If uncertain about a subcriterion (e.g., performance), the critic runs a short CoT inside itself:\n  ```text\n  \"Step: performance check. Baseline runtime: 50ms. New code runtime: 65ms.\n  Regression > 20%. Score: 0.4.\"\n  ```\n- This \"inference healing\" allows the reward model to **explain** each sub-score.\n- Use smaller critic models (1–2B parameters) to keep CoT generation cost-efficient.\n\n**3. Aggregates Subscores**\n- Each subcriterion returns a float ∈ [0, 1].\n- A weighted sum (e.g., 0.4 × correctness + 0.2 × style + 0.2 × performance + 0.2 × security) yields the final code-review score.\n\n**4. Generates Human-Readable Feedback**\n- Alongside a numerical score, return a short analysis:\n  ```json\n  {\n    \"correctness\": 1.0,\n    \"style\": 0.8,\n    \"performance\": 0.4,\n    \"security\": 0.6,\n    \"comments\": \"Performance regression due to O(n²) loop.\"\n  }\n  ```",
     "when_to_use": [
-      "RL training for code agents",
-      "When test-only rewards are insufficient",
-      "Need explainable feedback for agents",
-      "Multi-criteria code quality evaluation"
+      "Critic Dataset Collection: Gather examples of good vs. bad code patches, labeled along each subcriterion",
+      "Critic Training: Fine-tune a small LLM (e.g., 1–2 B parameters) to produce sub-scores and CoT justifications",
+      "Integration into RL Loop: Replace or augment the existing binary \"tests-passed\" reward with inference_healed_reward(patch)",
+      "Selective Healing: Generate CoT explanations only for subscores below a threshold (e.g., < 0.8) to reduce latency and cost",
+      "Parallel Execution: Run tests, linters, benchmarks, and security scans concurrently to reduce total evaluation time",
+      "Human-in-the-Loop Checkpoints: If a patch is borderline (e.g., final_score ∈ [0.5, 0.7]), route it for manual code review"
     ],
     "pros": [
-      "Explainable feedback for targeted improvements",
-      "Captures non-functional quality criteria",
-      "Agent knows WHY patch scored poorly",
-      "Higher overall code quality"
+      "Explainable Feedback: The agent knows why a patch scored poorly, allowing targeted improvements",
+      "Higher Code Quality: Incorporates non-functional criteria (performance, security), leading to more robust code"
     ],
     "cons": [
-      "Compute overhead for multiple checks",
-      "Critic maintenance as standards evolve",
-      "Complexity of multi-criteria aggregation",
-      "May slow down training loop"
+      "Compute Overhead: Each reward invocation may involve running tests, linters, benchmarks, and a static analysis, adding latency",
+      "Critic Maintenance: As coding standards or security rules evolve, retrain or update the critic models and rubrics"
     ],
     "tags": [
       "reward-modeling",
@@ -1329,23 +1334,27 @@
     "title": "Variance-Based RL Sample Selection",
     "title_ko": "분산 기반 RL 샘플 선택",
     "category": "Learning & Adaptation",
-    "description": "Not all training samples are equally valuable for RL Run multiple baseline evaluations per sample to identify variance, then prioritize high-variance samples (sometimes correct) for training",
-    "problem": "Not all training samples are equally valuable for RL. Zero-variance samples (always correct or always wrong) provide no learning signal, wasting expensive compute.",
-    "solution": "Run multiple baseline evaluations per sample to identify variance, then prioritize high-variance samples (sometimes correct) for training.",
+    "description": "Not all training samples are equally valuable for reinforcement learning Run multiple baseline evaluations per sample to identify variance, then prioritize high-variance samples for training",
+    "problem": "Not all training samples are equally valuable for reinforcement learning. This pattern builds on Prioritized Experience Replay (Schaul et al., 2016), which introduced TD-error-based sample prioritization for value learning. Zero-variance samples (model gets same score every time, always correct or always wrong) provide no learning signal. Training on samples where the model has no uncertainty wastes expensive RL exploration. With limited training budgets, you want to maximize learning from each sample. It's hard to know if your dataset will support effective RL training. When Theo ran baseline evaluations on the FinQA benchmark, he discovered that ~85% of samples had zero variance, meaning only ~15% could actually contribute to learning.",
+    "solution": "Run multiple baseline evaluations per sample to identify variance, then prioritize high-variance samples for training.\n\nThe Variance Plot Methodology:\n1. **Baseline Evaluation**: Run your base model 3-5 times on each sample\n2. **Visualize Variance**: Plot results to identify which samples have variance\n3. **Categorize Samples**: Always correct (variance=0, model already knows), Always incorrect (variance=0, too hard), Sometimes correct (variance>0, prime candidates for RL)\n4. **Focus Training**: Prioritize or exclusively use high-variance samples\n\nCompute multiplier guidance: Low variance (10-15%) use multiplier 2-4 for more exploration, Medium variance (15-30%) use multiplier 1-2, High variance (>30%) multiplier 1 may suffice.",
     "when_to_use": [
-      "Before expensive RL training",
-      "Limited training budget",
-      "Predicting training potential"
+      "Run base model 3-5 times on each sample in training and validation sets before training",
+      "Create variance plot to understand data (X-axis: sample index, Y-axis: score)",
+      "Look for 15-30% high variance samples as good indicator for RL",
+      "Set compute multiplier based on variance level (low: 2-4, medium: 1-2, high: 1)",
+      "Monitor how variance evolves during training (should decrease then stabilize)"
     ],
     "pros": [
-      "Data efficiency",
-      "Predictive of improvement potential",
-      "Guides hyperparameters"
+      "Data efficiency: focus training on samples that actually contribute to learning",
+      "Predictive: estimate improvement potential before expensive training",
+      "Diagnostic: understand if your task is suitable for RL",
+      "Guides hyperparameters: informs compute multiplier and training duration decisions"
     ],
     "cons": [
-      "Upfront evaluation cost (3-5x)",
-      "Noisy with small samples",
-      "Variance changes during training"
+      "Upfront cost: requires 3-5x baseline evaluations before training",
+      "Small samples: with few samples (<50), variance estimates may be noisy",
+      "Doesn't guarantee success: high variance is necessary but not sufficient",
+      "Dynamic variance: variance changes during training, so initial analysis may not hold"
     ],
     "tags": [
       "reinforcement-learning",
@@ -1859,28 +1868,27 @@
     "title": "Dual LLM Pattern",
     "title_ko": "이중 LLM 패턴",
     "category": "Orchestration & Control",
-    "description": "A single LLM processing both trusted and untrusted data is vulnerable to prompt injection attacks Use two LLMs: a privileged one for planning/tools and a quarantined one for processing untrusted data",
-    "problem": "A single LLM processing both trusted and untrusted data is vulnerable to prompt injection attacks.",
-    "solution": "Use two LLMs: a privileged one for planning/tools and a quarantined one for processing untrusted data.",
+    "description": "When the same model both reads untrusted content and controls high-privilege tools, a single prompt-injection path can convert benign context into privileged actions Split roles:\n\n- **Privileged LLM:*",
+    "problem": "When the same model both reads untrusted content and controls high-privilege tools, a single prompt-injection path can convert benign context into privileged actions. This coupling collapses trust boundaries and makes it hard to reason about where dangerous behavior originated.",
+    "solution": "Split roles:\n\n- **Privileged LLM:** Plans and calls tools but **never sees raw untrusted data**.\n- **Quarantined LLM:** Reads untrusted data but **has zero tool access**.\n- Pass data as **symbolic variables** or validated primitives; privileged side only manipulates references.\n\nUse an explicit contract between the two models: the quarantined model may only emit typed values (or opaque handles), while the privileged model may only operate over approved schemas and tools. This preserves capability while preventing raw untrusted text from entering high-authority reasoning paths.\n\n```pseudo\nvar1 = QuarantineLLM(\"extract email\", text)  # returns $VAR1\nPrivLLM.plan(\"send $VAR1 to boss\")           # no raw text exposure\nexecute(plan, subst={ \"$VAR1\": var1 })\n```",
     "when_to_use": [
-      "Email/document processing",
-      "Web scraping",
-      "User input handling"
+      "Email/calendar assistants",
+      "Booking agents",
+      "API-powered chatbots",
+      "Any system handling untrusted user input with privileged actions (e.g., database writes, external API calls, file system operations)"
     ],
     "pros": [
-      "Security separation",
-      "Reduced attack surface",
-      "Principle of least privilege"
+      "Clear trust boundary",
+      "Compatible with static analysis"
     ],
     "cons": [
-      "Complex architecture",
-      "Increased costs",
-      "Latency overhead"
+      "Complexity",
+      "Debugging across two minds"
     ],
     "tags": [
       "privilege-separation",
       "quarantined-llm",
-      "security"
+      "symbolic-variables"
     ],
     "related": []
   },
@@ -1955,26 +1963,28 @@
     "title": "Factory over Assistant",
     "title_ko": "어시스턴트보다 팩토리 모델",
     "category": "Orchestration & Control",
-    "description": "The 'assistant' model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability Shift from the assistant model to the factory mod",
-    "problem": "The 'assistant' model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability. The human becomes the bottleneck as the feedback loop. You can only run one agent at a time when watching it in a sidebar.",
-    "solution": "Shift from the assistant model to the factory model: spawn multiple autonomous agents that work in parallel, check on them periodically, and focus your time on higher-level orchestration. Instead of being the feedback loop, set up automated feedback loops (tests, builds, skills). Use interactive models for quick tasks and autonomous models for deep work.",
+    "description": "The \"assistant\" model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability Shift from the **assistant model** to the **facto",
+    "problem": "The \"assistant\" model—working one-on-one with an agent in a sidebar, watching it work, ping-ponging back and forth—limits productivity and scalability. As models become more autonomous and capable, the human becomes the bottleneck as the feedback loop. You can only run one agent at a time when you're watching it in a sidebar.",
+    "solution": "Shift from the **assistant model** to the **factory model**: spawn multiple autonomous agents that work in parallel, check on them periodically, and focus your time on higher-level orchestration rather than being the feedback loop.\n\n**The factory mindset:**\n- Send off multiple agents to work on different tasks\n- Check in on them periodically (30-60 minutes later)\n- Focus on setting up automated feedback loops (tests, builds, skills)\n- Optimize for parallelism and autonomy\n\n**The assistant model is dying because:**\n1. **Limits parallelization**: You can only effectively run one agent when watching it\n2. **Human as crutch**: You become the feedback loop when you should be setting up automated loops\n3. **Wrong optimization**: Sidebar UX optimizes for watching, not for autonomous work\n4. **Holds back progress**: Slower models work better in sidebar, better models work better autonomously\n\n**Key insight:** With models that can work autonomously for 45+ minutes, watching them in a sidebar is wasteful. You should be able to spawn 10 such agents and check on them all later.\n\n**Academic support:** Multi-agent research (OpenDevin, AutoGen, CAMEL) validates parallel autonomous execution over single-assistant interaction.",
     "when_to_use": [
-      "Multiple independent tasks that can run in parallel",
-      "Tasks where models can work autonomously for 30-60 minutes",
-      "Robust automated feedback loops already in place",
-      "Team ready to shift from interactive to orchestration role"
+      "Shift time investment: from 80% watching agent / 20% development to 30% setting up automated loops / 20% spawning and orchestrating / 50% review and integration",
+      "Build automated feedback loops: test commands, build commands, skills, linters and formatters that agents use instead of being the feedback loop yourself",
+      "Use appropriate models for each mode: interactive models for quick tasks, autonomous research-oriented models for factory mode",
+      "Embrace asynchronous workflows: spawn multiple agents, do something else, check back later, integrate results"
     ],
     "pros": [
-      "Massive parallelization of agent work",
-      "Better use of human time on orchestration",
-      "Scales with model autonomy capabilities",
-      "Higher throughput with multiple tasks in parallel"
+      "Massive parallelization: Run multiple agents simultaneously",
+      "Better use of human time: Focus on orchestration, not watching",
+      "Scales with model capability: More autonomous models = more effective factory",
+      "Reduced latency: Don't wait for agent to finish each step",
+      "Higher throughput: Multiple tasks completed in parallel"
     ],
     "cons": [
-      "Loss of real-time control over agent work",
-      "Delayed feedback on issues (30-60 minute cycles)",
-      "Setup overhead for robust automated feedback loops",
-      "Harder to debug when things go wrong"
+      "Loss of control: Can't steer agent in real-time",
+      "Delayed feedback: Might not see issues for 30-60 minutes",
+      "Setup overhead: Requires robust automated feedback loops",
+      "Harder to debug: When things go wrong, less visibility into process",
+      "Tooling requirements: Need good monitoring and check-in mechanisms"
     ],
     "tags": [
       "parallelism",
@@ -3655,30 +3665,32 @@
     "title": "Deterministic Security Scanning Build Loop",
     "title_ko": "결정론적 보안 스캔 빌드 루프",
     "category": "Security & Safety",
-    "description": "Non-deterministic security approaches (Cursor rules, MCP tools) are fundamentally flawed because security requires absolute determinism—code is either secure or not secure Implement deterministic secu",
-    "problem": "Non-deterministic security approaches (Cursor rules, MCP tools) are fundamentally flawed because security requires absolute determinism—code is either secure or not secure.",
-    "solution": "Implement deterministic security validation through the build loop: non-deterministic generation phase, then deterministic backpressure phase with security scanning tools (SAST, DAST).",
+    "description": "Non-deterministic approaches to security in AI code generation (Cursor rules, MCP security tools) are fundamentally flawed because security requires absolute determinism - code is either secure or not",
+    "problem": "Non-deterministic approaches to security in AI code generation (Cursor rules, MCP security tools) are fundamentally flawed because security requires absolute determinism - code is either secure or not secure, with no grey area. These approaches are merely suggestions to the LLM that may or may not be followed consistently.",
+    "solution": "Implement **deterministic security validation** through the build loop using a two-phase approach:\n\n1. **Generation Phase** (non-deterministic): Agent generates code based on suggestions and context\n2. **Backpressure Phase** (deterministic): Security scanning tools validate the generated code\n\nThe key is integrating existing security scanning tools (SAST, DAST, SCA) directly into the build target that agents must execute after every code change. This approach is grounded in supply chain security frameworks like SLSA and reproducible builds research.\n\n```makefile\n.PHONY: all build test security-scan\n\nall: build test security-scan\n\nbuild:\n    @echo \"Build completed successfully\"\n    @exit 0\n\ntest:\n    @echo \"Tests completed successfully\" \n    @exit 0\n\nsecurity-scan:\n    # Use your existing security scanning tools\n    semgrep --config=auto src/\n    bandit -r src/\n    trivy fs .\n    gitleaks detect --source .\n    @exit $?\n```\n\nConfigure agent instructions to mandate build execution:\n\n```markdown\n# Agent Instructions\n\n## Code Quality \n\nAfter every code change, you MUST:\n\n1. Run `make all` to verify that the code builds successfully and tests pass.\n2. IMPORTANT: You MUST resolve any security issues identified during compilation.\n```",
     "when_to_use": [
-      "Security-critical code generation",
-      "CI/CD integration",
-      "Compliance requirements"
+      "Inner Loop (Development): Integrate existing security scanning tools into your build target, configure agent instructions to run build after every change, let the agent see security tool output and iterate",
+      "Outer Loop (CI/CD): Use the same security tools in your pull request checks, maintain one unified rules database across both loops",
+      "Implementation Steps: Add security scanning tools to Makefile/package.json/build script, update agent configuration to mandate build execution, ensure security tools exit with non-zero codes on violations"
     ],
     "pros": [
-      "Leverages battle-tested tools",
-      "Consistent validation",
-      "Works with any agent"
+      "Leverages deterministic, battle-tested security tools",
+      "Reuses existing security infrastructure and rules",
+      "Works with any coding agent/harness",
+      "Provides consistent security validation"
     ],
     "cons": [
-      "Increases build time",
-      "May produce false positives",
-      "Requires fast security tools"
+      "Increases build time and CI resource usage",
+      "May produce false positives requiring human review",
+      "Requires fast security tools for good developer experience"
     ],
     "tags": [
       "security",
       "deterministic",
       "build-loop",
       "backpressure",
-      "static-analysis"
+      "static-analysis",
+      "supply-chain"
     ],
     "related": []
   },
@@ -4126,23 +4138,28 @@
     "title": "AI Web Search Agent Loop",
     "title_ko": "AI 웹 검색 에이전트 루프",
     "category": "Tool Use & Environment",
-    "description": "LLMs have training cutoffs and need to decide when to search, translate conversational context into effective queries, find diverse results, iterate based on findings, and cite sources properly Implem",
-    "problem": "LLMs have training cutoffs and need to decide when to search, translate conversational context into effective queries, find diverse results, iterate based on findings, and cite sources properly.",
-    "solution": "Implement iterative web search with coordinating agent managing parallel workers: search decision layer, query translation, parallel worker spawning, iterative refinement, and citation indexing.",
+    "description": "Traditional LLMs have a training cutoff date, meaning they don't know recent facts or real-time information Implement an iterative web search agent loop where a coordinating agent manages multiple par",
+    "problem": "Traditional LLMs have a training cutoff date, meaning they don't know recent facts or real-time information. Simply connecting a model to a search API isn't enough - the model needs to: decide when searching is necessary versus using internal knowledge, translate conversational context into effective search queries, find diverse long-tail results rather than just popular pages, iterate and refine searches based on intermediate results, and cite sources properly to build user trust and reduce hallucination concerns.",
+    "solution": "Implement an iterative web search agent loop where a coordinating agent manages multiple parallel worker agents to comprehensively research a topic.\n\nCore components:\n1. **Search Decision Layer**: A trained classifier that determines when web search is appropriate (using SFT, RLHF, or RL training)\n2. **Query Translation**: Convert conversational context into effective search queries and operators - keyword extraction (SERP APIs have 32 keyword limits), domain-specific searches, temporal operators, query rewriting\n3. **Parallel Worker Agent Spawning**: The coordinating agent creates multiple specialized worker agents that search different domains/angles simultaneously, use different operators and query variations, and aggregate results back to the coordinator\n4. **Iterative Refinement**: Based on initial results, the coordinator identifies new questions raised by findings, spawns additional workers with more specific searches, and repeats until satisfied with result quality\n5. **Citation & Indexing**: Maintain an ephemeral index per search session with proper source attribution",
     "when_to_use": [
-      "Real-time information needs",
-      "Factual accuracy with citations",
-      "Diverse long-tail content research"
+      "Building AI assistants that need real-time information",
+      "Applications requiring factual accuracy and source attribution",
+      "Research tools that need diverse, long-tail web content",
+      "Reducing hallucination in domain-specific queries"
     ],
     "pros": [
-      "Access to real-time information",
-      "Reduced hallucinations",
-      "Source citations build trust"
+      "Access to real-time information beyond training cutoff",
+      "Reduced hallucinations through source grounding",
+      "Increased user confidence through citations",
+      "Can find niche, long-tail information through iterative search",
+      "Parallelizable for performance"
     ],
     "cons": [
-      "SERP APIs not optimized for AI",
-      "Complex multi-part system",
-      "Higher latency and cost"
+      "SERP APIs are not optimized for AI agents (keyword limits, curation bias)",
+      "Complex system with multiple moving parts and external dependencies",
+      "Higher latency and cost than internal knowledge retrieval",
+      "Requires training models to make reliable tool calls",
+      "Some SERP operators deprecated, limiting refinement options"
     ],
     "tags": [
       "web-search",
@@ -4150,6 +4167,7 @@
       "citations",
       "parallel-agents",
       "query-translation",
+      "operators",
       "grounding"
     ],
     "related": []
@@ -4441,26 +4459,29 @@
     "title": "Intelligent Bash Tool Execution",
     "title_ko": "지능형 Bash 도구 실행",
     "category": "Tool Use & Environment",
-    "description": "Secure, reliable command execution from agents is complex: PTY requirements for TTY-required CLIs, platform differences for signal handling, security concerns requiring approval workflows, and backgro",
-    "problem": "Secure, reliable command execution from agents is complex: PTY requirements for TTY-required CLIs, platform differences for signal handling, security concerns requiring approval workflows, and background process management needs.",
-    "solution": "Multi-mode execution with adaptive fallback: direct exec → PTY, with automatic selection based on command requirements. Handles PTY spawn failures gracefully, manages background processes, and provides security-aware approval workflows.",
+    "description": "Secure, reliable command execution from agents is complex and error-prone: PTY requirements (TTY-required CLIs like coding agents and terminal UIs fail with direct exec), platform differences (Linux a",
+    "problem": "Secure, reliable command execution from agents is complex and error-prone: PTY requirements (TTY-required CLIs like coding agents and terminal UIs fail with direct exec), platform differences (Linux and macOS behave differently for detached processes and signal handling), security concerns (arbitrary command execution needs approval workflows and elevated mode detection), and background management (long-running processes need tracking, output aggregation, and cleanup). Agents need a multi-mode execution strategy that adapts to the command's requirements while maintaining security and reliability.",
+    "solution": "Multi-mode execution with adaptive fallback: direct exec → PTY, with automatic selection based on command requirements and runtime capabilities. The system handles PTY spawn failures gracefully, manages background processes, and provides security-aware approval workflows.\n\nCore concepts:\n- **Tool schema definition**: Bash commands invoked through structured tool interfaces (MCP, OpenAI Function Calling) with validated parameters\n- **PTY-first for TTY-required commands**: Detects when commands need a pseudo-terminal and spawns via `node-pty`\n- **Graceful PTY fallback**: If PTY spawn fails (module missing, platform unsupported), falls back to direct exec with a warning\n- **Platform-specific handling**: macOS requires detached processes for proper signal propagation; Linux handles both modes\n- **Security-aware modes**: Elevated mode detection with approval workflows (deny, allowlist, full)\n- **Background process registry**: Long-running processes tracked with session IDs, output tailing, and exit notifications\n- **Output truncation**: Enforce `maxOutput` limits to prevent memory exhaustion for verbose processes\n- **Proper signal propagation**: SIGTERM/SIGKILL delivered correctly to child processes on timeout or abort",
     "when_to_use": [
-      "Interactive CLI tools",
-      "Long-running background tasks",
-      "Security-sensitive command execution"
+      "Detect TTY requirements and set usePty for TTY-required CLIs",
+      "Handle PTY failures with try-catch and fall back to direct exec",
+      "Configure security modes (deny, allowlist, full) and approval behavior",
+      "Register background processes for tracking, polling, and cleanup",
+      "Propagate signals correctly with SIGTERM then SIGKILL for graceful shutdown",
+      "Aggregate output and enforce maxOutput limits to prevent memory exhaustion"
     ],
     "pros": [
-      "TTY support for interactive tools",
-      "Graceful degradation without PTY",
-      "Flexible security policies",
-      "Background process tracking",
-      "Platform-aware signal handling"
+      "TTY support enables TTY-required tools that would otherwise fail",
+      "Graceful degradation falls back to direct exec when PTY is unavailable",
+      "Multiple security modes (deny, allowlist, full) provide flexible security policies",
+      "Process registry enables long-running task management and cleanup",
+      "Platform awareness handles macOS/Linux differences for signal propagation"
     ],
     "cons": [
-      "PTY native module dependency",
-      "Multi-mode execution complexity",
-      "Memory usage for output buffering",
-      "Platform-specific signal limitations"
+      "Requires node-pty native module which may fail to compile in some environments",
+      "Multi-mode execution increases code complexity and testing surface",
+      "Aggregating all output in memory can exhaust RAM for long-running verbose processes",
+      "Detached processes on macOS don't receive signals, requiring workarounds"
     ],
     "tags": [
       "bash",
