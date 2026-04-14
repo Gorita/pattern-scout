@@ -6,27 +6,53 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "Many individuals in non-software engineering roles (sales, marketing, operations) could benefit from custom software tools tailored to their workflows, but lack traditional programming skills to build them.",
-    "ko": "비소프트웨어 엔지니어링 역할(영업, 마케팅, 운영)의 많은 개인은 워크플로우에 맞춤화된 소프트웨어 도구의 혜택을 받을 수 있지만, 이를 구축할 전통적인 프로그래밍 기술이 부족합니다."
+    "en": "Many individuals in non-software engineering roles (e.g., sales, marketing, operations, communications) could benefit from custom software tools, scripts, or dashboards tailored to their specific workflows, but lack the traditional programming skills to build them.",
+    "ko": "비소프트웨어 엔지니어링 역할(예: 영업, 마케팅, 운영, 커뮤니케이션)의 많은 개인은 특정 워크플로우에 맞춤화된 소프트웨어 도구, 스크립트 또는 대시보드의 혜택을 받을 수 있지만, 이를 구축할 전통적인 프로그래밍 기술이 부족합니다."
   },
   "solution": {
-    "en": "Empower non-programmers to create or modify software using AI agents. Users describe desired tools in natural language, agents generate necessary code, and users iteratively refine with agent help. This democratizes software development to domain experts.",
-    "ko": "AI 에이전트를 사용하여 비프로그래머가 소프트웨어를 생성하거나 수정할 수 있도록 권한을 부여합니다. 사용자는 원하는 도구를 자연어로 설명하고, 에이전트는 필요한 코드를 생성하며, 사용자는 에이전트의 도움으로 반복적으로 개선합니다. 이는 도메인 전문가에게 소프트웨어 개발을 민주화합니다."
+    "en": "Empower a broader range of users, including those without deep coding expertise, to create or modify software solutions for their own needs using AI agents. With an AI agent as an assistant, these users can:\n1. Describe their desired tool or functionality in natural language.\n2. Have the agent generate the necessary code (e.g., for a dashboard, a script to automate a task, a simple web application).\n3. Iteratively refine the tool with the agent's help.\n4. Even perform simple bug fixes or modifications to existing tools or codebases.\n\nThis pattern lowers the barrier to software creation, allowing domain experts in various fields to build their own productivity tools, thereby \"democratizing\" software development to some extent.",
+    "ko": "깊은 코딩 전문 지식이 없는 사용자를 포함한 더 넓은 범위의 사용자가 AI 에이전트를 사용하여 자신의 필요에 맞는 소프트웨어 솔루션을 생성하거나 수정할 수 있도록 합니다. AI 에이전트를 어시스턴트로 활용하여 사용자는:\n1. 원하는 도구나 기능을 자연어로 설명합니다.\n2. 에이전트가 필요한 코드를 생성합니다(예: 대시보드, 작업 자동화 스크립트, 간단한 웹 애플리케이션).\n3. 에이전트의 도움으로 도구를 반복적으로 개선합니다.\n4. 기존 도구나 코드베이스에 대한 간단한 버그 수정이나 수정도 수행합니다.\n\n이 패턴은 소프트웨어 생성의 장벽을 낮추어 다양한 분야의 도메인 전문가가 자체 생산성 도구를 구축할 수 있게 하여 소프트웨어 개발을 어느 정도 \"민주화\"합니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   Non-Technical User            │\n│   (Sales, Marketing, Ops)       │\n└───────────────┬─────────────────┘\n                │ Natural Language\n                │ Description\n┌───────────────▼─────────────────┐\n│         AI Agent                │\n│   • Understands intent          │\n│   • Generates code              │\n│   • Explains changes            │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│      Generated Tool             │\n│   • Dashboard                   │\n│   • Automation script           │\n│   • Simple web app              │\n└───────────────┬─────────────────┘\n                │\n        ┌───────┴───────┐\n        │ Iterate       │\n        │ & Refine      │\n        └───────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Non-Technical User] -->|Describe Need| B[AI Agent]\n    B -->|Generate Code| C[Custom Tool]\n    C --> D{Satisfactory?}\n    D -->|No| E[Provide Feedback]\n    E --> B\n    D -->|Yes| F[Use Tool]\n    F --> G[Even Fix Bugs]\n    G --> B",
   "code_example": "# Example: Sales team member creates custom dashboard\n\n# User prompt:\n\"Create a dashboard that pulls our Salesforce pipeline data\nand shows weekly trends with a chart comparing to quota\"\n\n# Agent generates:\n# - Python script for Salesforce API integration\n# - Data processing for weekly aggregation\n# - Simple web dashboard with Chart.js\n# - Deployment configuration\n\n# User iterates:\n\"Add a filter for my territory only\"\n\"Make the quota line red\"\n\"Send me a Slack notification when pipeline drops 20%\"\n\n# Real example from Anthropic:\n# Communications team member shipping bug fixes to claude.ai",
   "when_to_use": {
-    "en": ["Domain experts need custom tools", "Business users want automation", "Simple bug fixes by non-engineers", "Rapid prototyping of internal tools"],
-    "ko": ["도메인 전문가가 맞춤 도구 필요", "비즈니스 사용자가 자동화 원함", "비엔지니어의 간단한 버그 수정", "내부 도구의 빠른 프로토타이핑"]
+    "en": [
+      "Domain experts need custom tools but lack programming expertise",
+      "Iterative refinement with quick results and user feedback",
+      "Hiding technical complexity while maintaining capability",
+      "Approval workflows for destructive operations to build trust with non-technical users"
+    ],
+    "ko": [
+      "도메인 전문가가 맞춤 도구가 필요하지만 프로그래밍 전문 지식 부족",
+      "빠른 결과와 사용자 피드백을 통한 반복적 개선",
+      "기능을 유지하면서 기술적 복잡성 은닉",
+      "비기술 사용자의 신뢰 구축을 위한 파괴적 작업 승인 워크플로우"
+    ]
   },
   "pros": {
-    "en": ["Domain experts build own tools", "Reduces engineering bottlenecks", "Faster iteration on business needs", "Enables citizen development"],
-    "ko": ["도메인 전문가가 자체 도구 구축", "엔지니어링 병목 감소", "비즈니스 요구에 빠른 반복", "시민 개발 가능"]
+    "en": [
+      "Enables domain experts to build their own tools",
+      "Reduces engineering bottlenecks",
+      "Creates learning feedback loops where users develop technical intuition through exposure"
+    ],
+    "ko": [
+      "도메인 전문가가 자체 도구 구축 가능",
+      "엔지니어링 병목 감소",
+      "노출을 통해 사용자가 기술적 직관을 개발하는 학습 피드백 루프 생성"
+    ]
   },
   "cons": {
-    "en": ["Quality and security concerns", "May create unmaintainable code", "Support burden on engineering", "Not suitable for complex systems"],
-    "ko": ["품질 및 보안 우려", "유지보수 불가능한 코드 생성 가능", "엔지니어링의 지원 부담", "복잡한 시스템에 적합하지 않음"]
+    "en": [
+      "Generated code may have reliability issues that non-technical users cannot detect",
+      "Production deployment remains challenging",
+      "Quality and security require guardrails rather than training"
+    ],
+    "ko": [
+      "생성된 코드에 비기술 사용자가 감지할 수 없는 신뢰성 문제 가능",
+      "프로덕션 배포는 여전히 어려움",
+      "품질과 보안은 교육이 아닌 가드레일 필요"
+    ]
   },
-  "tags": ["no-code", "low-code", "citizen-developer", "tool-creation", "business-users", "automation"]
+  "tags": ["no-code", "low-code", "citizen-developer", "tool-creation", "business-users", "automation", "custom-software"]
 }

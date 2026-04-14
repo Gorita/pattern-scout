@@ -6,27 +6,53 @@
   "status": "experimental-but-awesome",
   "original_url": "https://www.nibzard.com/claude-code",
   "problem": {
-    "en": "A single AI agent instance might get stuck in a local optimum or fail to explore a diverse range of solutions for complex problems or creative ideation.",
-    "ko": "단일 AI 에이전트 인스턴스는 복잡한 문제나 창의적 아이디어 도출에서 지역 최적점에 갇히거나 다양한 솔루션 범위를 탐색하지 못할 수 있습니다."
+    "en": "For complex problems or creative ideation, a single AI agent instance might get stuck in a local optimum or fail to explore a diverse range of solutions. Generating a breadth of ideas can be challenging for a sequential, monolithic process.",
+    "ko": "복잡한 문제나 창의적 아이디어 도출에서 단일 AI 에이전트 인스턴스는 지역 최적점에 갇히거나 다양한 솔루션 범위를 탐색하지 못할 수 있습니다. 순차적이고 단일한 프로세스로는 폭넓은 아이디어를 생성하는 것이 어려울 수 있습니다."
   },
   "solution": {
-    "en": "Spawn multiple independent agent instances with the same task or varied perspectives, work in parallel, then synthesize outputs through a coordinator or human review.",
-    "ko": "동일한 작업이나 다양한 관점으로 여러 독립적인 에이전트 인스턴스를 생성하고, 병렬로 작업한 다음, 코디네이터나 인간 검토를 통해 출력을 종합합니다."
+    "en": "Employ a multi-agent approach for brainstorming and idea generation. This involves:\n1. Defining a core problem or task.\n2. Spawning multiple independent (or semi-independent) AI agent instances.\n3. Assigning each agent the same initial task or slightly varied perspectives on the task.\n4. Allowing each agent to work in parallel to generate ideas, solutions, or approaches.\n5. Collecting the outputs from all agents.\n6. Optionally, a coordinating agent or a human user can then synthesize these diverse outputs, identify common themes, or select the most promising ideas for further development.\n\nThis pattern leverages parallelism to explore a wider solution space and can lead to more creative or robust outcomes than a single agent might produce alone.",
+    "ko": "브레인스토밍과 아이디어 생성을 위한 다중 에이전트 접근 방식을 사용합니다. 다음을 포함합니다:\n1. 핵심 문제 또는 작업을 정의합니다.\n2. 여러 독립적(또는 반독립적) AI 에이전트 인스턴스를 생성합니다.\n3. 각 에이전트에 동일한 초기 작업 또는 약간 다른 관점을 할당합니다.\n4. 각 에이전트가 병렬로 아이디어, 솔루션, 접근 방식을 생성하도록 합니다.\n5. 모든 에이전트의 출력을 수집합니다.\n6. 선택적으로 조정 에이전트 또는 인간 사용자가 다양한 출력을 종합하고, 공통 주제를 식별하거나, 추가 개발을 위한 가장 유망한 아이디어를 선택합니다.\n\n이 패턴은 병렬성을 활용하여 더 넓은 솔루션 공간을 탐색하며, 단일 에이전트보다 더 창의적이거나 견고한 결과를 도출할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│  Core Problem   │\n└────────┬────────┘\n    ┌────┼────┐\n    ▼    ▼    ▼\n┌────┐┌────┐┌────┐\n│Agt1││Agt2││Agt3│\n│PerA││PerB││PerC│\n└──┬─┘└──┬─┘└──┬─┘\n   │     │     │\n   ▼     ▼     ▼\n┌────┐┌────┐┌────┐\n│Sol1││Sol2││Sol3│\n└──┬─┘└──┬─┘└──┬─┘\n   └─────┼─────┘\n         ▼\n┌─────────────────┐\n│   Coordinator   │\n│    Synthesize   │\n└─────────────────┘",
-  "mermaid_diagram": "flowchart TD\n    A[Core Problem/Task] --> B[Agent 1: Perspective A]\n    A --> C[Agent 2: Perspective B]\n    A --> D[Agent 3: Perspective C]\n    B --> E[Solution Set 1]\n    C --> F[Solution Set 2]\n    D --> G[Solution Set 3]\n    E --> H[Coordinator/Human]\n    F --> H\n    G --> H\n    H --> I[Synthesized Solutions]",
+  "mermaid_diagram": "flowchart TD\n    A[Core Problem/Task] --> B[Agent 1: Perspective A]\n    A --> C[Agent 2: Perspective B]\n    A --> D[Agent 3: Perspective C]\n    B --> E[Solution Set 1]\n    C --> F[Solution Set 2]\n    D --> G[Solution Set 3]\n    E --> H[Coordinator/Human]\n    F --> H\n    G --> H\n    H --> I[Synthesized Solutions]\n    H --> J[Common Themes]\n    H --> K[Best Ideas Selected]",
   "code_example": "# Example: Parallel brainstorming with Claude Code\n# \"Use 3 parallel agents to brainstorm ideas for \n#  how to clean up @services/aggregator/feed_service.cpp\"\n\nasync def parallel_brainstorm(task, num_agents=3):\n    perspectives = [\n        'Focus on performance',\n        'Focus on readability',\n        'Focus on maintainability'\n    ]\n    \n    solutions = await asyncio.gather(*[\n        spawn_agent(task, perspective)\n        for perspective in perspectives[:num_agents]\n    ])\n    \n    return synthesize(solutions)",
   "when_to_use": {
-    "en": ["Complex problem exploration", "Creative ideation", "Architecture decisions needing diverse views"],
-    "ko": ["복잡한 문제 탐색", "창의적 아이디어 도출", "다양한 관점이 필요한 아키텍처 결정"]
+    "en": [
+      "When you need diverse perspectives or want to avoid local optimum trapping",
+      "Assign distinct roles or perspectives to each agent (e.g., critic, optimist, technical realist)",
+      "Limit to 2-4 agents for manageable coordination; more than 6 adds exponential overhead",
+      "Use a coordinating agent or human to synthesize and deduplicate outputs"
+    ],
+    "ko": [
+      "다양한 관점이 필요하거나 지역 최적점 함정을 피하고 싶을 때",
+      "각 에이전트에 고유한 역할이나 관점 할당 (예: 비평가, 낙관론자, 기술 현실주의자)",
+      "관리 가능한 조정을 위해 2-4개 에이전트로 제한; 6개 이상은 기하급수적 오버헤드 추가",
+      "조정 에이전트 또는 인간을 활용하여 출력 종합 및 중복 제거"
+    ]
   },
   "pros": {
-    "en": ["Wider solution space exploration", "Diverse perspectives", "Can lead to creative breakthroughs"],
-    "ko": ["더 넓은 솔루션 공간 탐색", "다양한 관점", "창의적 돌파구로 이어질 수 있음"]
+    "en": [
+      "Explores wider solution space",
+      "Reduces local optimum trapping",
+      "Enables diverse perspective exploration"
+    ],
+    "ko": [
+      "더 넓은 솔루션 공간 탐색",
+      "지역 최적점 함정 감소",
+      "다양한 관점 탐색 가능"
+    ]
   },
   "cons": {
-    "en": ["Higher token costs (multiple agents)", "Requires synthesis step", "May produce conflicting ideas"],
-    "ko": ["높은 토큰 비용 (다중 에이전트)", "종합 단계 필요", "상충하는 아이디어 생성 가능"]
+    "en": [
+      "Adds orchestration complexity",
+      "Coordination overhead increases with agent count",
+      "Requires synthesis mechanisms"
+    ],
+    "ko": [
+      "오케스트레이션 복잡성 증가",
+      "에이전트 수에 따라 조정 오버헤드 증가",
+      "종합 메커니즘 필요"
+    ]
   },
-  "tags": ["multi-agent", "brainstorming", "parallel-processing", "idea-generation", "collaborative-ideation"]
+  "tags": ["multi-agent", "brainstorming", "parallel processing", "idea generation", "sub-agents", "collaborative ideation"]
 }

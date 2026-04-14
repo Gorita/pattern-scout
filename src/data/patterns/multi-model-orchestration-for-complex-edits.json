@@ -6,27 +6,51 @@
   "status": "validated-in-production",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "A single large language model may not be optimally suited for all sub-tasks in complex operations like multi-file code editing. Tasks like context retrieval, code generation, and edit application have different requirements.",
-    "ko": "단일 대형 언어 모델은 다중 파일 코드 편집과 같은 복잡한 작업의 모든 하위 작업에 최적으로 적합하지 않을 수 있습니다. 컨텍스트 검색, 코드 생성, 편집 적용과 같은 작업은 다른 요구사항을 가집니다."
+    "en": "A single large language model, even if powerful, may not be optimally suited for all sub-tasks involved in a complex operation like multi-file code editing. Tasks such as understanding broad context, generating precise code, and applying edits might benefit from specialized model capabilities.",
+    "ko": "단일 대형 언어 모델은 아무리 강력하더라도 다중 파일 코드 편집과 같은 복잡한 작업에 관련된 모든 하위 작업에 최적으로 적합하지 않을 수 있습니다. 넓은 컨텍스트 이해, 정밀한 코드 생성, 편집 적용과 같은 작업은 전문화된 모델 기능의 혜택을 받을 수 있습니다."
   },
   "solution": {
-    "en": "Employ a pipeline of multiple specialized models: retrieval model for context gathering, large generation model for code modifications, custom models for applying edits accurately.",
-    "ko": "여러 전문 모델의 파이프라인을 사용합니다: 컨텍스트 수집을 위한 검색 모델, 코드 수정을 위한 대형 생성 모델, 정확한 편집 적용을 위한 사용자 정의 모델."
+    "en": "Employ a pipeline or orchestration of multiple AI models, each specialized for different parts of a complex task. Different models excel at different cognitive tasks—specialization beats generalization. For code editing, this could involve:\n\n1. A **retrieval model** to gather relevant context from the codebase.\n2. A **large, intelligent generation model** (e.g., Claude 3.5 Sonnet) to understand the user's intent and generate the primary code modifications based on the retrieved context.\n3. Potentially other **custom or smaller models** to assist in applying these generated edits accurately across multiple files or performing fine-grained adjustments.\n\nPass only distilled conclusions between models, not full conversation histories. This reduces token costs and maintains clean phase boundaries. This approach leverages the strengths of different models in a coordinated fashion to achieve a more robust and effective outcome for complex operations than a single model might achieve alone.",
+    "ko": "복잡한 작업의 각 부분에 전문화된 여러 AI 모델의 파이프라인 또는 오케스트레이션을 사용합니다. 각 모델은 서로 다른 인지 작업에서 뛰어나며, 전문화가 범용화를 능가합니다. 코드 편집의 경우 다음을 포함할 수 있습니다:\n\n1. 코드베이스에서 관련 컨텍스트를 수집하는 **검색 모델**.\n2. 사용자의 의도를 이해하고 검색된 컨텍스트를 기반으로 주요 코드 수정을 생성하는 **대형 지능형 생성 모델** (예: Claude 3.5 Sonnet).\n3. 생성된 편집을 여러 파일에 정확하게 적용하거나 세밀한 조정을 수행하는 **사용자 정의 또는 소형 모델**.\n\n모델 간에는 전체 대화 기록이 아닌 정제된 결론만 전달합니다. 이를 통해 토큰 비용을 절감하고 깔끔한 단계 경계를 유지합니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│  User Request   │\n│ Multi-File Edit │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Retrieval Model │\n│ Gather Context  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Generation Model│\n│ (Claude Sonnet) │\n│ Generate Edits  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│Application Model│\n│ Apply Across    │\n│    Files        │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Edited Codebase │\n└─────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User Request: Multi-File Edit] --> B[Retrieval Model: Gather Context]\n    B --> C[Main Generation Model: Generate Edits]\n    C --> D[Edit Application Model: Apply Edits Across Files]\n    D --> E[Edited Codebase]",
   "code_example": "class MultiModelOrchestrator:\n    def __init__(self):\n        self.retriever = RetrievalModel()  # Fast, specialized\n        self.generator = ClaudeSonnet()     # Intelligent, general\n        self.applier = EditApplicationModel()  # Precise, focused\n    \n    def process_edit_request(self, request):\n        # Phase 1: Retrieve relevant context\n        context = self.retriever.gather_context(request)\n        \n        # Phase 2: Generate edits with main model\n        edits = self.generator.generate_edits(request, context)\n        \n        # Phase 3: Apply edits precisely\n        result = self.applier.apply_edits(edits)\n        \n        return result",
   "when_to_use": {
-    "en": ["Multi-file code editing", "Complex codebase modifications", "Tasks needing specialized capabilities"],
-    "ko": ["다중 파일 코드 편집", "복잡한 코드베이스 수정", "전문 기능이 필요한 작업"]
+    "en": [
+      "When tasks need explicit control flow between planning, execution, and fallback",
+      "Start with one high-volume workflow before applying it across all agent lanes",
+      "Define ownership for each phase so failures can be routed and recovered quickly",
+      "Pass only distilled conclusions between model phases, not full conversation histories"
+    ],
+    "ko": [
+      "계획, 실행, 폴백 간 명시적 제어 흐름이 필요한 작업",
+      "모든 에이전트 레인에 적용하기 전에 하나의 고빈도 워크플로우부터 시작",
+      "실패를 빠르게 라우팅하고 복구할 수 있도록 각 단계의 소유권 정의",
+      "모델 단계 간에 전체 대화 기록이 아닌 정제된 결론만 전달"
+    ]
   },
   "pros": {
-    "en": ["Leverages specialized model strengths", "More robust outcomes", "Efficient resource usage"],
-    "ko": ["전문 모델 강점 활용", "더 견고한 결과", "효율적인 자원 사용"]
+    "en": [
+      "Improves coordination across multi-step workflows",
+      "Reduces hidden control flow",
+      "Enables cost optimization through right-sized model selection"
+    ],
+    "ko": [
+      "다단계 워크플로우 간 조정 개선",
+      "숨겨진 제어 흐름 감소",
+      "적절한 크기의 모델 선택을 통한 비용 최적화 가능"
+    ]
   },
   "cons": {
-    "en": ["Increased complexity", "Model coordination overhead", "Latency from multiple calls"],
-    "ko": ["복잡성 증가", "모델 조정 오버헤드", "다중 호출로 인한 지연"]
+    "en": [
+      "Adds orchestration complexity",
+      "More states to debug"
+    ],
+    "ko": [
+      "오케스트레이션 복잡성 증가",
+      "디버그해야 할 상태 증가"
+    ]
   },
-  "tags": ["multi-model", "code-generation", "code-editing", "retrieval", "pipeline"]
+  "tags": ["multi-model", "code-generation", "code-editing", "retrieval", "pipeline", "complex-tasks"]
 }
