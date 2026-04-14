@@ -6,27 +6,51 @@
   "status": "proposed",
   "original_url": "http://jorypestorious.com/blog/ai-engineer-spec/",
   "problem": {
-    "en": "Hand-crafted prompts or loose user stories leave room for ambiguity; agents can wander or produce conflicting code.",
-    "ko": "수작업 프롬프트나 느슨한 사용자 스토리는 모호성의 여지를 남겨 에이전트가 방황하거나 충돌하는 코드를 생성할 수 있습니다."
+    "en": "Hand-crafted prompts or loose user stories leave room for ambiguity; agents can wander, over-interpret, or produce code that conflicts with stakeholder intent.",
+    "ko": "수작업 프롬프트나 느슨한 사용자 스토리는 모호성의 여지를 남깁니다. 에이전트가 방황하거나, 과잉 해석하거나, 이해관계자 의도와 충돌하는 코드를 생성할 수 있습니다."
   },
   "solution": {
-    "en": "Adopt a spec-first workflow where a formal specification file is the agent's primary input and source of truth.",
-    "ko": "공식 명세 파일이 에이전트의 주요 입력이자 진실의 원천인 명세 우선 워크플로우를 채택합니다."
+    "en": "Adopt a **spec-first workflow** in which a formal specification file (e.g., Markdown, OpenAPI, JSON Schema) is the agent's *primary* input and source of truth.\n\n- **Parse spec** → agent builds an explicit task graph.\n- **Scaffold** project structure & stub code straight from the spec.\n- **Enforce** that every generated artifact links back to a spec clause.\n- **Iterate** only by editing the spec, *not* by re-prompting ad-hoc.\n\n```pseudo\nif new_feature_requested:\n    write_spec(update)\n    agent.sync_with(spec)\n```\n\n**Core Framework (SPEC/EXPOSURE/TASK DELTA):**\n- **SPEC**: Version-controlled markdown capturing intent and values\n- **EXPOSURE**: What customers experience; spec is permanent, code is temporary\n- **TASK DELTA**: Continuous loop evaluating SPEC ↔ PRODUCT to identify gaps",
+    "ko": "공식 명세 파일(예: Markdown, OpenAPI, JSON Schema)이 에이전트의 *주요* 입력이자 진실의 원천인 **명세 우선 워크플로우**를 채택합니다.\n\n- **명세 파싱** → 에이전트가 명시적 작업 그래프를 구축합니다.\n- **스캐폴딩** → 명세에서 직접 프로젝트 구조와 스텁 코드를 생성합니다.\n- **강제** → 모든 생성된 산출물이 명세 조항에 연결되도록 합니다.\n- **반복** → 임시 프롬프트가 아닌 명세 편집만으로 진행합니다.\n\n**핵심 프레임워크 (SPEC/EXPOSURE/TASK DELTA):**\n- **SPEC**: 의도와 가치를 포착하는 버전 관리된 마크다운\n- **EXPOSURE**: 고객이 경험하는 것; 명세는 영구적이고 코드는 임시적\n- **TASK DELTA**: SPEC ↔ PRODUCT를 평가하여 갭을 식별하는 연속 루프"
   },
   "ascii_diagram": "┌─────────────┐\n│    Spec     │\n│  (Markdown/ │\n│   OpenAPI)  │\n└──────┬──────┘\n       │ parse\n┌──────▼──────┐\n│ Task Graph  │\n└──────┬──────┘\n       │ scaffold\n┌──────▼──────┐\n│   Project   │\n│  Structure  │\n└──────┬──────┘\n       │ iterate\n┌──────▼──────┐\n│  Edit Spec  │\n│ (not prompt)│\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Write Spec] --> B[Agent Parses Spec]\n    B --> C[Build Task Graph]\n    C --> D[Scaffold Project]\n    D --> E[Generate Code]\n    E --> F{Need Changes?}\n    F -->|Yes| G[Edit Spec]\n    G --> B\n    F -->|No| H[Done]",
   "code_example": "# Spec-first workflow\nif new_feature_requested:\n    spec = update_spec(feature_requirements)\n    agent.sync_with(spec)\n    # Agent builds from spec, not ad-hoc prompts\n    \n# Every artifact links back to spec clause\nassert artifact.spec_reference is not None",
   "when_to_use": {
-    "en": ["Complex projects", "Team collaboration", "Audit-required systems"],
-    "ko": ["복잡한 프로젝트", "팀 협업", "감사 필요 시스템"]
+    "en": [
+      "Write specifications first (Markdown files in git), then let agents scaffold from them",
+      "Documentation IS the spec—write it before code",
+      "Use tiered review: AI for patterns, humans for logic",
+      "Parallelize via git worktrees or multiple agents coordinating through shared spec files"
+    ],
+    "ko": [
+      "명세를 먼저 작성(git의 Markdown 파일)한 후 에이전트가 스캐폴딩",
+      "문서가 곧 명세—코드보다 먼저 작성",
+      "계층적 리뷰 사용: 패턴은 AI, 로직은 사람",
+      "git worktree 또는 공유 명세 파일을 통해 조율하는 다중 에이전트로 병렬화"
+    ]
   },
   "pros": {
-    "en": ["Repeatable", "Audit-friendly", "Easy diffing"],
-    "ko": ["반복 가능", "감사 친화적", "쉬운 비교"]
+    "en": [
+      "Repeatable",
+      "Audit-friendly",
+      "Easy diffing"
+    ],
+    "ko": [
+      "반복 가능",
+      "감사 친화적",
+      "쉬운 비교"
+    ]
   },
   "cons": {
-    "en": ["Up-front spec writing effort", "Learning curve for spec formats"],
-    "ko": ["사전 명세 작성 노력", "명세 형식 학습 곡선"]
+    "en": [
+      "Up-front spec writing effort",
+      "Initial ramp-up for teams new to spec formats"
+    ],
+    "ko": [
+      "사전 명세 작성 노력",
+      "명세 형식에 익숙하지 않은 팀의 초기 적응 시간"
+    ]
   },
   "tags": ["spec-first", "scaffolding", "contract", "requirements"]
 }

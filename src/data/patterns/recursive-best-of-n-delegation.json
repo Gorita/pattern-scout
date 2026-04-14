@@ -6,24 +6,50 @@
   "status": "emerging",
   "original_url": "https://github.com/nibzard/labruno-agent",
   "problem": {
-    "en": "Recursive delegation (parent -> sub-agents -> sub-sub-agents) has a failure mode: a single weak sub-agent result can poison parent's next steps. Errors compound up the tree. Pure recursion also underuses parallelism when a node is uncertain.",
-    "ko": "재귀적 위임(부모 -> 서브에이전트 -> 서브서브에이전트)에는 실패 모드가 있습니다: 단일 약한 서브에이전트 결과가 부모의 다음 단계를 오염시킬 수 있습니다. 오류가 트리 위로 누적됩니다. 순수 재귀는 노드가 불확실할 때 병렬성을 제대로 활용하지 못합니다."
+    "en": "Recursive delegation (parent agent → sub-agents → sub-sub-agents) decomposes big tasks, but has a failure mode:\n\n- A single weak sub-agent result can poison the parent's next steps (wrong assumption, missed file, bad patch)\n- Errors compound up the tree: \"one bad leaf\" can derail the whole rollout\n- Pure recursion underuses parallelism when a node is uncertain: you want multiple shots *right where the ambiguity is*\n\nMeanwhile, \"best-of-N\" parallel attempts help reliability, but without structure they waste compute by repeatedly solving the *same* problem instead of decomposing it. The pattern applies parallelism only where uncertainty exists—at the subtask level—while maintaining structured decomposition.",
+    "ko": "재귀적 위임(부모 에이전트 → 서브에이전트 → 서브서브에이전트)은 큰 작업을 분해하지만, 실패 모드가 있습니다:\n\n- 단일 약한 서브에이전트 결과가 부모의 다음 단계를 오염시킬 수 있습니다(잘못된 가정, 누락된 파일, 잘못된 패치)\n- 오류가 트리 위로 누적됩니다: '하나의 나쁜 리프'가 전체 롤아웃을 탈선시킬 수 있습니다\n- 순수 재귀는 노드가 불확실할 때 병렬성을 제대로 활용하지 못합니다: 모호한 부분에서 여러 번의 시도가 필요합니다\n\n한편 'best-of-N' 병렬 시도는 신뢰성에 도움이 되지만, 구조 없이는 분해 대신 *동일한* 문제를 반복적으로 풀어 컴퓨팅을 낭비합니다. 이 패턴은 구조화된 분해를 유지하면서 불확실성이 존재하는 곳 — 하위 작업 수준 — 에서만 병렬성을 적용합니다."
   },
   "solution": {
-    "en": "At each node in a recursive agent tree, run best-of-N for the current subtask before expanding. Decompose into subtasks, spawn K candidate workers per subtask in isolated sandboxes, score with judge (tests + LLM rubric), select top candidate, escalate uncertainty if confidence is low.",
-    "ko": "재귀 에이전트 트리의 각 노드에서 확장 전에 현재 하위 작업에 대해 best-of-N을 실행합니다. 하위 작업으로 분해하고, 격리된 샌드박스에서 하위 작업당 K개의 후보 워커를 생성하고, 심판(테스트 + LLM 루브릭)으로 점수를 매기고, 최상위 후보를 선택하고, 신뢰도가 낮으면 불확실성을 에스컬레이션합니다."
+    "en": "At *each node* in a recursive agent tree, run **best-of-N** for the current subtask before expanding further. This combines the structured decomposition of recursive delegation with the reliability of self-consistency sampling:\n\n1. **Decompose:** Parent turns task into sub-tasks (like normal recursive delegation)\n2. **Parallel candidates per subtask:** For each subtask, spawn **K candidate workers** in isolated sandboxes (K=2-5 typical)\n3. **Score candidates:** Use a judge that combines:\n   - Automated signals (tests, lint, exit code, diff size, runtime)\n   - LLM-as-judge rubric (correctness, adherence to constraints, simplicity)\n4. **Select + promote:** Pick the top candidate as the \"canonical\" result for that subtask\n5. **Escalate uncertainty:** If the judge confidence is low (or candidates disagree), either:\n   - Increase K for that subtask, or\n   - Spawn a focused \"investigator\" sub-agent to gather missing facts, then re-run selection\n6. **Aggregate upward:** Parent synthesizes selected results and continues recursion",
+    "ko": "재귀 에이전트 트리의 *각 노드*에서 추가 확장 전에 현재 하위 작업에 대해 **best-of-N**을 실행합니다. 이는 재귀적 위임의 구조화된 분해와 자기 일관성 샘플링의 신뢰성을 결합합니다:\n\n1. **분해:** 부모가 작업을 하위 작업으로 전환합니다(일반 재귀적 위임과 동일)\n2. **하위 작업당 병렬 후보:** 각 하위 작업에 대해 격리된 샌드박스에서 **K개의 후보 워커**를 생성합니다(K=2-5가 일반적)\n3. **후보 점수 매기기:** 다음을 결합하는 심판을 사용합니다:\n   - 자동화된 신호(테스트, 린트, 종료 코드, diff 크기, 런타임)\n   - LLM 심판 루브릭(정확성, 제약 준수, 단순성)\n4. **선택 + 승격:** 해당 하위 작업의 '정규' 결과로 최상위 후보를 선택합니다\n5. **불확실성 에스컬레이션:** 심판 신뢰도가 낮거나 후보들이 불일치하면:\n   - 해당 하위 작업의 K를 증가시키거나\n   - 누락된 사실을 수집할 집중 '조사관' 서브에이전트를 생성한 후 선택을 다시 실행합니다\n6. **상향 집계:** 부모가 선택된 결과를 종합하고 재귀를 계속합니다"
   },
   "when_to_use": {
-    "en": ["Shardable subtasks with tricky individual shards", "Tasks with cheap output scoring (unit tests, lint, type checks)", "High-stakes changes where one wrong move is costly"],
-    "ko": ["개별 샤드가 까다로운 샤딩 가능한 하위 작업", "저렴한 출력 점수 매기기가 가능한 작업(단위 테스트, 린트, 타입 검사)", "하나의 잘못된 움직임이 비용이 큰 고위험 변경"]
+    "en": [
+      "Subtasks are shardable, but each shard can be tricky (ambiguous API use, repo-specific conventions)",
+      "You can score outputs cheaply (unit tests, type checks, lint, golden files)",
+      "\"One wrong move\" is costly (migration diffs, security-sensitive changes, large refactors)",
+      "Start with K=2 for most subtasks, increase to K=5 only on high uncertainty nodes"
+    ],
+    "ko": [
+      "하위 작업이 샤딩 가능하지만 개별 샤드가 까다로운 경우(모호한 API 사용, 저장소 특정 관례)",
+      "출력을 저렴하게 점수 매길 수 있는 경우(단위 테스트, 타입 검사, 린트, 골든 파일)",
+      "'하나의 잘못된 움직임'이 비용이 큰 경우(마이그레이션 diff, 보안 민감 변경, 대규모 리팩토링)",
+      "대부분의 하위 작업에서 K=2로 시작, 불확실성이 높은 노드에서만 K=5로 증가"
+    ]
   },
   "pros": {
-    "en": ["Much more robust than single-recursion", "Compute is targeted where uncertainty is high", "Works naturally with sandboxed execution and patch workflows"],
-    "ko": ["단일 재귀보다 훨씬 강건함", "불확실성이 높은 곳에 컴퓨팅 집중", "샌드박스 실행 및 패치 워크플로우와 자연스럽게 작동"]
+    "en": [
+      "Much more robust than single-recursion: local uncertainty gets extra shots",
+      "Compute is targeted: you spend K where it matters, not globally",
+      "Works naturally with sandboxed execution and patch-based workflows"
+    ],
+    "ko": [
+      "단일 재귀보다 훨씬 강건함: 로컬 불확실성에 추가 시도 제공",
+      "컴퓨팅이 집중됨: 전역이 아닌 중요한 곳에 K를 사용",
+      "샌드박스 실행 및 패치 기반 워크플로우와 자연스럽게 작동"
+    ]
   },
   "cons": {
-    "en": ["More orchestration complexity (judge, scoring, thresholds)", "Higher cost/latency if K is overused", "Judge quality becomes bottleneck"],
-    "ko": ["더 많은 오케스트레이션 복잡성(심판, 점수, 임계값)", "K를 과도하게 사용하면 비용/지연 증가", "심판 품질이 병목이 됨"]
+    "en": [
+      "More orchestration complexity (judge, scoring, confidence thresholds)",
+      "Higher cost/latency if you overuse K",
+      "Judge quality becomes a bottleneck; add objective checks whenever possible"
+    ],
+    "ko": [
+      "더 많은 오케스트레이션 복잡성(심판, 점수, 신뢰도 임계값)",
+      "K를 과도하게 사용하면 비용/지연 증가",
+      "심판 품질이 병목이 됨; 가능하면 객관적 검사를 추가"
+    ]
   },
   "mermaid_diagram": "flowchart TD\n    A[Parent task] --> B[Decompose into subtasks]\n    B --> C1[Subtask 1]\n    B --> C2[Subtask 2]\n    C1 --> D1[Worker 1a]\n    C1 --> D2[Worker 1b]\n    C1 --> D3[Worker 1c]\n    D1 --> J1[Judge + tests]\n    D2 --> J1\n    D3 --> J1\n    J1 --> S1[Select best result 1]\n    C2 --> E1[Worker 2a]\n    C2 --> E2[Worker 2b]\n    E1 --> J2[Judge + tests]\n    E2 --> J2\n    J2 --> S2[Select best result 2]\n    S1 --> Z[Aggregate + continue recursion]\n    S2 --> Z",
   "tags": ["recursion", "best-of-n", "parallel-sandboxes", "judge", "delegation", "rlms", "selection", "sub-agents"]

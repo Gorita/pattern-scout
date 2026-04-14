@@ -6,27 +6,65 @@
   "status": "validated-in-production",
   "original_url": "https://www.nibzard.com/ampcode",
   "problem": {
-    "en": "Complex tasks exceed single agent context limits and require specialized handling for different subtasks.",
-    "ko": "복잡한 작업이 단일 에이전트 컨텍스트 한계를 초과하고 다른 하위 작업에 전문화된 처리가 필요합니다."
+    "en": "Large multi-file tasks blow out the main agent's context window and reasoning budget. You need a way to delegate work to specialized agents with isolated contexts and tools.",
+    "ko": "대규모 멀티 파일 작업이 메인 에이전트의 컨텍스트 윈도우와 추론 예산을 초과합니다. 격리된 컨텍스트와 도구를 가진 전문화된 에이전트에게 작업을 위임하는 방법이 필요합니다."
   },
   "solution": {
-    "en": "Let the main agent spawn focused sub-agents, each with its own fresh context, to work in parallel on shardable subtasks. Aggregate their results when done. Critical requirement: each subagent invocation must have a clear, specific task subject for traceability. Implementation approaches include declarative YAML configuration (defining subagent types with system prompts, allowed tools, and context windows) and dynamic spawning (on-demand parallel task execution). Parallel delegation best practices: launch independent tasks simultaneously, use clear task subjects, plan synthesis upfront, and limit to 2-4 subagents.",
-    "ko": "메인 에이전트가 집중된 서브 에이전트를 생성하여 각각 고유한 새로운 컨텍스트로 분할 가능한 하위 작업을 병렬 처리합니다. 완료 후 결과를 집계합니다. 핵심 요구사항: 각 서브 에이전트 호출에는 추적 가능한 명확하고 구체적인 작업 제목이 있어야 합니다. 구현 방식으로는 선언적 YAML 구성(시스템 프롬프트, 허용 도구, 컨텍스트 윈도우를 포함한 서브 에이전트 타입 정의)과 동적 생성(필요 시 병렬 작업 실행)이 있습니다. 병렬 위임 모범 사례: 독립적 작업은 동시 실행, 명확한 작업 제목 사용, 사전 종합 계획, 서브 에이전트 2-4개 제한입니다."
+    "en": "Let the main agent **spawn focused sub-agents**, each with its own fresh context, to work in parallel on shardable subtasks. Aggregate their results when done.\n\n**Critical requirement**: Each subagent invocation must have a clear, specific task subject for traceability.\n\n**Implementation approaches:**\n\n### 1. Declarative YAML Configuration\nDefine subagent types in configuration files with their own system prompts, allowed tools, and context windows:\n\n```yaml\n# subagents/planning.yaml\nname: planning\nsystem_prompt: \"Break down complex tasks into steps...\"\ntools:\n  - list_files\n  - read_file\n```\n\n### 2. Dynamic Spawning\nSpawn subagents on-demand for parallel task execution with clear task subjects.\n\n**Parallel delegation best practices:**\n- Launch independent tasks simultaneously\n- Use clear task subjects for traceability\n- Plan synthesis upfront\n- Limit to 2-4 subagents\n\n**Three spawning architecture scales:**\n- **Virtual File Isolation** (2-4 subagents): Same-process spawning with explicit file passing\n- **Git Worktree Isolation** (10-100 subagents): Filesystem-level isolation using git worktrees\n- **Cloud Worker Spawning** (100+ agents): Container/VM isolation for enterprise-scale distributed processing",
+    "ko": "메인 에이전트가 **집중된 서브 에이전트를 생성**하여 각각 고유한 새로운 컨텍스트로 분할 가능한 하위 작업을 병렬 처리합니다. 완료 후 결과를 집계합니다.\n\n**핵심 요구사항**: 각 서브 에이전트 호출에는 추적 가능성을 위한 명확하고 구체적인 작업 제목이 있어야 합니다.\n\n**구현 방식:**\n\n### 1. 선언적 YAML 구성\n시스템 프롬프트, 허용 도구, 컨텍스트 윈도우를 포함한 서브 에이전트 타입을 설정 파일에 정의합니다.\n\n### 2. 동적 생성\n명확한 작업 제목과 함께 필요 시 병렬 작업 실행을 위해 서브 에이전트를 생성합니다.\n\n**병렬 위임 모범 사례:**\n- 독립적 작업은 동시 실행\n- 추적 가능성을 위한 명확한 작업 제목 사용\n- 사전 종합 계획 수립\n- 서브 에이전트 2-4개 제한\n\n**세 가지 생성 아키텍처 규모:**\n- **가상 파일 격리** (2-4개 서브 에이전트): 명시적 파일 전달을 통한 동일 프로세스 생성\n- **Git Worktree 격리** (10-100개 서브 에이전트): git worktree를 사용한 파일시스템 수준 격리\n- **클라우드 워커 생성** (100개 이상 에이전트): 엔터프라이즈급 분산 처리를 위한 컨테이너/VM 격리"
   },
   "ascii_diagram": "┌─────────────────┐\n│   Main Agent    │\n└────────┬────────┘\n    ┌────┼────┐\n    ▼    ▼    ▼\n┌─────┐┌─────┐┌─────┐\n│Sub1 ││Sub2 ││Sub3 │\n│Code ││Test ││Docs │\n└──┬──┘└──┬──┘└──┬──┘\n   └──────┼──────┘\n          ▼\n   ┌────────────┐\n   │  Combine   │\n   └────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Main Agent] --> B[Sub-Agent: Code]\n    A --> C[Sub-Agent: Test]\n    A --> D[Sub-Agent: Docs]\n    B & C & D --> E[Aggregate Results]",
   "code_example": "main_agent = Agent(task='Refactor auth module')\n\n# Spawn specialized sub-agents\ncode_agent = main_agent.spawn('code', focus='implementation')\ntest_agent = main_agent.spawn('test', focus='test coverage')\ndocs_agent = main_agent.spawn('docs', focus='documentation')\n\n# Each works in parallel with focused context\nresults = await asyncio.gather(\n    code_agent.run(),\n    test_agent.run(),\n    docs_agent.run()\n)",
   "when_to_use": {
-    "en": ["Large codebase operations", "Parallel processing needs", "Specialized task separation", "Independent exploration tasks that can run simultaneously", "Complex research requiring multiple focused investigations"],
-    "ko": ["대규모 코드베이스 작업", "병렬 처리 필요 시", "전문화된 작업 분리", "동시에 실행 가능한 독립적 탐색 작업", "여러 집중 조사가 필요한 복잡한 리서치"]
+    "en": [
+      "Context window management for large file processing",
+      "I/O-bound workflows with concurrent network API calls",
+      "Code-driven workflows needing LLM delegation for specific determinations",
+      "Security isolation with separate tools/contexts in mutually isolated subagents",
+      "Massive parallelization needs (10+ concurrent agents via swarm migrations)"
+    ],
+    "ko": [
+      "대용량 파일 처리를 위한 컨텍스트 윈도우 관리",
+      "동시 네트워크 API 호출이 있는 I/O 바운드 워크플로우",
+      "특정 판단을 위해 LLM 위임이 필요한 코드 기반 워크플로우",
+      "상호 격리된 서브 에이전트에서 별도 도구/컨텍스트를 통한 보안 격리",
+      "대규모 병렬화 필요 (스웜 마이그레이션을 통한 10개 이상 동시 에이전트)"
+    ]
   },
   "pros": {
-    "en": ["Context isolation", "Parallel processing", "Specialization"],
-    "ko": ["컨텍스트 분리", "병렬 처리", "전문화"]
+    "en": [
+      "Context isolation: Each subagent has clean context window",
+      "Parallelization: Reduce workflow latency through concurrent execution",
+      "Specialization: Different subagent types for different tasks",
+      "Virtual files: Precise control over what each subagent can see",
+      "Tool scoping: Limit subagent capabilities for security/simplicity",
+      "Declarative config: Reusable subagent definitions via YAML"
+    ],
+    "ko": [
+      "컨텍스트 격리: 각 서브 에이전트가 깨끗한 컨텍스트 윈도우 보유",
+      "병렬화: 동시 실행으로 워크플로우 지연 감소",
+      "전문화: 작업별 다른 서브 에이전트 타입",
+      "가상 파일: 각 서브 에이전트가 볼 수 있는 것에 대한 정밀 제어",
+      "도구 범위 지정: 보안/단순성을 위한 서브 에이전트 기능 제한",
+      "선언적 구성: YAML을 통한 재사용 가능한 서브 에이전트 정의"
+    ]
   },
   "cons": {
-    "en": ["Coordination overhead", "Increased costs", "Complex result integration"],
-    "ko": ["조정 오버헤드", "비용 증가", "결과 통합 복잡"]
+    "en": [
+      "Overhead: Spawning and coordinating subagents adds complexity",
+      "Cost: Running multiple agents simultaneously increases token usage",
+      "Coordination: Main agent must track and aggregate subagent results",
+      "Not always necessary: Frequently thought needed but found more natural alternative",
+      "Latency visibility: User-facing latency is invisible feature until problematic"
+    ],
+    "ko": [
+      "오버헤드: 서브 에이전트 생성 및 조정이 복잡성 추가",
+      "비용: 여러 에이전트 동시 실행으로 토큰 사용량 증가",
+      "조정: 메인 에이전트가 서브 에이전트 결과를 추적하고 집계해야 함",
+      "항상 필요하지 않음: 자주 필요하다고 생각했지만 더 자연스러운 대안 발견",
+      "지연 가시성: 사용자 대면 지연은 문제가 될 때까지 보이지 않는 기능"
+    ]
   },
-  "tags": ["orchestration", "context", "scalability", "subagents", "parallelization", "subject-hygiene", "parallel-delegation"]
+  "tags": ["orchestration", "context", "scalability", "subagents", "yaml-configuration", "virtual-files", "subject-hygiene", "parallel-delegation"]
 }

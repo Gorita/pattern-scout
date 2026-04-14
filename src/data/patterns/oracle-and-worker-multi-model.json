@@ -6,27 +6,53 @@
   "status": "emerging",
   "original_url": "https://youtu.be/hAEmt-FMyHA",
   "problem": {
-    "en": "Using expensive, powerful models for all tasks is cost-prohibitive and inefficient.",
-    "ko": "모든 작업에 비싸고 강력한 모델을 사용하는 것은 비용이 많이 들고 비효율적입니다."
+    "en": "Relying on a single AI model creates a trade-off between capability and cost. High-performance models are expensive for routine tasks, while cost-effective models may lack the reasoning power for complex problems.",
+    "ko": "단일 AI 모델에 의존하면 성능과 비용 사이에 트레이드오프가 발생합니다. 고성능 모델은 일상적 작업에 비용이 많이 들고, 비용 효율적인 모델은 복잡한 문제에 대한 추론 능력이 부족할 수 있습니다."
   },
   "solution": {
-    "en": "Use a powerful 'oracle' model for high-level strategy and planning, with cheaper 'worker' models for routine execution.",
-    "ko": "고수준 전략과 계획에는 강력한 '오라클' 모델을, 일상적 실행에는 저렴한 '워커' 모델을 사용합니다."
+    "en": "Implement a two-tier system with specialized roles:\n\n- **The Worker (Claude Sonnet 4):** Fast, capable, and cost-effective agent handling bulk tool use and code generation\n- **The Oracle (OpenAI o3 / Gemini 2.5 Pro):** Powerful, expensive model reserved for high-level reasoning, architectural planning, and debugging complex issues\n\nThe Worker can explicitly request Oracle consultation when stuck or needing better strategy. The Oracle reviews the Worker's approach and suggests course corrections without polluting the main agent's context.",
+    "ko": "전문화된 역할을 가진 2단계 시스템을 구현합니다:\n\n- **워커 (Claude Sonnet 4):** 대량 도구 사용과 코드 생성을 처리하는 빠르고 유능하며 비용 효율적인 에이전트\n- **오라클 (OpenAI o3 / Gemini 2.5 Pro):** 고수준 추론, 아키텍처 계획, 복잡한 이슈 디버깅을 위해 예약된 강력하고 비용이 높은 모델\n\n워커는 막히거나 더 나은 전략이 필요할 때 오라클 상담을 명시적으로 요청할 수 있습니다. 오라클은 메인 에이전트의 컨텍스트를 오염시키지 않고 워커의 접근 방식을 검토하고 방향 수정을 제안합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Oracle    │\n│ (Opus/o3)   │\n│  Strategy   │\n└──────┬──────┘\n       │ plan\n   ┌───┼───┐\n   ▼   ▼   ▼\n┌────┐┌────┐┌────┐\n│W1  ││W2  ││W3  │\n│Hai ││Hai ││Hai │\n│ku  ││ku  ││ku  │\n└─┬──┘└─┬──┘└─┬──┘\n  └─────┼─────┘\n        ▼\n   ┌─────────┐\n   │ Results │\n   └─────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Oracle: High-Level Strategy] --> B[Worker 1: Execute]\n    A --> C[Worker 2: Execute]\n    A --> D[Worker N: Execute]\n    B & C & D --> E[Aggregate Results]",
   "code_example": "# Oracle creates the strategy (expensive but smart)\nstrategy = opus.plan(complex_task)\n\n# Workers execute (cheap and fast)\nresults = []\nfor subtask in strategy.subtasks:\n    result = haiku.execute(subtask)\n    results.append(result)\n\n# Oracle reviews if needed\nif needs_review:\n    opus.review(results)",
   "when_to_use": {
-    "en": ["Cost optimization", "Large-scale processing", "Strategic planning tasks"],
-    "ko": ["비용 최적화", "대규모 처리", "전략적 계획 작업"]
+    "en": [
+      "Development environments and complex coding tasks",
+      "Architectural decisions requiring high-level reasoning",
+      "Debugging sessions where initial approaches fail",
+      "Cost optimization for large-scale processing"
+    ],
+    "ko": [
+      "개발 환경 및 복잡한 코딩 작업",
+      "고수준 추론이 필요한 아키텍처 결정",
+      "초기 접근이 실패한 디버깅 세션",
+      "대규모 처리를 위한 비용 최적화"
+    ]
   },
   "pros": {
-    "en": ["Cost reduction", "Strategy quality", "Scalability"],
-    "ko": ["비용 절감", "전략 품질", "확장성"]
+    "en": [
+      "Cost-efficient use of frontier models",
+      "Sophisticated problem-solving",
+      "Specialized AI team approach"
+    ],
+    "ko": [
+      "프론티어 모델의 비용 효율적 활용",
+      "정교한 문제 해결",
+      "전문화된 AI 팀 접근법"
+    ]
   },
   "cons": {
-    "en": ["Architecture complexity", "Coordination overhead"],
-    "ko": ["아키텍처 복잡", "조정 오버헤드"]
+    "en": [
+      "Additional orchestration complexity",
+      "Potential latency from model switching",
+      "Requires careful Oracle invocation logic"
+    ],
+    "ko": [
+      "추가적인 오케스트레이션 복잡성",
+      "모델 전환으로 인한 잠재적 지연",
+      "신중한 오라클 호출 로직 필요"
+    ]
   },
-  "tags": ["multi-model", "cost-optimization", "strategic-reasoning", "orchestration"]
+  "tags": ["multi-model", "cost-optimization", "strategic-reasoning", "architecture"]
 }

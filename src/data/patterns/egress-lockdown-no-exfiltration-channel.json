@@ -6,23 +6,33 @@
   "status": "established",
   "original_url": "https://simonwillison.net/2025/Jun/16/lethal-trifecta/",
   "problem": {
-    "en": "Even with private-data access and untrusted inputs, attacks fail if the agent has no way to transmit stolen data. Many real-world fixes simply removed outbound channels.",
-    "ko": "개인 데이터 접근과 신뢰할 수 없는 입력이 있더라도, 에이전트가 훔친 데이터를 전송할 방법이 없으면 공격이 실패합니다. 많은 실제 수정이 단순히 아웃바운드 채널을 제거했습니다."
+    "en": "Even with private-data access and untrusted inputs, attacks fail if the agent has **no way to transmit stolen data**. This pattern implements the Bell-LaPadula model's \"no write down\" property: high-privilege subjects cannot write to low-trust destinations. Many real-world fixes simply removed or filtered outbound channels.",
+    "ko": "개인 데이터 접근과 신뢰할 수 없는 입력이 있더라도, 에이전트가 **훔친 데이터를 전송할 방법이 없으면** 공격이 실패합니다. 이 패턴은 Bell-LaPadula 모델의 '하향 기록 금지' 속성을 구현합니다: 높은 권한의 주체가 낮은 신뢰 대상에 기록할 수 없습니다. 많은 실제 수정이 단순히 아웃바운드 채널을 제거하거나 필터링했습니다."
   },
   "solution": {
-    "en": "Implement egress firewall: allow only specific domains/methods, strip/hash content in outbound calls, forbid dynamic link generation, run external comms in separate worker without private data access.",
-    "ko": "송신 방화벽 구현: 특정 도메인/메서드만 허용, 아웃바운드 호출에서 콘텐츠 제거/해시, 동적 링크 생성 금지, 개인 데이터 접근 없이 별도 워커에서 외부 통신 실행."
+    "en": "Implement an **egress firewall** for agent tools:\n\n- Allow only specific domains, methods, or payload sizes.\n- Strip or hash content in any permitted outbound call.\n- Forbid dynamic link generation (e.g., `attacker.example/exfil?q=REDACTED`).\n- Where external communication is essential, run it in a separate \"dumb\" worker that cannot see private data.\n\n```bash\n# Docker file example\nRUN iptables -P OUTPUT DROP       # default-deny\nRUN iptables -A OUTPUT -d api.mycompany.internal -j ACCEPT\n\n# For L7-aware filtering: eBPF/XDP (Linux 4.19+) or Cilium\n```",
+    "ko": "에이전트 도구를 위한 **송신 방화벽**을 구현합니다:\n\n- 특정 도메인, 메서드 또는 페이로드 크기만 허용합니다.\n- 허용된 아웃바운드 호출에서 콘텐츠를 제거하거나 해시합니다.\n- 동적 링크 생성을 금지합니다(예: `attacker.example/exfil?q=REDACTED`).\n- 외부 통신이 필수적인 경우, 개인 데이터를 볼 수 없는 별도의 '단순' 워커에서 실행합니다.\n\n```bash\n# Docker 파일 예제\nRUN iptables -P OUTPUT DROP       # 기본 거부\nRUN iptables -A OUTPUT -d api.mycompany.internal -j ACCEPT\n\n# L7 인식 필터링: eBPF/XDP (Linux 4.19+) 또는 Cilium\n```"
   },
   "ascii_diagram": "┌─────────────────────┐\n│    Agent Process    │\n│  (private data)     │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│   Egress Firewall   │\n├─────────────────────┤\n│ ✗ attacker.com      │\n│ ✗ dynamic URLs      │\n│ ✓ api.internal      │\n│ ✓ specific domains  │\n└──────────┬──────────┘\n           │\n    [Allowed Only]\n           │\n┌──────────▼──────────┐\n│  External Network   │\n└─────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent with Private Data] --> B{Outbound Request}\n    B --> C[Egress Firewall]\n    C --> D{Allowed Domain?}\n    D -->|No| E[DROP + Log]\n    D -->|Yes| F{Content Check}\n    F -->|Suspicious| G[Strip/Hash Content]\n    F -->|Clean| H[Allow Request]\n    G --> H\n    H --> I[External Network]",
   "code_example": "# Docker egress lockdown example\nRUN iptables -P OUTPUT DROP       # default-deny\nRUN iptables -A OUTPUT -d api.mycompany.internal -j ACCEPT\n\n# Audit proxy for allowed domains\nallowed_domains:\n  - api.internal.com\n  - github.com\n\n# Log any DROP events for forensics\niptables -A OUTPUT -j LOG --log-prefix 'EGRESS_DROP: '",
   "when_to_use": {
-    "en": ["Agents processing untrusted data", "Enterprise security requirements", "High-value data environments"],
-    "ko": ["신뢰할 수 없는 데이터를 처리하는 에이전트", "엔터프라이즈 보안 요구사항", "고가치 데이터 환경"]
+    "en": [
+      "Place the agent inside a sandboxed VM or container with outbound rules",
+      "Provide needed APIs via an internal proxy; audit that proxy's request schema",
+      "Apply seccomp profiles or AppArmor policies to block network syscalls directly",
+      "Log any DROP events for forensic follow-up"
+    ],
+    "ko": [
+      "아웃바운드 규칙이 있는 샌드박스 VM 또는 컨테이너에 에이전트 배치",
+      "내부 프록시를 통해 필요한 API 제공; 해당 프록시의 요청 스키마 감사",
+      "seccomp 프로필 또는 AppArmor 정책을 적용하여 네트워크 시스템 호출 직접 차단",
+      "포렌식 후속 조치를 위해 모든 DROP 이벤트 로깅"
+    ]
   },
   "pros": {
-    "en": ["Drastically reduces high-impact leaks", "Easy to reason about", "Defense in depth"],
-    "ko": ["고영향 누출 대폭 감소", "이해하기 쉬움", "심층 방어"]
+    "en": ["Drastically reduces high-impact leaks", "Easy to reason about"],
+    "ko": ["고영향 누출 대폭 감소", "추론하기 쉬움"]
   },
   "cons": {
     "en": ["Breaks legitimate integrations", "Requires proxy stubs for essential calls"],
