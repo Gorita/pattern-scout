@@ -4,26 +4,60 @@
   "title_ko": "자기 정체성 축적",
   "category": "Context & Memory",
   "status": "emerging",
-  "original_url": "https://github.com/nibzard/awesome-agentic-patterns",
+  "original_url": "https://docs.anthropic.com/en/docs/claude-code/hooks",
   "problem": {
-    "en": "AI agents lack continuous memory across sessions. Each conversation starts from zero, causing lost familiarity, repetitive explanations, shallow relationships, and generic responses.",
-    "ko": "AI 에이전트는 세션 간 연속적인 메모리가 없습니다. 각 대화가 제로에서 시작하여 친숙함 상실, 반복적인 설명, 얕은 관계, 일반적인 응답을 초래합니다."
+    "en": "AI agents lack continuous memory across sessions. Each conversation starts from zero, causing:\n\n- **Lost familiarity**: The agent doesn't remember user preferences, goals, or working patterns\n- **Repetitive explanations**: Users must re-explain context and preferences each session\n- **Shallow relationships**: Agent cannot build deeper understanding of user's needs over time\n- **Generic responses**: Without accumulated context, agents default to generic behaviors\n\nWhile episodic memory systems store past *experiences*, they don't address the need for an evolving *self-identity*—who the agent is in relation to the user.",
+    "ko": "AI 에이전트는 세션 간 연속적인 메모리가 없습니다. 각 대화가 제로에서 시작하여 다음과 같은 문제를 초래합니다:\n\n- **친숙함 상실**: 에이전트가 사용자 선호도, 목표, 작업 패턴을 기억하지 못합니다\n- **반복적인 설명**: 사용자가 매 세션마다 컨텍스트와 선호도를 다시 설명해야 합니다\n- **얕은 관계**: 에이전트가 시간이 지남에 따라 사용자 요구에 대한 깊은 이해를 구축할 수 없습니다\n- **일반적인 응답**: 축적된 컨텍스트 없이 에이전트가 일반적인 행동으로 기본 설정됩니다\n\n에피소딕 메모리 시스템은 과거 *경험*을 저장하지만, 진화하는 *자기 정체성* — 사용자와의 관계에서 에이전트가 누구인지 — 에 대한 필요를 해결하지 못합니다."
   },
   "solution": {
-    "en": "Dual-hook architecture for self-identity accumulation: SessionStart hook injects accumulated profile, SessionEnd hook extracts new insights. An evolving identity document (WHO_AM_I.md, SOUL.md) persists across sessions.",
-    "ko": "자기 정체성 축적을 위한 이중 훅 아키텍처: SessionStart 훅이 축적된 프로필을 주입하고, SessionEnd 훅이 새로운 인사이트를 추출합니다. 진화하는 정체성 문서(WHO_AM_I.md, SOUL.md)가 세션 간에 지속됩니다."
+    "en": "Implement **dual-hook architecture** for self-identity accumulation:\n\n1. **SessionStart Hook**: Inject accumulated identity/profile at session start\n2. **SessionEnd Hook**: Extract new insights and refine the profile after each session\n3. **Identity Document**: A persistent file (e.g., WHO_AM_I.md, SOUL.md) that evolves over time\n\n**Core mechanism:**\n\n```python\n# SessionStart: Inject accumulated identity\ndef session_start_hook():\n    profile = read_file(\"WHO_AM_I.md\")\n    inject_context(profile)\n\n# SessionEnd: Refine identity with new insights\ndef session_end_hook(conversation):\n    new_insights = extract_insights(conversation)\n    current_profile = read_file(\"WHO_AM_I.md\")\n    updated_profile = merge_insights(current_profile, new_insights)\n    write_file(\"WHO_AM_I.md\", updated_profile)\n```\n\n**Profile structure typically includes:**\n\n- **Project Goals**: Evolving list of priorities and focus areas\n- **Preferences**: Coding opinions, tool choices, architectural preferences\n- **Communication Style**: Tone preferences, formatting conventions\n- **Workflow Patterns**: Research practices, decision-making patterns\n- **Boundaries**: What the agent should/shouldn't do",
+    "ko": "자기 정체성 축적을 위한 **이중 훅 아키텍처**를 구현합니다:\n\n1. **SessionStart 훅**: 세션 시작 시 축적된 정체성/프로필을 주입합니다\n2. **SessionEnd 훅**: 각 세션 후 새로운 인사이트를 추출하고 프로필을 정제합니다\n3. **정체성 문서**: 시간이 지남에 따라 진화하는 영구 파일(예: WHO_AM_I.md, SOUL.md)입니다\n\n**핵심 메커니즘:**\n\n```python\n# SessionStart: 축적된 정체성 주입\ndef session_start_hook():\n    profile = read_file(\"WHO_AM_I.md\")\n    inject_context(profile)\n\n# SessionEnd: 새로운 인사이트로 정체성 정제\ndef session_end_hook(conversation):\n    new_insights = extract_insights(conversation)\n    current_profile = read_file(\"WHO_AM_I.md\")\n    updated_profile = merge_insights(current_profile, new_insights)\n    write_file(\"WHO_AM_I.md\", updated_profile)\n```\n\n**프로필 구조에 일반적으로 포함되는 항목:**\n\n- **프로젝트 목표**: 우선순위와 집중 영역의 진화하는 목록\n- **선호도**: 코딩 의견, 도구 선택, 아키텍처 선호도\n- **커뮤니케이션 스타일**: 톤 선호도, 포맷팅 관례\n- **워크플로우 패턴**: 연구 관행, 의사결정 패턴\n- **경계**: 에이전트가 해야 할 것과 하지 말아야 할 것"
   },
   "when_to_use": {
-    "en": ["Personal assistant agents", "Long-term user relationships", "Preference learning scenarios"],
-    "ko": ["개인 어시스턴트 에이전트", "장기 사용자 관계", "선호도 학습 시나리오"]
+    "en": [
+      "Create identity document with initial structure",
+      "Configure SessionStart hook to read and inject it",
+      "Configure SessionEnd hook to refine it with new insights",
+      "Include instructions for when/how to update"
+    ],
+    "ko": [
+      "초기 구조로 정체성 문서 생성",
+      "SessionStart 훅을 구성하여 읽고 주입",
+      "SessionEnd 훅을 구성하여 새로운 인사이트로 정제",
+      "업데이트 시기/방법에 대한 지침 포함"
+    ]
   },
   "pros": {
-    "en": ["Continuous familiarity across sessions", "Deepening relationship over time", "Reduced repetitive friction", "Personalized behavior", "Transparent and user-editable"],
-    "ko": ["세션 간 지속적인 친숙함", "시간이 지남에 따라 깊어지는 관계", "반복적 마찰 감소", "개인화된 행동", "투명하고 사용자 편집 가능"]
+    "en": [
+      "Continuous familiarity: Agent \"remembers\" user across sessions",
+      "Deepening relationship: Understanding accumulates over time",
+      "Reduced friction: Less repetitive explanation of preferences",
+      "Personalized behavior: Agent adapts to user's specific style",
+      "Transparent: Identity is visible and editable by user"
+    ],
+    "ko": [
+      "지속적인 친숙함: 에이전트가 세션 간에 사용자를 '기억'함",
+      "깊어지는 관계: 이해가 시간이 지남에 따라 축적됨",
+      "마찰 감소: 선호도에 대한 반복적 설명 감소",
+      "개인화된 행동: 에이전트가 사용자의 특정 스타일에 적응",
+      "투명성: 정체성이 사용자에게 보이고 편집 가능"
+    ]
   },
   "cons": {
-    "en": ["Profile staleness risk", "Overfitting to one user", "Context token overhead", "Extraction noise from sessions", "Requires hook infrastructure"],
-    "ko": ["프로필 노후화 위험", "한 사용자에 과적합", "컨텍스트 토큰 오버헤드", "세션에서 추출 노이즈", "훅 인프라 필요"]
+    "en": [
+      "Staleness risk: Profile may become outdated if not updated",
+      "Overfitting: Agent may become too specialized to one user",
+      "Context overhead: Profile consumes tokens each session",
+      "Extraction noise: SessionEnd may extract irrelevant \"insights\"",
+      "Requires hooks: Needs lifecycle hook infrastructure"
+    ],
+    "ko": [
+      "노후화 위험: 업데이트하지 않으면 프로필이 구식이 될 수 있음",
+      "과적합: 에이전트가 한 사용자에게 너무 특화될 수 있음",
+      "컨텍스트 오버헤드: 프로필이 매 세션 토큰을 소비",
+      "추출 노이즈: SessionEnd가 관련 없는 '인사이트'를 추출할 수 있음",
+      "훅 필요: 라이프사이클 훅 인프라가 필요함"
+    ]
   },
-  "tags": ["self-identity", "persona", "session-hooks", "familiarity", "cross-session", "profile", "agent-personality"]
+  "tags": ["self-identity", "persona", "session-hooks", "familiarity", "cross-session", "profile", "soul-document", "agent-personality"]
 }

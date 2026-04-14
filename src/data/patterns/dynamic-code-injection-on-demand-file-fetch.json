@@ -2,31 +2,61 @@
   "id": "dynamic-code-injection-on-demand-file-fetch",
   "title": "Dynamic Code Injection (On-Demand File Fetch)",
   "title_ko": "동적 코드 주입 (온디맨드 파일 가져오기)",
-  "category": "Context & Memory",
+  "category": "Tool Use & Environment",
   "status": "established",
-  "original_url": "https://www.nibzard.com/claude-code",
+  "original_url": "https://docs.anthropic.com/en/docs/claude-code/common-workflows",
   "problem": {
-    "en": "Manually copying/pasting files into prompts is tedious, wastes tokens, and interrupts workflow momentum.",
-    "ko": "프롬프트에 파일을 수동으로 복사/붙여넣기하는 것은 지루하고 토큰을 낭비하며 워크플로우 모멘텀을 방해합니다."
+    "en": "During an interactive coding session, a user or agent may need to inspect or modify files **not originally loaded** into the main context. Manually copying/pasting entire files into the prompt is:\n\n- Tedious and error-prone.\n- Wastes tokens on boilerplate (e.g., large config files).\n- Interrupts workflow momentum when switching between the editor and chat.",
+    "ko": "대화형 코딩 세션 중에 사용자나 에이전트가 메인 컨텍스트에 **원래 로드되지 않은** 파일을 검사하거나 수정해야 할 수 있습니다. 프롬프트에 전체 파일을 수동으로 복사/붙여넣기하는 것은:\n\n- 지루하고 오류가 발생하기 쉽습니다.\n- 보일러플레이트(예: 대용량 설정 파일)에 토큰을 낭비합니다.\n- 에디터와 채팅 간 전환 시 워크플로우 모멘텀을 방해합니다."
   },
   "solution": {
-    "en": "Allow on-demand file injection via special syntax (@filename, /load) that automatically fetches and summarizes files.",
-    "ko": "파일을 자동으로 가져오고 요약하는 특수 구문(@filename, /load)을 통해 온디맨드 파일 주입을 허용합니다."
+    "en": "Allow **on-demand file injection** via special syntax (e.g., `@filename` or `/load file`) that automatically:\n\n**1. Fetches the requested file(s)** from disk or version control.\n**2. Summarizes** or **extracts** only the relevant portions (e.g., function bodies, AST-parsed definitions, or specific line ranges) if the file is large.\n**3. Injects** that snippet into the agent's current context, seamlessly extending its \"memory\" for the ongoing task.\n\nConcretely:\n\n- A user types `/load src/components/Button.js:lines 10–50` or `@src/setup/db.js`.\n- The agent's preprocessor intercepts this command, reads the specified file (or line range), and replaces the command with the file content (or trimmed snippet).\n- The rest of the prompt remains unchanged, so the agent can continue reasoning without restarting the conversation.",
+    "ko": "특수 구문(예: `@filename` 또는 `/load file`)을 통해 **온디맨드 파일 주입**을 허용합니다. 이는 자동으로:\n\n**1. 요청된 파일을 가져옵니다** — 디스크 또는 버전 관리에서.\n**2. 요약하거나 추출합니다** — 파일이 큰 경우 관련 부분만(예: 함수 본문, AST 파싱된 정의, 특정 라인 범위).\n**3. 주입합니다** — 해당 스니펫을 에이전트의 현재 컨텍스트에 원활하게 확장합니다.\n\n구체적으로:\n\n- 사용자가 `/load src/components/Button.js:lines 10–50` 또는 `@src/setup/db.js`를 입력합니다.\n- 에이전트의 전처리기가 이 명령을 가로채고, 지정된 파일(또는 라인 범위)을 읽어 명령을 파일 내용(또는 트리밍된 스니펫)으로 대체합니다.\n- 나머지 프롬프트는 변경되지 않으므로 에이전트가 대화를 재시작하지 않고 추론을 계속할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────┐\n│User types:  │\n│@src/user.py │\n└──────┬──────┘\n       │ intercept\n┌──────▼──────┐\n│  Read File  │\n│  (or range) │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Inject into │\n│   Context   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Agent uses  │\n│  the code   │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[User: @src/user.py] --> B[Intercept Command]\n    B --> C[Read File from Disk]\n    C --> D{File Too Large?}\n    D -->|No| E[Inject Full Content]\n    D -->|Yes| F[Run Summarizer]\n    F --> E\n    E --> G[Agent Continues with Context]",
   "code_example": "# Command syntax examples:\n# @path/to/file.ext → loads full file if < 2000 tokens\n# /load path:10-50 → loads lines 10-50\n# /summarize test_spec.py → extracts docstrings + test names\n\ndef handle_at_mention(path):\n    content = read_file(path)\n    if token_count(content) > 2000:\n        content = summarize(content)\n    return f'/// BEGIN {path}\\n{content}\\n/// END {path}'",
   "when_to_use": {
-    "en": ["Interactive coding sessions", "Code exploration", "Multi-file context needs"],
-    "ko": ["대화형 코딩 세션", "코드 탐색", "멀티 파일 컨텍스트 필요"]
+    "en": [
+      "Build a listener in your chat frontend or CLI that recognizes @ and /load tokens",
+      "Map recognized tokens to file paths; verify permissions and resolve symlinks",
+      "Read file text, run a line-range parser or AST-based snippet extractor (e.g., tree-sitter) if needed",
+      "Replace the token in the outgoing prompt with /// BEGIN <filename> ...content... /// END <filename>",
+      "Validate and reject path traversal attempts (e.g., @../../../etc/passwd)"
+    ],
+    "ko": [
+      "채팅 프론트엔드 또는 CLI에서 @ 및 /load 토큰을 인식하는 리스너 구축",
+      "인식된 토큰을 파일 경로로 매핑; 권한 확인 및 심볼릭 링크 해석",
+      "파일 텍스트 읽기, 필요시 라인 범위 파서 또는 AST 기반 스니펫 추출기(예: tree-sitter) 실행",
+      "발신 프롬프트에서 토큰을 /// BEGIN <filename> ...내용... /// END <filename>으로 대체",
+      "경로 탐색 시도 검증 및 거부(예: @../../../etc/passwd)"
+    ]
   },
   "pros": {
-    "en": ["Interactive exploration", "Reduced human overhead", "Improved agent accuracy"],
-    "ko": ["대화형 탐색", "인간 오버헤드 감소", "향상된 에이전트 정확도"]
+    "en": [
+      "Enables interactive exploration of code without leaving the chat environment",
+      "Reduces human overhead: no manual copy/paste of code blocks",
+      "Improves agent accuracy by ensuring the most relevant code is directly visible",
+      "Token-efficient: 10-100x reduction versus full context loading; documented 3x+ development efficiency gains"
+    ],
+    "ko": [
+      "채팅 환경을 벗어나지 않고 코드의 대화형 탐색 가능",
+      "인간 오버헤드 감소: 코드 블록의 수동 복사/붙여넣기 불필요",
+      "가장 관련성 높은 코드가 직접 보이도록 하여 에이전트 정확도 향상",
+      "토큰 효율적: 전체 컨텍스트 로딩 대비 10-100배 감소; 3배 이상의 개발 효율성 향상 문서화"
+    ]
   },
   "cons": {
-    "en": ["Requires file system access", "Security risk if unsandboxed", "Summarization may omit context"],
-    "ko": ["파일 시스템 접근 필요", "샌드박스 없으면 보안 위험", "요약이 맥락 생략 가능"]
+    "en": [
+      "Requires the chat interface (or a proxy server) to have local file system access",
+      "Security critical: path validation, sensitive file blocking (.env, *.key), and sandboxing are non-negotiable",
+      "Summarization heuristics may omit subtle context (e.g., private helper functions)"
+    ],
+    "ko": [
+      "채팅 인터페이스(또는 프록시 서버)가 로컬 파일 시스템 접근이 필요함",
+      "보안 필수: 경로 검증, 민감 파일 차단(.env, *.key) 및 샌드박싱은 필수 사항",
+      "요약 휴리스틱이 미묘한 컨텍스트를 생략할 수 있음(예: 비공개 헬퍼 함수)"
+    ]
   },
   "tags": ["file-injection", "at-mention", "slash-commands", "IDE-integration"]
 }

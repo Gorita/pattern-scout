@@ -6,27 +6,47 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=Xkwok_XXQgw",
   "problem": {
-    "en": "Building a unified model excelling at both natural language tasks and code generation requires massive centralized training. This is compute-intensive and susceptible to catastrophic forgetting when mixing code and NL tasks.",
-    "ko": "자연어 작업과 코드 생성 모두에 뛰어난 통합 모델을 구축하려면 대규모 중앙 집중식 훈련이 필요합니다. 이는 계산 집약적이며 코드와 NL 작업을 혼합할 때 치명적 망각에 취약합니다."
+    "en": "Building a **unified model** that excels both at **natural language tasks** (e.g., summarization, documentation generation) and **code generation/reasoning** typically requires a massive centralized training run. This is:\n\n- **Compute-Intensive:** Training from scratch on both code and language corpora demands enormous resources.\n- **Susceptible to Interference:** When mixing code and NL tasks in one pipeline, the model may forget earlier skills.",
+    "ko": "**자연어 작업**(예: 요약, 문서 생성)과 **코드 생성/추론** 모두에 뛰어난 **통합 모델**을 구축하려면 일반적으로 대규모 중앙 집중식 훈련이 필요합니다. 이는 다음과 같은 문제가 있습니다:\n\n- **계산 집약적:** 코드와 언어 코퍼스 모두에서 처음부터 훈련하려면 막대한 리소스가 필요합니다.\n- **간섭에 취약:** 하나의 파이프라인에서 코드와 NL 작업을 혼합하면 모델이 이전 스킬을 잊을 수 있습니다."
   },
   "solution": {
-    "en": "Adopt decentralized training + model merging: train separate Language and Code specialists independently, then use weight averaging (or Fisher-weighted averaging) to merge them. Optionally follow with short fine-tuning on mixed data.",
-    "ko": "분산 훈련 + 모델 병합 채택: 언어와 코드 전문가를 독립적으로 훈련한 다음 가중치 평균(또는 Fisher 가중 평균)을 사용하여 병합합니다. 선택적으로 혼합 데이터에서 짧은 미세조정을 수행합니다."
+    "en": "Adopt a **decentralized training + model merging** approach:\n\n**1. Train a \"Language Specialist\"**\n- Fine-tune a base LLM on documentation generation, summarization, code comments, and general NL tasks.\n\n**2. Train a \"Code Specialist\"**\n- Independently fine-tune the same base LLM architecture on code-specific corpora.\n\n**3. Merge Techniques**\n- **Simple Weight Averaging:** Arithmetic mean of model weights (Model Soups, NeurIPS 2022).\n- **Task Arithmetic:** Treat fine-tuning as vector operations—add/subtract task vectors: `W_merged = W_base + Σ λ_i * τ_i` where `τ_task = W_finetuned - W_base` (ICLR 2024).\n- **TIES Merging:** Trim top-k% parameters, elect sign direction, merge only non-conflicting parameters to reduce interference (arXiv 2023).\n- **Fisher-weighted:** Weight parameters by Fisher Information Matrix to preserve important updates (Elastic Weight Consolidation, PNAS 2017).\n\n**4. Iterative Merge Rounds**\n- As new specialists become available, periodically merge them into the main agent.",
+    "ko": "**분산 훈련 + 모델 병합** 접근법을 채택합니다:\n\n**1. '언어 전문가' 훈련**\n- 문서 생성, 요약, 코드 주석 및 일반 NL 작업에 대해 기본 LLM을 미세조정합니다.\n\n**2. '코드 전문가' 훈련**\n- 동일한 기본 LLM 아키텍처를 코드 특정 코퍼스에 독립적으로 미세조정합니다.\n\n**3. 병합 기법**\n- **단순 가중치 평균:** 모델 가중치의 산술 평균 (Model Soups, NeurIPS 2022).\n- **작업 산술:** 미세조정을 벡터 연산으로 처리 — 작업 벡터를 더하거나 빼기: `W_merged = W_base + Σ λ_i * τ_i` (ICLR 2024).\n- **TIES 병합:** 상위 k% 매개변수를 트리밍하고, 부호 방향을 선출하며, 간섭을 줄이기 위해 비충돌 매개변수만 병합합니다 (arXiv 2023).\n- **Fisher 가중:** Fisher 정보 행렬로 매개변수에 가중치를 부여하여 중요한 업데이트를 보존합니다 (Elastic Weight Consolidation, PNAS 2017).\n\n**4. 반복적 병합 라운드**\n- 새로운 전문가가 사용 가능해지면 주기적으로 메인 에이전트에 병합합니다."
   },
   "ascii_diagram": "┌─────────────────┐  ┌─────────────────┐\n│ Language        │  │ Code            │\n│ Specialist      │  │ Specialist      │\n│ (NL tasks)      │  │ (Code gen)      │\n└────────┬────────┘  └────────┬────────┘\n         │                    │\n         └────────┬───────────┘\n                  │\n         ┌────────▼────────┐\n         │ Weight Merging  │\n         │ (avg or Fisher) │\n         └────────┬────────┘\n                  │\n         ┌────────▼────────┐\n         │ Merged Agent    │\n         │ (NL + Code)     │\n         └────────┬────────┘\n                  │\n         ┌────────▼────────┐\n         │ Short Fine-tune │\n         │ (optional)      │\n         └─────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Base LLM] --> B[Language Specialist Training]\n    A --> C[Code Specialist Training]\n    B --> D[lang-specialist-ckpt.pt]\n    C --> E[code-specialist-ckpt.pt]\n    D --> F[Weight Averaging Merge]\n    E --> F\n    F --> G[merged-agent-ckpt.pt]\n    G --> H[Optional: Short Mixed Fine-tune]\n    H --> I[Final Unified Agent]",
   "code_example": "# Model merging using Hugging Face tools\n# Step 1: Train specialists independently\n# python train.py --data nl_corpus --output lang-specialist-ckpt.pt\n# python train.py --data code_corpus --output code-specialist-ckpt.pt\n\n# Step 2: Merge models\npython merge_models.py \\\n  --model_a lang-specialist-ckpt.pt \\\n  --model_b code-specialist-ckpt.pt \\\n  --output merged-agent-ckpt.pt \\\n  --alpha 0.5  # Equal weight averaging\n\n# Step 3: Validate on benchmark suite\npython validate.py \\\n  --model merged-agent-ckpt.pt \\\n  --benchmarks summarization,qa,code_gen,bug_fix",
   "when_to_use": {
-    "en": ["Building multi-skill coding agents", "Combining independently trained specialists", "Resource-constrained training", "Iterative capability expansion"],
-    "ko": ["다중 스킬 코딩 에이전트 구축", "독립적으로 훈련된 전문가 결합", "리소스 제한 훈련", "반복적 능력 확장"]
+    "en": [
+      "Ensure all specialist models share identical architecture (e.g., same number of layers, parameters)",
+      "Use MergeKit (Arcee AI) for production-ready merging with Task Arithmetic, TIES, DARE, and SLERP support",
+      "Run a benchmark suite covering both NL tasks and code tasks to detect interference post-merge"
+    ],
+    "ko": [
+      "모든 전문가 모델이 동일한 아키텍처를 공유하는지 확인(예: 동일한 레이어 수, 매개변수)",
+      "Task Arithmetic, TIES, DARE, SLERP를 지원하는 MergeKit(Arcee AI)으로 프로덕션 병합 수행",
+      "병합 후 간섭을 감지하기 위해 NL 작업과 코드 작업 모두를 포함하는 벤치마크 스위트 실행"
+    ]
   },
   "pros": {
-    "en": ["Teams can develop skills independently", "Reduced centralized compute needs", "Iterative skill addition possible", "Works surprisingly well"],
-    "ko": ["팀이 독립적으로 스킬 개발 가능", "중앙 집중식 컴퓨트 요구 감소", "반복적 스킬 추가 가능", "놀라울 정도로 잘 작동"]
+    "en": [
+      "Parallelism in R&D: Teams can independently develop NL and code capabilities, then merge",
+      "Reduced Centralized Compute: No need for a single massive GPU cluster to train both skill sets simultaneously"
+    ],
+    "ko": [
+      "R&D 병렬화: 팀이 NL과 코드 능력을 독립적으로 개발한 후 병합 가능",
+      "중앙 집중식 컴퓨트 감소: 두 스킬 세트를 동시에 훈련하기 위한 단일 대규모 GPU 클러스터 불필요"
+    ]
   },
   "cons": {
-    "en": ["Naive averaging can dilute strengths", "All specialists must share architecture", "Same tokenizer/vocabulary required", "May need post-merge validation"],
-    "ko": ["단순 평균은 강점을 희석할 수 있음", "모든 전문가가 아키텍처 공유 필요", "동일한 토크나이저/어휘 필요", "병합 후 검증 필요할 수 있음"]
+    "en": [
+      "Potential Performance Dilution: Naive averaging can blur specialist strengths if distributions conflict",
+      "Alignment Required: All specialists must use the same base tokenizer and vocabulary to avoid mismatches"
+    ],
+    "ko": [
+      "성능 희석 가능성: 단순 평균은 분포가 충돌하면 전문가 강점을 흐리게 할 수 있음",
+      "정렬 필요: 모든 전문가가 불일치를 방지하기 위해 동일한 기본 토크나이저와 어휘를 사용해야 함"
+    ]
   },
-  "tags": ["model-merging", "transfer-learning", "coding-agent", "multilingual", "decentralized-training"]
+  "tags": ["model-merging", "transfer-learning", "coding-agent", "multilingual"]
 }

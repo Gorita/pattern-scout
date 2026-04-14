@@ -23,12 +23,12 @@
 ## 📂 8 Categories
 
 - 🎛️ **Orchestration & Control** (47) - Task decomposition, sub-agent spawning
-- 🧠 **Context & Memory** (19) - Sliding window, vector cache
+- 🧠 **Context & Memory** (18) - Sliding window, vector cache
 - 🔄 **Feedback Loops** (15) - Compiler, CI, self-healing retry
 - 📚 **Learning & Adaptation** (7) - Agent RFT, skill library
 - ✅ **Reliability & Eval** (19) - Guardrails, evaluation framework
 - 🔒 **Security & Safety** (10) - Isolated VM, PII tokenization
-- 🔧 **Tool Use & Environment** (22) - Shell, browser, DB
+- 🔧 **Tool Use & Environment** (23) - Shell, browser, DB
 - 👥 **UX & Collaboration** (16) - Prompt handoff, step-by-step commit
 
 ---
