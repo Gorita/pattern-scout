@@ -1,0 +1,59 @@
+{
+  "id": "deterministic-zero-llm-orchestration",
+  "title": "Deterministic Zero-LLM Orchestration",
+  "title_ko": "결정론적 제로 LLM 오케스트레이션",
+  "category": "Orchestration & Control",
+  "status": "validated-in-production",
+  "original_url": "https://github.com/chernistry/bernstein",
+  "problem": {
+    "en": "Multi-agent coding systems typically spend LLM tokens on coordination — deciding which agent works on what, routing tasks, merging results. This coordination overhead adds cost, latency, and non-determinism where none is needed.",
+    "ko": "멀티 에이전트 코딩 시스템은 일반적으로 조정에 LLM 토큰을 소비합니다 — 어떤 에이전트가 무엇을 작업할지 결정하고, 작업을 라우팅하고, 결과를 병합합니다. 이러한 조정 오버헤드는 불필요한 곳에 비용, 지연, 비결정성을 추가합니다."
+  },
+  "solution": {
+    "en": "Keep the orchestrator as deterministic Python code that spends zero LLM tokens on coordination. The LLM budget goes entirely to the agents doing actual work. The orchestrator handles task decomposition via rule-based planning, agent assignment and parallel spawning, result verification through test execution, and git operations (branching, merging, committing). Agents handle code generation, problem solving, and implementation decisions.",
+    "ko": "오케스트레이터를 조정에 LLM 토큰을 전혀 소비하지 않는 결정론적 Python 코드로 유지합니다. LLM 예산은 전적으로 실제 작업을 수행하는 에이전트에게 할당됩니다. 오케스트레이터는 규칙 기반 계획을 통한 작업 분해, 에이전트 할당 및 병렬 생성, 테스트 실행을 통한 결과 검증, Git 작업(브랜치, 병합, 커밋)을 처리합니다. 에이전트는 코드 생성, 문제 해결, 구현 결정을 담당합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Multi-agent coding systems where coordination does not require LLM judgment",
+      "CI pipelines running in headless mode",
+      "Self-evolution mode for proposing and sandboxing improvements",
+      "Projects with well-defined structure suitable for rule-based planning"
+    ],
+    "ko": [
+      "조정에 LLM 판단이 필요하지 않은 멀티 에이전트 코딩 시스템",
+      "헤드리스 모드에서 실행되는 CI 파이프라인",
+      "개선 사항을 제안하고 샌드박싱하는 자가 진화 모드",
+      "규칙 기반 계획에 적합한 잘 정의된 구조의 프로젝트"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Predictable coordination cost (zero LLM tokens)",
+      "Deterministic behavior — same goal produces same task breakdown",
+      "Faster iteration — no waiting for LLM to decide what to do next",
+      "Supports heterogeneous agents (Claude Code, Codex CLI, Gemini CLI, Qwen)"
+    ],
+    "ko": [
+      "예측 가능한 조정 비용 (LLM 토큰 제로)",
+      "결정론적 동작 — 동일한 목표가 동일한 작업 분해를 생성",
+      "빠른 반복 — LLM이 다음에 할 일을 결정하기를 기다릴 필요 없음",
+      "이종 에이전트 지원 (Claude Code, Codex CLI, Gemini CLI, Qwen)"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Rigid decomposition — can't handle ambiguous goals that need LLM judgment to split",
+      "Requires well-defined project structure for rule-based planning",
+      "Less adaptive than LLM-routed orchestration for novel task types"
+    ],
+    "ko": [
+      "경직된 분해 — 분할에 LLM 판단이 필요한 모호한 목표 처리 불가",
+      "규칙 기반 계획을 위해 잘 정의된 프로젝트 구조 필요",
+      "새로운 작업 유형에 대해 LLM 라우팅 오케스트레이션보다 적응력 부족"
+    ]
+  },
+  "ascii_diagram": "Goal → Decompose (deterministic) → Assign to parallel agents → Verify (tests) → Commit",
+  "code_example": "# Single goal → parallel agents → verified commits\nbernstein -g \"Add JWT auth with refresh tokens, tests, and API docs\"\n\n# Headless for CI pipelines\nbernstein --headless\n\n# Self-evolution mode: propose and sandbox improvements\nbernstein --evolve --budget 5.00",
+  "tags": ["orchestration", "multi-agent", "parallel-execution", "deterministic", "test-driven", "zero-llm-overhead"]
+}

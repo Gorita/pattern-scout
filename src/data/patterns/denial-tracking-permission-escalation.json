@@ -1,0 +1,56 @@
+{
+  "id": "denial-tracking-permission-escalation",
+  "title": "Denial Tracking & Permission Escalation",
+  "title_ko": "거부 추적 및 권한 에스컬레이션",
+  "category": "Security & Safety",
+  "status": "emerging",
+  "original_url": "https://github.com/muriloscigliano/ai-playbook",
+  "problem": {
+    "en": "When agents run in non-interactive contexts (background jobs, CI/CD pipelines, headless mode), every permission prompt is typically auto-denied. If the agent keeps attempting the same blocked tool, it wastes its iteration budget retrying an action that will never succeed. This leads to silent failures, stalled tasks, and burned compute with no progress. Even in interactive mode, a user who repeatedly denies a specific tool creates the same loop: the agent tries, gets denied, tries again with a slightly different argument, and gets denied again.",
+    "ko": "에이전트가 비대화형 컨텍스트(백그라운드 작업, CI/CD 파이프라인, 헤드리스 모드)에서 실행될 때, 모든 권한 프롬프트는 일반적으로 자동 거부됩니다. 에이전트가 동일한 차단된 도구를 계속 시도하면 성공하지 못할 동작을 재시도하며 반복 예산을 낭비합니다. 이로 인해 무음 실패, 정지된 작업, 진행 없는 컴퓨팅 소모가 발생합니다. 대화형 모드에서도 사용자가 특정 도구를 반복적으로 거부하면 동일한 루프가 생성됩니다: 에이전트가 시도하고, 거부되고, 약간 다른 인자로 다시 시도하고, 다시 거부됩니다."
+  },
+  "solution": {
+    "en": "Maintain a per-tool denial counter scoped to the current conversation. After a configurable threshold of denials (typically 3), escalate instead of retrying. In interactive mode, prompt the user for blanket permission (e.g., 'Bash has been denied 3 times. Allow all Bash for this session?'). In non-interactive mode, switch to a fallback strategy (use a different tool, skip the step, or abort with a clear error). When escalation triggers and the user grants blanket permission, add the tool to alwaysAllowRules for the remainder of the session and reset the counter.",
+    "ko": "현재 대화에 범위가 지정된 도구별 거부 카운터를 유지합니다. 설정 가능한 거부 임계값(일반적으로 3회) 이후 재시도 대신 에스컬레이션합니다. 대화형 모드에서는 사용자에게 일괄 권한을 요청합니다(예: 'Bash가 3번 거부되었습니다. 이 세션에서 모든 Bash를 허용하시겠습니까?'). 비대화형 모드에서는 폴백 전략으로 전환합니다(다른 도구 사용, 단계 건너뛰기, 명확한 오류와 함께 중단). 에스컬레이션이 트리거되고 사용자가 일괄 권한을 부여하면 세션 나머지 기간 동안 도구를 alwaysAllowRules에 추가하고 카운터를 리셋합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Background or headless agent runners where prompts are auto-denied",
+      "CI/CD agents that need certain tools to complete their task",
+      "Long-running interactive sessions where approval fatigue is likely"
+    ],
+    "ko": [
+      "프롬프트가 자동 거부되는 백그라운드 또는 헤드리스 에이전트 실행기",
+      "작업 완료에 특정 도구가 필요한 CI/CD 에이전트",
+      "승인 피로가 발생할 수 있는 장시간 대화형 세션"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Prevents wasted iteration loops",
+      "Surfaces the real blocker early",
+      "Reduces approval fatigue in interactive mode",
+      "Trivial to implement (a counter and a branch)"
+    ],
+    "ko": [
+      "낭비되는 반복 루프 방지",
+      "실제 차단 요인을 조기에 표면화",
+      "대화형 모드에서 승인 피로 감소",
+      "구현이 매우 간단 (카운터와 분기)"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Blanket session permissions widen the attack surface after escalation",
+      "Threshold tuning requires experimentation",
+      "Fallback strategies must be defined per tool, adding configuration overhead"
+    ],
+    "ko": [
+      "일괄 세션 권한이 에스컬레이션 후 공격 표면을 확대",
+      "임계값 튜닝에 실험 필요",
+      "도구별 폴백 전략을 정의해야 하므로 설정 오버헤드 추가"
+    ]
+  },
+  "mermaid_diagram": "graph TD\n    A[Tool Denied] --> B[Increment Counter]\n    B --> C{Counter >= Threshold?}\n    C -- No --> D[Retry with Different Approach]\n    C -- Yes --> E{Interactive?}\n    E -- Yes --> F[Prompt: Allow all for session?]\n    E -- No --> G[Switch to Fallback Strategy]\n    F -- Granted --> H[Add to alwaysAllow & Reset]\n    F -- Denied --> G\n    H --> I[Continue Execution]\n    G --> J[Skip / Use Alternative / Abort]",
+  "tags": ["permissions", "denial-tracking", "escalation", "background-agents", "non-interactive", "safety"]
+}

@@ -1,0 +1,63 @@
+{
+  "id": "agent-circuit-breaker",
+  "title": "Agent Circuit Breaker",
+  "title_ko": "에이전트 서킷 브레이커",
+  "category": "Reliability & Eval",
+  "status": "emerging",
+  "original_url": "https://martinfowler.com/bliki/CircuitBreaker.html",
+  "problem": {
+    "en": "Agents that use external tools — APIs, databases, web scrapers, code executors — face a common failure mode: a tool endpoint becomes degraded or unavailable, and the agent keeps calling it, burning tokens on retries that will never succeed. This creates three cascading problems: token waste from each failed tool call, latency amplification from sequential retries on a dead endpoint, and cascading failure where the agent stalls entirely instead of using alternative approaches.",
+    "ko": "외부 도구(API, 데이터베이스, 웹 스크래퍼, 코드 실행기)를 사용하는 에이전트는 공통적인 장애 모드에 직면합니다. 도구 엔드포인트가 성능 저하되거나 사용 불가능해지면 에이전트가 계속 호출하여 성공하지 못할 재시도에 토큰을 소모합니다. 이로 인해 세 가지 연쇄 문제가 발생합니다: 실패한 도구 호출마다 토큰 낭비, 비활성 엔드포인트에 대한 순차적 재시도로 인한 지연 증폭, 그리고 대안적 접근 방식을 사용하는 대신 에이전트가 완전히 정지하는 연쇄 장애입니다."
+  },
+  "solution": {
+    "en": "Apply the classic Circuit Breaker pattern from distributed systems to agent tool invocations. The circuit breaker wraps each tool call and tracks failure rates, transitioning between three states: Closed (tool calls pass through normally, failures are counted), Open (tool calls are blocked immediately, returns a cached error or fallback), and Half-Open (one probe call is allowed through; if it succeeds, reset to Closed, if it fails, return to Open). Agent-specific adaptations include token-aware thresholds, fallback routing, per-tool granularity, and session-scoped state.",
+    "ko": "분산 시스템의 고전적인 서킷 브레이커 패턴을 에이전트 도구 호출에 적용합니다. 서킷 브레이커는 각 도구 호출을 래핑하고 실패율을 추적하며 세 가지 상태 간에 전환합니다: Closed(도구 호출이 정상적으로 통과하며 실패가 카운트됨), Open(도구 호출이 즉시 차단되며 캐시된 오류 또는 폴백 반환), Half-Open(하나의 프로브 호출이 허용되며 성공하면 Closed로 리셋, 실패하면 Open으로 복귀). 에이전트 특화 적용에는 토큰 인식 임계값, 폴백 라우팅, 도구별 세분화, 세션 범위 상태가 포함됩니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Agent uses 3+ external tools that can independently fail",
+      "Tools have variable reliability (APIs with rate limits, web scrapers, third-party services)",
+      "Agent sessions are long enough that a tool may recover mid-session"
+    ],
+    "ko": [
+      "에이전트가 독립적으로 실패할 수 있는 3개 이상의 외부 도구를 사용하는 경우",
+      "도구의 신뢰성이 가변적인 경우 (속도 제한이 있는 API, 웹 스크래퍼, 서드파티 서비스)",
+      "에이전트 세션이 도구가 중간에 복구될 수 있을 만큼 충분히 긴 경우"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Prevents token waste from futile retries on broken tools",
+      "Enables graceful degradation — agent continues working with available tools",
+      "Self-healing: half-open probes restore tools automatically when they recover",
+      "Simple to implement (~50 lines of core logic)",
+      "Session-scoped state avoids the state management complexity of persistent breakers"
+    ],
+    "ko": [
+      "고장난 도구에 대한 무의미한 재시도로 인한 토큰 낭비 방지",
+      "우아한 성능 저하 지원 — 에이전트가 사용 가능한 도구로 계속 작업",
+      "자가 치유: Half-Open 프로브가 도구 복구 시 자동으로 복원",
+      "구현이 간단함 (핵심 로직 약 50줄)",
+      "세션 범위 상태로 영구 브레이커의 상태 관리 복잡성 회피"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Adds a layer of indirection around tool calls",
+      "Threshold tuning requires understanding each tool's failure characteristics",
+      "May mask intermittent errors that would naturally resolve with a single retry",
+      "Agent must be prompted to handle CircuitOpenError gracefully (fallback awareness)",
+      "Not useful for agents with only 1-2 highly reliable tools"
+    ],
+    "ko": [
+      "도구 호출에 간접 레이어 추가",
+      "임계값 튜닝에 각 도구의 실패 특성 이해 필요",
+      "단일 재시도로 자연스럽게 해결될 간헐적 오류를 가릴 수 있음",
+      "에이전트가 CircuitOpenError를 우아하게 처리하도록 프롬프트 필요 (폴백 인식)",
+      "1~2개의 고신뢰 도구만 사용하는 에이전트에는 불필요"
+    ]
+  },
+  "mermaid_diagram": "stateDiagram-v2\n    [*] --> Closed\n    Closed --> Open: failure_count >= threshold\n    Open --> HalfOpen: cooldown_elapsed\n    HalfOpen --> Closed: probe_succeeds\n    HalfOpen --> Open: probe_fails",
+  "code_example": "class AgentCircuitBreaker:\n    def __init__(self, failure_threshold=3, cooldown_seconds=60):\n        self.state = \"closed\"\n        self.failure_count = 0\n        self.threshold = failure_threshold\n        self.cooldown = cooldown_seconds\n        self.opened_at = None\n\n    def call(self, tool_fn, *args, **kwargs):\n        if self.state == \"open\":\n            if time.time() - self.opened_at >= self.cooldown:\n                self.state = \"half_open\"\n            else:\n                raise CircuitOpenError(f\"Circuit open — tool disabled for {self.cooldown}s\")\n\n        try:\n            result = tool_fn(*args, **kwargs)\n            if self.state == \"half_open\":\n                self.state = \"closed\"\n                self.failure_count = 0\n            return result\n        except Exception as e:\n            self.failure_count += 1\n            if self.failure_count >= self.threshold:\n                self.state = \"open\"\n                self.opened_at = time.time()\n            raise",
+  "tags": ["circuit-breaker", "fault-tolerance", "tool-reliability", "graceful-degradation", "resilience"]
+}
