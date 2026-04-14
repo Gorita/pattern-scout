@@ -228,26 +228,20 @@
     "title": "Dynamic Context Injection",
     "title_ko": "동적 컨텍스트 주입",
     "category": "Context & Memory",
-    "description": "While layered config files provide good baseline context, agents often need specific information on-demand during sessions Implement mechanisms for dynamic context injection during sessions: File/Fold",
-    "problem": "While layered config files provide good baseline context, agents often need specific information on-demand during sessions. Constantly editing static config files or pasting large text chunks into prompts is inefficient.",
-    "solution": "Implement mechanisms for dynamic context injection during sessions: File/Folder at-mentions (@path/to/file), custom slash commands (/user:command) that load predefined prompts from files. Provides targeted context exactly when needed.",
+    "description": "While layered configuration files provide good baseline context, agents often need specific pieces of information (e Implement mechanisms for users to dynamically inject context into the agent's worki",
+    "problem": "While layered configuration files provide good baseline context, agents often need specific pieces of information (e.g., contents of a particular file, output of a script, predefined complex prompt) on-demand during an interactive session. Constantly editing static context files or pasting large chunks of text into prompts is inefficient.",
+    "solution": "Implement mechanisms for users to dynamically inject context into the agent's working memory during a session. Common approaches include:\n\n- **File/Folder At-Mentions:** Allowing users to type a special character (e.g., `@`) followed by a file or folder path (e.g., `@src/components/Button.tsx` or `@app/tests/`). The agent then ingests the content of the specified file or a summary of the folder into its current context for the ongoing task.\n- **Custom Slash Commands:** Enabling users to define reusable, named prompts or instructions in separate files (e.g., in `~/.claude/commands/foo.md`). These can be invoked with a slash command (e.g., `/user:foo`), causing their content to be loaded into the agent's context. This is useful for frequently used complex instructions or context snippets.\n\nThese methods allow for a more fluid and efficient way to provide targeted context exactly when needed.",
     "when_to_use": [
-      "Need file context without copy-paste",
-      "Frequently used complex instructions",
-      "On-demand codebase exploration",
-      "Interactive session context enrichment"
+      "Use this when model quality depends on selecting or retaining the right context",
+      "Start with strict context budgets and explicit memory retention rules",
+      "Measure relevance and retrieval hit-rate before increasing memory breadth",
+      "Implement security controls: allowlist-based directory access, regex-based credential scanning, file size limits"
     ],
     "pros": [
-      "Fluid context injection",
-      "Reusable slash commands",
-      "No need to edit static configs",
-      "Targeted context exactly when needed"
+      "Raises answer quality by keeping context relevant and reducing retrieval noise"
     ],
     "cons": [
-      "Must remember command names",
-      "Large files consume context",
-      "Command files need maintenance",
-      "May inject unnecessary content"
+      "Requires ongoing tuning of memory policies and indexing quality"
     ],
     "tags": [
       "context-management",
@@ -964,22 +958,19 @@
     "title": "Rich Feedback Loops > Perfect Prompts",
     "title_ko": "완벽한 프롬프트보다 풍부한 피드백 루프",
     "category": "Feedback Loops",
-    "description": "Polishing a single prompt can't cover every edge-case; agents need ground truth to self-correct Expose iterative, machine-readable feedback (compiler errors, test failures, linter output, screenshots)",
+    "description": "Polishing a single prompt can't cover every edge-case; agents need ground truth to self-correct Expose **iterative, machine-readable feedback**—compiler errors, test failures, linter output, screensho",
     "problem": "Polishing a single prompt can't cover every edge-case; agents need ground truth to self-correct. Additionally, agents need to integrate human feedback (positive and corrective) to improve session quality over time. Projects that better respond to user feedback have fewer corrections and better outcomes.",
-    "solution": "Expose iterative, machine-readable feedback (compiler errors, test failures, linter output, screenshots) after every tool call. Integrate human feedback patterns: recognize positive feedback to reinforce working patterns, learn from corrections to avoid repeating mistakes, adapt based on user communication style, and track what works for specific users. Evidence from 88 sessions shows projects with more positive feedback had better outcomes (nibzard-web: 80% success with 8 positive vs awesome-agentic-patterns: 17% with 1 positive).",
+    "solution": "Expose **iterative, machine-readable feedback**—compiler errors, test failures, linter output, screenshots—after every tool call. The agent uses diagnostics to plan the next step, leading to emergent self-debugging.\n\n**Integrate human feedback patterns:**\n- **Recognize positive feedback** to reinforce patterns that work—positive signals are training data, not politeness\n- **Learn from corrections** to avoid repeating mistakes\n- **Adapt based on user communication style** and preferences\n- **Track what works** for specific users over time\n\n**Tool design matters:** Structured outputs (JSON, exit codes, error objects) are more effective than natural language for agent self-correction.\n\n**Key insight**: Projects with more positive feedback had better outcomes. Reinforcement works—it's training data that teaches the agent what *to* do, whereas corrections only teach what *not* to do.\n\nModern models like Claude Sonnet 4.5 are increasingly proactive in creating their own feedback loops by writing and executing short scripts and tests, even for seemingly simple verification tasks.",
     "when_to_use": [
-      "Coding agents",
-      "Quality-critical tasks",
-      "Iterative development"
+      "Use this when agent quality improves only after iterative critique or retries.",
+      "Start with one objective metric and one feedback loop trigger.",
+      "Record failure modes so each loop produces reusable learning artifacts."
     ],
     "pros": [
-      "Robustness",
-      "Continuous improvement",
-      "Real-world validation"
+      "Turns repeated failures into measurable improvements over time"
     ],
     "cons": [
-      "Infrastructure required",
-      "Initial setup costs"
+      "Can increase runtime and operational cost due to iterative passes"
     ],
     "tags": [
       "feedback",
@@ -2272,29 +2263,28 @@
     "title": "LLM Map-Reduce Pattern",
     "title_ko": "LLM 맵-리듀스 패턴",
     "category": "Orchestration & Control",
-    "description": "Processing multiple untrusted items in one context risks cross-contamination and prompt injection propagation Process each item in an isolated sub-agent (map), then aggregate results in a trusted cont",
-    "problem": "Processing multiple untrusted items in one context risks cross-contamination and prompt injection propagation.",
-    "solution": "Process each item in an isolated sub-agent (map), then aggregate results in a trusted context (reduce).",
+    "description": "When many untrusted documents are processed in a single reasoning context, one malicious item can influence global conclusions Adopt a **map-reduce workflow**:\n\n- **Map:** Spawn lightweight, *sandboxe",
+    "problem": "When many untrusted documents are processed in a single reasoning context, one malicious item can influence global conclusions. This creates cross-document contamination where a single poisoned input affects unrelated items and final decisions.",
+    "solution": "Adopt a **map-reduce workflow**:\n\n- **Map:** Spawn lightweight, *sandboxed* LLMs—each ingests one untrusted chunk and emits a constrained output (boolean, JSON schema, enum).\n- **Reduce:** Aggregate validated summaries via deterministic code (count, filter, majority-vote) or a privileged LLM that sees only sanitized fields.\n\nIsolation is the core control: each map worker handles one item with constrained output contracts, so contamination cannot spread laterally. The reducer consumes validated summaries only, which preserves scalability and reduces injection blast radius.",
     "when_to_use": [
-      "Email processing",
-      "Document analysis",
-      "Web scraping"
+      "File triage, document summarization, resume filters, code migration verification—any N-to-1 decision where each item's influence should stay local.",
+      "Best fit when: N >= 10 items, processing time > 30s/item, items are independent, and aggregation is needed."
     ],
     "pros": [
-      "Isolation",
-      "Parallel processing",
-      "Contamination prevention"
+      "A malicious item can't taint others",
+      "Scalable parallelism",
+      "Smaller contexts reduce cost"
     ],
     "cons": [
-      "Overhead",
-      "Coordination complexity"
+      "Requires strict output validation",
+      "Extra orchestration overhead",
+      "Loses cross-item context"
     ],
     "tags": [
       "map-reduce",
       "sub-agents",
       "isolation",
-      "untrusted-data",
-      "security"
+      "untrusted-data"
     ],
     "related": []
   },
@@ -2826,23 +2816,26 @@
     "title": "Three-Stage Perception Architecture",
     "title_ko": "3단계 인식 아키텍처",
     "category": "Orchestration & Control",
-    "description": "Complex AI agents struggle with unstructured inputs Implement three-stage pipeline: Perception (input gathering/normalization), Processing (reasoning/decision-making), Action (execution in environment",
-    "problem": "Complex AI agents struggle with unstructured inputs. Without clear separation of concerns, agents become monolithic and difficult to debug, extend, or scale independently.",
-    "solution": "Implement three-stage pipeline: Perception (input gathering/normalization), Processing (reasoning/decision-making), Action (execution in environment).",
+    "description": "Complex AI agents often struggle with unstructured inputs and need a systematic way to process information before taking action Implement a three-stage pipeline architecture that cleanly separates an ",
+    "problem": "Complex AI agents often struggle with unstructured inputs and need a systematic way to process information before taking action. Without a clear separation of concerns, agents can become monolithic and difficult to debug, extend, or optimize. Additionally, mixing perception, processing, and action logic makes it hard to swap out components or scale different parts of the system independently.",
+    "solution": "Implement a three-stage pipeline architecture that cleanly separates an agent's workflow into distinct phases:\n\n1. **Perception Stage**: Handles all input gathering and normalization—receives raw inputs (text, images, audio, structured data), performs initial processing (OCR, speech-to-text, format conversion), and normalizes data into a common internal representation.\n\n2. **Processing Stage**: Performs reasoning and decision-making—analyzes normalized inputs using appropriate models, applies business logic and reasoning, makes decisions about what actions to take, and can involve multiple sub-agents or reasoning steps.\n\n3. **Action Stage**: Executes decisions in the environment—translates decisions into concrete actions, interfaces with external systems and APIs, handles error recovery and retries, and reports results back to the system.",
     "when_to_use": [
-      "Multi-modal input handling",
-      "Complex agent systems",
-      "Team-based development"
+      "Use this when tasks need explicit control flow between planning, execution, and fallback.",
+      "Start with one high-volume workflow before applying it across all agent lanes.",
+      "Define ownership for each phase so failures can be routed and recovered quickly."
     ],
     "pros": [
-      "Modularity",
-      "Easier debugging",
-      "Independent scaling per stage"
+      "Clean separation of concerns",
+      "Easier to maintain and extend",
+      "Better error isolation",
+      "Enables specialized optimization per stage",
+      "Facilitates team collaboration (different teams per stage)"
     ],
     "cons": [
       "Additional complexity for simple tasks",
-      "Latency from stage transitions",
-      "Interface design overhead"
+      "Potential latency from stage transitions",
+      "Requires careful interface design between stages",
+      "May introduce overhead for data transformation between stages"
     ],
     "tags": [
       "architecture",
@@ -3098,26 +3091,23 @@
     "title": "Asynchronous Coding Agent Pipeline",
     "title_ko": "비동기 코딩 에이전트 파이프라인",
     "category": "Reliability & Eval",
-    "description": "Synchronous execution of coding tasks creates compute bubbles and idle resources Decouple inference, tool execution, and learning into parallel asynchronous components: Inference Workers (GPU) sample ",
-    "problem": "Synchronous execution of coding tasks creates compute bubbles and idle resources. When a coding agent issues a tool call (compile, test), it blocks further reasoning until that tool returns, leading to underutilized GPUs and slower RL rollouts.",
-    "solution": "Decouple inference, tool execution, and learning into parallel asynchronous components: Inference Workers (GPU) sample from policy, Tool Executors (CPU) run compilations/tests in parallel, Reward Models compute rewards, and Learner aggregates gradients.",
+    "description": "Synchronous execution of coding tasks—where the agent must wait for compilation, testing, linting, or static analysis—creates **compute bubbles** and **idle resources** Decouple the **inference**, **t",
+    "problem": "Synchronous execution of coding tasks—where the agent must wait for compilation, testing, linting, or static analysis—creates **compute bubbles** and **idle resources**. When a coding agent issues a tool call (e.g., `run_tests()`), it blocks further reasoning until that tool returns, leading to underutilized GPUs/TPUs and slower RL rollouts.\n\n- RL agents must push hard on **async RL** \"so everything is happening in parallel without blowing up bubbles\".\n- For coding agents, each I/O-bound tool call (compilation, test runs) can take seconds to minutes.\n- Industry benchmarks show **67% performance improvement** with parallel execution (3.2s vs 9.8s for 3 agents).",
+    "solution": "Decouple the **inference**, **tool execution**, and **learning** into **parallel, asynchronous components**, communicating via message queues:\n\n**1. Inference Workers (GPU)**\n- Continuously sample from the latest policy.\n- Output \"actions\" that are either low-compute (e.g., \"suggest next line\") or external tool calls (e.g., \"CompileSubagent(serviceA)\").\n\n**2. Tool Executors (CPU / Container Hosts)**\n- Listen to a queue of tool call requests (`compile`, `run_tests`, `lint`).\n- Run each tool in an isolated environment, then push the results (success/failure, logs) back to the **Inference Workers**.\n\n**3. Reward Modeling Units (GPU/CPU)**\n- Consume completed trajectories (series of `(state, action, tool_output)`), compute turn-level or final rewards (e.g., via `inference_healed_reward`).\n- Push `(trajectory_id, reward)` to the **Learner**.\n\n**4. Learner / Parameter Server (GPU)**\n- Periodically aggregates gradients from recent trajectories, updates policy weights, and publishes new checkpoints.\n- Completely decouples generation and training, addressing synchronous bottlenecks in large-scale RL systems (up to 2.77x acceleration).\n\n**5. Replay & Buffer System**\n- **Experience Replay:** Stores recent `(state, action, reward)` tuples, allowing the Learner to sample minibatches.\n- **Priority Queues:** If certain coding episodes show high variance (e.g., intermittent compile successes), re-evaluate them with updated reward models.",
     "when_to_use": [
-      "Large-scale RL training for coding agents",
-      "Multi-hour training runs",
-      "Parallel tool execution needed",
-      "High GPU utilization required"
+      "**Message Broker:** Use Redis streams or RabbitMQ topics to queue tool calls (`compile_requests`, `test_requests`)",
+      "**Autoscaling Policies:** Monitor queue lengths: if `compile_requests` > threshold, spin up additional `CompileSubagent` containers",
+      "**Failure Handling:** If a tool executor crashes or a network error occurs, send a \"retry\" or \"skip\" message; mark that trajectory as \"stale\" if too many retries",
+      "**Checkpoint Frequency:** Decide at what interval the Learner should publish new policy weights (e.g., every 1,000 episodes) to avoid excessive network traffic"
     ],
     "pros": [
-      "High GPU utilization",
-      "Scalable compute for each component",
-      "Parallel tool execution",
-      "Reduced training time"
+      "**High Utilization:** GPUs remain busy running inference or learning while CPU-bound tasks run in parallel",
+      "**Scalable Compute:** Can independently scale inference, tool execution, and reward modeling",
+      "**Performance Gains:** Producer-consumer async workflows achieve 1.59-2.03x throughput improvement; parallel tool calls reduce latency by up to 90%"
     ],
     "cons": [
-      "Complex system maintenance",
-      "Staleness management needed",
-      "Requires robust monitoring",
-      "Infrastructure overhead"
+      "**Complex System Maintenance:** Requires robust monitoring, logging, and alerting across multiple services",
+      "**Staleness Management:** Policies may train on slightly outdated data; hyperparameters must account for acceptable staleness windows (e.g., 5-20 minutes)"
     ],
     "tags": [
       "asynchronous",
@@ -3995,30 +3985,36 @@
     "title": "Agent-First Tooling and Logging",
     "title_ko": "에이전트 우선 도구 및 로깅",
     "category": "Tool Use & Environment",
-    "description": "Most developer tools, CLIs, and logs are designed for human consumption with color-coded, multi-line outputs that are difficult for AI agents to parse reliably Design tooling and logging to be 'agent-",
-    "problem": "Most developer tools, CLIs, and logs are designed for human consumption with color-coded, multi-line outputs that are difficult for AI agents to parse reliably.",
-    "solution": "Design tooling and logging to be 'agent-first': unified logging to single source, verbose JSON-structured output, and agent-aware CLI flags (--for-agent).",
+    "description": "Most developer tools, CLIs, and application logs are designed for human consumption Consciously design and adapt tooling and logging to be \"agent-first,\" prioritizing machine-readability over human er",
+    "problem": "Most developer tools, CLIs, and application logs are designed for human consumption. They use color-coded, multi-line, or summarized outputs that are easy for a person to scan but can be difficult for an AI agent to parse reliably. This \"human-centric\" design creates noise and ambiguity, forcing the agent to waste tokens and effort on interpreting output rather than acting on it.",
+    "solution": "Consciously design and adapt tooling and logging to be \"agent-first,\" prioritizing machine-readability over human ergonomics. The environment should cater to the agent's need for clear, structured, and unambiguous information.\n\n- **Unified Logging:** Instead of multiple log streams (client, server, database), consolidate them into a single, unified log. This gives the agent a single source of truth to monitor.\n- **Verbose, Structured Output:** Prefer verbose, structured formats like JSON lines over concise, human-readable text. Use schemas like Pydantic (Python) or Zod (TypeScript) for type-safe structured outputs.\n- **Agent-Aware CLIs:** Design new tools or add flags to existing tools (`--for-agent`, `--json`) that modify their output to be more explicit and less ambiguous for an AI.\n- **Standardized Tool Protocol:** Use the Model Context Protocol (MCP) as the standard interface for agent-tool communication.\n- **Code-First Tool Interface:** For complex workflows, LLMs generate code that calls tools rather than invoking them directly. This provides 10-100x token reduction by keeping intermediate results in the execution environment rather than model context.",
     "when_to_use": [
-      "Building agent-operated systems",
-      "CLI tools for automation",
-      "Log aggregation for AI analysis"
+      "Audit current tools and identify those producing human-centric output; find agent-friendly alternatives or add structured output flags",
+      "Implement unified logging by consolidating multiple log sources into a single, structured stream",
+      "Create agent-aware APIs that prioritize machine-readable output formats and clear, unambiguous responses",
+      "Default to JSON, YAML, or other structured formats instead of free-form text output"
     ],
     "pros": [
-      "Improves agent parsing accuracy",
-      "Reduces token waste",
-      "Single source of truth"
+      "Dramatically improves agent parsing accuracy and speed",
+      "Reduces token waste on output interpretation",
+      "Enables more reliable automation and decision-making",
+      "Single source of truth for system state"
     ],
     "cons": [
-      "May sacrifice human readability",
-      "Requires tooling modifications",
-      "Dual interface maintenance"
+      "May sacrifice human readability and debugging convenience",
+      "Requires investment in tooling modifications",
+      "Teams need to maintain both human and agent interfaces (dual-interface pattern)",
+      "Learning curve for developers used to human-centric tools",
+      "Code-first patterns require additional infrastructure (sandboxed execution)"
     ],
     "tags": [
       "tool-design",
       "logging",
       "machine-readable",
       "observability",
-      "agent-environment"
+      "agent-environment",
+      "mcp",
+      "structured-output"
     ],
     "related": []
   },
@@ -4251,22 +4247,21 @@
     "title": "Code-Then-Execute Pattern",
     "title_ko": "코드 후 실행 패턴",
     "category": "Tool Use & Environment",
-    "description": "Plan lists are opaque; we want full data-flow analysis and taint tracking for security Have LLM output a sandboxed DSL script",
-    "problem": "Plan lists are opaque; we want full data-flow analysis and taint tracking for security.",
-    "solution": "Have LLM output a sandboxed DSL script. Static checker/taint engine verifies flows (e.g., no tainted var to email recipient). Interpreter runs code in locked sandbox.",
+    "description": "Free-form plan-and-act loops are difficult to audit because critical control decisions stay implicit in natural-language reasoning Have the LLM output a **sandboxed program or DSL script**:\n\n1",
+    "problem": "Free-form plan-and-act loops are difficult to audit because critical control decisions stay implicit in natural-language reasoning. In security-sensitive workflows, teams need verifiable guarantees that tainted inputs cannot flow into dangerous sinks (for example, external messages, payments, or destructive commands). Plain-text plans are too weak for formal validation.",
+    "solution": "Have the LLM output a **sandboxed program or DSL script**:\n\n1. LLM writes code that calls tools and untrusted-data processors.\n2. Static checker/Taint engine verifies flows (e.g., no tainted var to `send_email.recipient`).\n3. Interpreter runs the code in a locked sandbox.\n\nThe key shift is to move from \"reasoning about actions\" to \"compiling actions\" into an inspectable artifact. Once actions are code, policy engines and static analyzers can enforce data-flow rules before execution.\n\nThis pattern also serves a complementary purpose: **token optimization**. When tool calls execute within the sandbox rather than through special tokens, only condensed results return to the LLM context, reducing token usage for data-heavy workflows by 75-99% in production deployments.",
     "when_to_use": [
-      "Complex multi-step agents",
-      "SQL copilots",
-      "Security-critical workflows"
+      "Use this for complex multi-step agents such as SQL copilots, software-engineering bots, and workflow automators where auditability matters.",
+      "Start with a small DSL and explicit forbidden flows, then expand language features as checks mature."
     ],
     "pros": [
       "Formal verifiability",
-      "Replay logs for debugging",
-      "Taint tracking"
+      "Replay logs",
+      "Reduced token costs for data-heavy workflows"
     ],
     "cons": [
-      "Requires DSL design",
-      "Static-analysis infrastructure needed"
+      "Requires DSL design and static-analysis infra",
+      "Sandbox execution overhead"
     ],
     "tags": [
       "dsl",
@@ -4713,31 +4708,34 @@
     "title": "Visual AI Multimodal Integration",
     "title_ko": "비주얼 AI 멀티모달 통합",
     "category": "Tool Use & Environment",
-    "description": "Many real-world tasks require visual information alongside text Integrate large multimodal models (LMMs) for visual understanding: accept images/videos as input, analyze visual content, combine visual",
-    "problem": "Many real-world tasks require visual information alongside text. Text-only agents miss critical information in images, videos, diagrams, and visual interfaces.",
-    "solution": "Integrate large multimodal models (LMMs) for visual understanding: accept images/videos as input, analyze visual content, combine visual and textual reasoning, take actions based on visual understanding.",
+    "description": "Many real-world tasks require understanding and processing visual information alongside text Integrate large multimodal models (LMMs) into agent architectures to enable visual understanding capabiliti",
+    "problem": "Many real-world tasks require understanding and processing visual information alongside text. Traditional text-only agents miss critical information present in images, videos, diagrams, and visual interfaces. This limitation prevents agents from helping with tasks like analyzing screenshots, debugging UI issues, understanding charts, processing security footage, or working with visual documentation.",
+    "solution": "Integrate large multimodal models (LMMs) into agent architectures to enable visual understanding capabilities. This pattern involves:\n\n1. **Visual Input Handling**: Accept images, videos, or screenshots as input alongside text. Images are typically resized and base64-encoded or provided via URL. Video may require frame extraction (except Gemini which supports native video processing).\n\n2. **Visual Analysis**: Use multimodal models to extract information, identify objects, read text (OCR), understand spatial relationships, and interpret diagrams or charts.\n\n3. **Cross-Modal Reasoning**: Combine visual and textual information for comprehensive understanding, enabling tasks like UI debugging from screenshots or data extraction from charts.\n\n4. **Visual-Guided Actions**: Take actions based on visual understanding (clicking UI elements, describing scenes, counting objects).\n\n**Provider Selection**: Different providers excel at different tasks—Anthropic Claude for UI understanding and code generation, Google Gemini for native video processing, OpenAI GPT-4o for general-purpose tasks, Meta LLaVA for open-source needs.",
     "when_to_use": [
-      "UI/UX debugging",
-      "Document processing with charts",
-      "Video analysis",
-      "Security monitoring"
+      "Use when tasks require visual understanding—UI debugging, document processing, image analysis, video comprehension, or code generation from screenshots.",
+      "Choose provider by use case: Anthropic Claude for UI understanding and screenshot-to-code; Google Gemini for native video processing; OpenAI GPT-4o for general-purpose tasks; Meta LLaVA for open-source/self-hosted needs; Mistral for EU/GDPR compliance.",
+      "Optimize for costs: Resize images to minimum viable size, use appropriate detail levels (low for general understanding, high for OCR), and consider cascading approaches (smaller models first, escalate when needed)."
     ],
     "pros": [
-      "Enables new task categories",
-      "More natural interaction",
-      "Better accuracy for visual tasks"
+      "Enables entirely new categories of tasks",
+      "More natural interaction (users can show rather than describe)",
+      "Better accuracy for visual tasks",
+      "Can handle complex multimodal reasoning"
     ],
     "cons": [
-      "Higher computational costs",
+      "Higher computational costs for visual processing",
       "Larger model requirements",
-      "Privacy concerns with visual data"
+      "Potential privacy concerns with visual data",
+      "May require specialized infrastructure for video processing",
+      "Quality depends on visual model capabilities"
     ],
     "tags": [
       "multimodal",
       "vision",
       "video",
       "image-processing",
-      "visual-understanding"
+      "visual-understanding",
+      "agent-capabilities"
     ],
     "related": []
   },
@@ -4810,26 +4808,22 @@
     "title": "Agent-Friendly Workflow Design",
     "title_ko": "에이전트 친화적 워크플로우 설계",
     "category": "UX & Collaboration",
-    "description": "Simply providing an AI agent with a task is often not enough Design workflows to be 'agent-friendly': clear goal definition instead of prescriptive steps, appropriate autonomy for implementation choic",
-    "problem": "Simply providing an AI agent with a task is often not enough. If workflows are too rigid, or if humans micromanage the agent's technical decisions, the agent may struggle or produce suboptimal results. Agents perform best with appropriate freedom.",
-    "solution": "Design workflows to be 'agent-friendly': clear goal definition instead of prescriptive steps, appropriate autonomy for implementation choices, structured I/O interfaces, iterative feedback loops, and proper tool provisioning.",
+    "description": "Simply providing an AI agent with a task is often not enough for optimal performance Consciously design and adapt workflows, task structures, and human-agent interaction points to be \"agent-friendly",
+    "problem": "Simply providing an AI agent with a task is often not enough for optimal performance. If workflows are too rigid, or if humans micromanage the agent's technical decisions, the agent may struggle or produce suboptimal results. Agents perform best when given some degree of freedom and when the tasks are structured in a way that aligns with their strengths.",
+    "solution": "Consciously design and adapt workflows, task structures, and human-agent interaction points to be \"agent-friendly.\" This involves:\n\n- **Clear Goal Definition:** Provide clear, high-level goals rather than overly prescriptive, step-by-step instructions for every detail.\n- **Appropriate Autonomy:** Grant the agent sufficient freedom to make its own implementation choices and explore solutions, especially if it has been programmed for such freedom.\n- **Structured Input/Output:** Define clear interfaces for how the agent receives information and delivers results.\n- **Iterative Feedback Loops:** Establish mechanisms for the agent to present intermediate work and for humans to provide corrective feedback without stifling the agent.\n- **Tool Provisioning:** Ensure the agent has access to the necessary tools and understanding of how to use them for the given workflow.\n- **Planning-Execution Separation:** Separate planning from execution—never implement before reviewing and approving the plan. This dramatically reduces waste and enables early course correction.\n- **Clear Handoff Protocols:** For multi-agent systems, define explicit handoff criteria, message formats, and context preservation to prevent infinite loops and responsibility confusion.\n\nThis approach aims to create a collaborative environment where the agent's capabilities are maximized by a thoughtfully designed process.",
     "when_to_use": [
-      "Complex agent tasks",
-      "When agents struggle with rigid instructions",
-      "Tasks requiring creative problem-solving",
-      "Building sustainable human-agent collaboration"
+      "Use this when humans and agents share ownership of work across handoffs",
+      "Start with clear interaction contracts for approvals, overrides, and escalation",
+      "Capture user feedback in structured form so prompts and workflows can improve",
+      "**Start simple:** Begin with a single agent and limited scope; complexity increases exponentially, not linearly, as agents are added",
+      "**Design observability from day one:** Complete tracing is mandatory for debugging multi-step agent execution",
+      "**Deploy to observe:** Use production as the learning environment—iterate in days rather than perfecting for months before launch"
     ],
     "pros": [
-      "Maximizes agent capabilities",
-      "Enables creative solutions",
-      "Reduces need for constant correction",
-      "Creates sustainable collaboration patterns"
+      "Creates clearer human-agent handoffs, better operational trust, and enables rapid iteration based on real-world feedback"
     ],
     "cons": [
-      "Requires trust in agent judgment",
-      "May produce unexpected approaches",
-      "Less control over implementation details",
-      "Needs clear success criteria"
+      "Needs explicit process design and coordination across teams. Multi-agent systems can become exponentially complex—fewer, well-designed agents often outperform complex architectures"
     ],
     "tags": [
       "human-agent-collaboration",
@@ -5076,26 +5070,29 @@
     "title": "Latent Demand Product Discovery",
     "title_ko": "잠재 수요 제품 발견",
     "category": "UX & Collaboration",
-    "description": "When building agent products, it's difficult to know which features will have real product-market fit before investing significant engineering effort Build products that are intentionally hackable and",
-    "problem": "When building agent products, it's difficult to know which features will have real product-market fit before investing significant engineering effort. Traditional feature development relies on user interviews which may not reveal how users would actually adapt tools.",
-    "solution": "Build products that are intentionally hackable and extensible, then observe how power users 'abuse' features for unintended use cases. This reveals latent demand - real user needs demonstrated through behavior. Once patterns emerge, productize them for all users.",
+    "description": "When building agent products, it's difficult to know which features will have real product-market fit before investing significant engineering effort Build products that are intentionally **hackable a",
+    "problem": "When building agent products, it's difficult to know which features will have real product-market fit before investing significant engineering effort. Traditional feature development relies on user interviews and surveys, which may not reveal how users would actually adapt tools to their needs.",
+    "solution": "Build products that are intentionally **hackable and extensible**, then observe how power users \"abuse\" or repurpose features for unintended use cases. This reveals latent demand—real user needs demonstrated through behavior rather than stated preferences. Once you identify these patterns, productize them for all users.\n\n**Key principles:**\n\n1. **Make extension points**: Provide hooks, plugins, slash commands, configuration files that users can customize\n2. **Monitor creative usage**: Watch for patterns where users hack features for purposes beyond original intent\n3. **Quantify the signal**: Measure how many users are doing the \"unintended\" behavior\n4. **Productize validated demand**: Build proper features for behaviors that show strong adoption",
     "when_to_use": [
-      "Building new agent products",
-      "Feature prioritization decisions",
-      "Understanding power user needs",
-      "Reducing feature development risk"
+      "Design core functionality with clear extension APIs",
+      "Make configuration and customization easy for power users",
+      "Monitor analytics and user feedback for unexpected usage patterns",
+      "Look for behaviors that multiple independent users discover",
+      "Prioritize building features for high-frequency \"hacks\""
     ],
     "pros": [
-      "Validates demand through behavior, not speculation",
-      "Reduces risk of unwanted features",
-      "Power users innovate on your behalf",
-      "Features come with proof of concept"
+      "Validates real demand through behavior, not speculation",
+      "Reduces risk of building unwanted features",
+      "Empowers power users to innovate on your behalf",
+      "Creates tight feedback loop between usage and development",
+      "Features come with built-in proof of concept"
     ],
     "cons": [
-      "Requires building extensibility upfront",
-      "May delay 'obvious' features",
-      "Power user behavior may not represent mainstream",
-      "Can lead to feature bloat"
+      "Requires building extensibility infrastructure upfront",
+      "May delay shipping \"obvious\" features while waiting for signal",
+      "Power user behavior may not represent mainstream needs",
+      "Requires analytics and monitoring systems to detect patterns",
+      "Can lead to feature bloat if every hack becomes a product"
     ],
     "tags": [
       "product-discovery",
