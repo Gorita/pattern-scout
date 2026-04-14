@@ -6,27 +6,65 @@
   "status": "emerging",
   "original_url": "https://github.com/hyperbrowserai/HyperAgent",
   "problem": {
-    "en": "LLM-based agent execution is expensive (both in costs and latency) and non-deterministic. Running the same workflow multiple times yields different results and incurs repeated LLM costs, making regression testing impossible.",
-    "ko": "LLM 기반 에이전트 실행은 비용과 지연 시간 모두에서 비싸고 비결정적입니다. 동일한 워크플로우를 여러 번 실행하면 다른 결과가 나오고 반복적인 LLM 비용이 발생하여 회귀 테스트가 불가능합니다."
+    "en": "LLM-based agent execution is expensive (both in costs and latency) and non-deterministic. Running the same workflow multiple times yields different results and incurs repeated LLM costs. This creates several issues: cost explosion from repeated LLM token burns for identical tasks, non-determinism with different outputs from same input, no regression testing capability, slow iteration due to LLM costs, and no practical CI/CD integration for agent workflows.",
+    "ko": "LLM 기반 에이전트 실행은 비용과 지연 시간 모두에서 비싸고 비결정적입니다. 동일한 워크플로우를 여러 번 실행하면 다른 결과가 나오고 반복적인 LLM 비용이 발생합니다. 이는 여러 문제를 야기합니다: 동일한 작업에 대한 반복적 LLM 토큰 소비로 인한 비용 폭발, 같은 입력에서 다른 출력이 나오는 비결정성, 회귀 테스트 불가능, LLM 비용으로 인한 느린 반복, 에이전트 워크플로우의 실질적 CI/CD 통합 불가능 등입니다."
   },
   "solution": {
-    "en": "Record every action during execution with precise metadata (XPaths, frame indices, execution details), enabling deterministic replay without LLM calls. Use intelligent fallback to LLM only when XPath resolution fails.",
-    "ko": "실행 중 모든 액션을 정밀한 메타데이터(XPath, 프레임 인덱스, 실행 세부사항)와 함께 기록하여 LLM 호출 없이 결정적 리플레이를 가능하게 합니다. XPath 해석이 실패할 때만 LLM으로 지능적 폴백을 사용합니다."
+    "en": "Record every action during execution with precise metadata (XPaths, frame indices, execution details), enabling deterministic replay without LLM calls. The cache captures enough information to replay actions even when page structure changes slightly. This pattern builds on experience replay from reinforcement learning, where agents learn by reusing past successful actions rather than exploring anew each time. Replay uses intelligent fallback: try cached XPath directly, retry with normalized XPath variations, invoke LLM for element resolution if still failing, and update cache with successful resolution. Can also generate standalone scripts from cached workflows.",
+    "ko": "실행 중 모든 액션을 정밀한 메타데이터(XPath, 프레임 인덱스, 실행 세부사항)와 함께 기록하여 LLM 호출 없이 결정적 리플레이를 가능하게 합니다. 캐시는 페이지 구조가 약간 변경되어도 액션을 리플레이할 수 있을 만큼 충분한 정보를 캡처합니다. 이 패턴은 에이전트가 매번 새로 탐색하는 대신 과거 성공적인 액션을 재사용하여 학습하는 강화학습의 경험 리플레이를 기반으로 합니다. 리플레이는 지능적 폴백을 사용합니다: 캐시된 XPath를 직접 시도하고, 정규화된 XPath 변형으로 재시도하고, 여전히 실패하면 요소 해석을 위해 LLM을 호출하고, 성공적인 해석으로 캐시를 업데이트합니다. 캐시된 워크플로우에서 독립 실행형 스크립트를 생성할 수도 있습니다."
   },
   "ascii_diagram": "┌─────────────────────────────┐\n│       First Run (LLM)       │\n├─────────────────────────────┤\n│ Action 1 → Cache Entry #1   │\n│ Action 2 → Cache Entry #2   │\n│ Action N → Cache Entry #N   │\n└──────────────┬──────────────┘\n               │\n┌──────────────▼──────────────┐\n│      Subsequent Runs        │\n├─────────────────────────────┤\n│ Load Cache → Replay Actions │\n│     ↓                       │\n│ XPath Works? → Execute      │\n│ XPath Fails? → LLM Fallback │\n└──────────────┬──────────────┘\n               │\n┌──────────────▼──────────────┐\n│   Zero/Minimal LLM Cost     │\n└─────────────────────────────┘",
-  "mermaid_diagram": "flowchart TD\n    A[User Request] --> B{Cache Exists?}\n    B -->|No| C[Run with LLM]\n    C --> D[Build Cache Entries]\n    D --> E[Save Cache]\n    B -->|Yes| F[Load Action Cache]\n    F --> G[Replay Action]\n    G --> H{XPath Works?}\n    H -->|Yes| I[Execute Action]\n    H -->|No| J[LLM Fallback]\n    J --> K[Update Cache]\n    I --> L{More Actions?}\n    K --> L\n    L -->|Yes| G\n    L -->|No| M[Complete - Low Cost]",
+  "mermaid_diagram": "graph TB\n    subgraph First Run\n        A[User Request] --> B[Agent with LLM]\n        B --> C[Action 1: Click Login]\n        C --> D[Build Cache Entry #1]\n        D --> E[Action 2: Fill Email]\n        E --> F[Build Cache Entry #2]\n        F --> G[Complete]\n    end\n    subgraph Subsequent Runs\n        H[User Request] --> I{Cache Exists?}\n        I -->|Yes| J[Load Action Cache]\n        J --> K[Replay Action 1]\n        K --> L{XPath Works?}\n        L -->|Yes| M[Replay Action 2]\n        L -->|No| N[LLM Fallback]\n        N --> M\n        M --> P[Complete - Zero LLM Cost]\n    end",
   "code_example": "interface ActionCacheEntry {\n  stepIndex: number;\n  instruction: string;\n  elementId: string;\n  method: string;  // click, fill, type\n  arguments: string[];\n  xpath: string;\n  success: boolean;\n}\n\n// First run: build cache\nconst cache = await agent.executeTask(task, {\n  enableActionCache: true\n});\nfs.writeFileSync('workflow-cache.json', JSON.stringify(cache));\n\n// Subsequent runs: replay from cache\nconst result = await page.runFromActionCache(cache, {\n  maxXPathRetries: 3,\n  fallbackToLLM: true\n});",
   "when_to_use": {
-    "en": ["Regression testing for agent workflows", "Cost reduction for repeated tasks", "CI/CD integration for automation scripts", "Deterministic workflow execution"],
-    "ko": ["에이전트 워크플로우의 회귀 테스트", "반복 작업의 비용 절감", "자동화 스크립트의 CI/CD 통합", "결정적 워크플로우 실행"]
+    "en": [
+      "Enable action caching during agent execution",
+      "Persist cache for later replay use",
+      "Replay from cache with XPath retry and LLM fallback",
+      "CI/CD integration for automated regression testing",
+      "Export workflows as standalone scripts for debugging"
+    ],
+    "ko": [
+      "에이전트 실행 중 액션 캐싱 활성화",
+      "나중의 리플레이 사용을 위한 캐시 영속화",
+      "XPath 재시도 및 LLM 폴백을 통한 캐시에서의 리플레이",
+      "자동화된 회귀 테스트를 위한 CI/CD 통합",
+      "디버깅을 위한 독립 실행형 스크립트로 워크플로우 내보내기"
+    ]
   },
   "pros": {
-    "en": ["Dramatic cost reduction (near-zero for replays)", "10-100x faster than LLM execution", "Enables deterministic regression testing", "Graceful degradation with LLM fallback"],
-    "ko": ["극적인 비용 절감 (리플레이 시 거의 제로)", "LLM 실행보다 10-100배 빠름", "결정적 회귀 테스트 가능", "LLM 폴백으로 우아한 성능 저하"]
+    "en": [
+      "Dramatic cost reduction — near-zero for replays; documented 43-97% cost reductions; 85%+ cache hit rates",
+      "Deterministic regression testing to verify fixes don't break workflows",
+      "10-100x faster performance than LLM execution",
+      "Complete execution history for debugging",
+      "Script generation to export workflows as standalone automation",
+      "Graceful degradation via LLM fallback for page structure changes"
+    ],
+    "ko": [
+      "극적인 비용 절감 — 리플레이 시 거의 제로; 문서화된 43-97% 비용 감소; 85% 이상의 캐시 적중률",
+      "수정이 워크플로우를 깨뜨리지 않는지 검증하는 결정적 회귀 테스트",
+      "LLM 실행보다 10-100배 빠른 성능",
+      "디버깅을 위한 완전한 실행 기록",
+      "독립 실행형 자동화로 워크플로우를 내보내는 스크립트 생성",
+      "페이지 구조 변경 시 LLM 폴백을 통한 우아한 성능 저하"
+    ]
   },
   "cons": {
-    "en": ["Cache management overhead", "Brittle to significant UI changes", "Initial LLM cost still required", "Only works for deterministic workflows"],
-    "ko": ["캐시 관리 오버헤드", "큰 UI 변경에 취약", "초기 LLM 비용은 여전히 필요", "결정적 워크플로우에만 작동"]
+    "en": [
+      "Cache management overhead for storing, versioning, and invalidating",
+      "Brittle to significant UI changes that break XPaths",
+      "Initial LLM cost still required for first run",
+      "Storage complexity as caches accumulate and need cleanup",
+      "Only works for deterministic workflows"
+    ],
+    "ko": [
+      "저장, 버전 관리, 무효화를 위한 캐시 관리 오버헤드",
+      "XPath를 깨뜨리는 큰 UI 변경에 취약",
+      "첫 실행에는 여전히 초기 LLM 비용 필요",
+      "캐시가 축적되고 정리가 필요한 스토리지 복잡성",
+      "결정적 워크플로우에만 작동"
+    ]
   },
   "tags": ["caching", "replay", "regression-testing", "cost-reduction", "deterministic", "xpath"]
 }

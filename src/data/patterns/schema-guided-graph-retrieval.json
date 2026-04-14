@@ -1,0 +1,65 @@
+{
+  "id": "schema-guided-graph-retrieval",
+  "title": "Schema-Guided Graph Retrieval for Multi-Hop Reasoning",
+  "title_ko": "스키마 기반 그래프 검색을 통한 멀티홉 추론",
+  "category": "Context & Memory",
+  "status": "emerging",
+  "original_url": "https://github.com/TencentCloudADP/youtu-graphrag",
+  "problem": {
+    "en": "Complex QA over private or domain-specific corpora often needs more structure than flat chunk retrieval, but naive GraphRAG systems still fail in predictable ways:\n\n- **Retrieval is too broad:** entity, relation, keyword, and summary nodes all compete during search, so evidence gets noisy.\n- **Question decomposition is disconnected from storage:** the planner breaks a query into sub-questions without knowing which entity types or relations actually exist in the graph.\n- **Domain transfer is expensive:** each new corpus needs hand-tuned ontology work or brittle prompt rewrites.\n- **Large graphs become hard to navigate:** even when the graph is correct, retrieval quality drops as the system lacks higher-level abstractions for routing.\n\nThe core issue is misalignment. Construction, retrieval, and reasoning each use different assumptions about the domain, so the graph accumulates structure that the retriever cannot reliably exploit.",
+    "ko": "비공개 또는 도메인 특화 코퍼스에 대한 복잡한 QA는 종종 단순 청크 검색보다 더 많은 구조가 필요하지만, 단순한 GraphRAG 시스템은 여전히 예측 가능한 방식으로 실패합니다:\n\n- **검색이 너무 광범위함:** 엔티티, 관계, 키워드, 요약 노드가 검색 중에 모두 경쟁하여 증거가 노이즈해집니다.\n- **질문 분해가 저장소와 분리됨:** 플래너가 그래프에 실제로 어떤 엔티티 유형이나 관계가 존재하는지 모른 채 쿼리를 하위 질문으로 분해합니다.\n- **도메인 전환 비용이 큼:** 새 코퍼스마다 수동 온톨로지 작업이나 취약한 프롬프트 재작성이 필요합니다.\n- **큰 그래프 탐색이 어려움:** 그래프가 정확해도 라우팅을 위한 상위 수준 추상화가 없어 검색 품질이 저하됩니다.\n\n핵심 문제는 정렬 불일치입니다. 구축, 검색, 추론이 각각 도메인에 대한 다른 가정을 사용하므로 그래프가 검색기가 안정적으로 활용할 수 없는 구조를 축적합니다."
+  },
+  "solution": {
+    "en": "Treat the schema as the control surface for the entire GraphRAG pipeline, not just an extraction hint.\n\nThe same schema should guide:\n\n1. **Graph construction:** define seed entity types, relations, and attributes that bound extraction.\n2. **Schema evolution:** let the extraction stage propose high-confidence additions when new domains require new types.\n3. **Hierarchical graph organization:** build higher-level keyword or community layers so retrieval can move across abstractions, not only raw triples.\n4. **Query decomposition:** prompt an agent with the same schema to produce focused sub-questions plus the node, relation, and attribute types likely involved.\n5. **Typed retrieval:** filter or bias retrieval toward those schema types before scoring and aggregating evidence.\n6. **Parallel evidence gathering:** run the decomposed sub-questions concurrently, then merge triples and chunk evidence for final reasoning.\n\n```text\nschema = load_seed_schema()\n\ngraph = build_graph(\n  documents,\n  schema=schema,\n  allow_schema_evolution=true\n)\n\ngraph = add_keyword_and_community_layers(graph)\n\nplan = decompose_question(\n  question,\n  schema=schema\n)\n\nevidence = parallel_map(plan.sub_questions, sub_q =>\n  retrieve(\n    graph,\n    query=sub_q,\n    type_filter=plan.involved_types\n  )\n)\n\nanswer = reason_over(merge(evidence))\n```\n\nThe distinctive move is not \"use a graph\" by itself. It is **reusing one schema across ingestion, planning, and retrieval** so the system can ask better sub-questions, search a narrower part of the graph, and adapt to new domains without redesigning the whole stack.",
+    "ko": "스키마를 단순한 추출 힌트가 아닌 전체 GraphRAG 파이프라인의 제어 표면으로 취급합니다.\n\n동일한 스키마가 다음을 안내해야 합니다:\n\n1. **그래프 구축:** 추출을 제한하는 시드 엔티티 유형, 관계, 속성을 정의합니다.\n2. **스키마 진화:** 새 도메인에 새 유형이 필요할 때 추출 단계가 높은 신뢰도의 추가를 제안할 수 있게 합니다.\n3. **계층적 그래프 구성:** 상위 수준 키워드 또는 커뮤니티 레이어를 구축하여 검색이 원시 트리플뿐 아니라 추상화 간을 이동할 수 있게 합니다.\n4. **쿼리 분해:** 동일한 스키마로 에이전트에 프롬프트하여 집중된 하위 질문과 관련될 가능성이 높은 노드, 관계, 속성 유형을 생성합니다.\n5. **타입 기반 검색:** 증거를 점수화하고 집계하기 전에 해당 스키마 유형으로 검색을 필터링하거나 편향시킵니다.\n6. **병렬 증거 수집:** 분해된 하위 질문을 동시에 실행한 후 최종 추론을 위해 트리플과 청크 증거를 병합합니다.\n\n핵심 차별점은 단순히 \"그래프를 사용하는 것\"이 아닙니다. **수집, 계획, 검색 전반에 걸쳐 하나의 스키마를 재사용**하여 시스템이 더 나은 하위 질문을 하고, 그래프의 더 좁은 부분을 검색하며, 전체 스택을 재설계하지 않고 새 도메인에 적응할 수 있게 하는 것입니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Multi-hop reasoning over private or domain-specific knowledge needed",
+      "Flat chunk retrieval produces too much irrelevant context",
+      "Domain has a stable enough ontology to define useful types up front",
+      "GraphRAG system that can expand into adjacent domains without rebuilding everything"
+    ],
+    "ko": [
+      "비공개 또는 도메인 특화 지식에 대한 멀티홉 추론이 필요한 경우",
+      "단순 청크 검색이 너무 많은 무관한 컨텍스트를 생성하는 경우",
+      "도메인이 유용한 유형을 사전 정의할 수 있을 만큼 안정적인 온톨로지를 갖춘 경우",
+      "전체를 재구축하지 않고 인접 도메인으로 확장할 수 있는 GraphRAG 시스템이 필요한 경우"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Improves retrieval precision by narrowing search to relevant schema types",
+      "Makes multi-hop questions easier to answer through explicit sub-question planning",
+      "Creates a cleaner domain-transfer path than fully hand-crafted ontologies",
+      "Produces more interpretable reasoning traces than flat dense retrieval alone",
+      "Supports combining low-level evidence with higher-level community summaries"
+    ],
+    "ko": [
+      "관련 스키마 유형으로 검색을 좁혀 검색 정밀도 향상",
+      "명시적 하위 질문 계획을 통해 멀티홉 질문 답변 용이",
+      "완전 수작업 온톨로지보다 더 깔끔한 도메인 전환 경로 제공",
+      "단순 밀집 검색보다 더 해석 가능한 추론 트레이스 생성",
+      "저수준 증거와 상위 수준 커뮤니티 요약의 결합 지원"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Requires upfront schema design and ongoing governance",
+      "Bad schema choices can hide relevant evidence instead of improving search",
+      "Schema evolution can introduce noisy or overlapping types if left unchecked",
+      "More moving parts than simple vector search: extraction, graph maintenance, decomposition, typed retrieval, and aggregation",
+      "Parallel sub-question retrieval improves coverage but increases orchestration complexity and latency variance"
+    ],
+    "ko": [
+      "사전 스키마 설계와 지속적인 거버넌스 필요",
+      "잘못된 스키마 선택이 검색 개선 대신 관련 증거를 숨길 수 있음",
+      "스키마 진화를 방치하면 노이즈가 많거나 중복되는 유형 발생 가능",
+      "단순 벡터 검색보다 더 많은 구성 요소: 추출, 그래프 유지보수, 분해, 타입 기반 검색, 집계",
+      "병렬 하위 질문 검색이 범위를 개선하지만 오케스트레이션 복잡성과 지연 분산 증가"
+    ]
+  },
+  "ascii_diagram": "┌──────────────┐\n│ Seed Schema  │\n└──────┬───────┘\n       │\n┌──────▼───────┐     ┌──────────────────┐\n│ Graph Build  │────►│ Schema Evolution │\n└──────┬───────┘     └────────┬─────────┘\n       │                      │\n┌──────▼──────────────────────▼──┐\n│     Hierarchical Graph         │\n└──────────────┬─────────────────┘\n               │\n┌──────────────▼──────────────────┐\n│  Query Decomposition + Schema  │\n│  → Sub-questions + Type Filter │\n└──────────────┬─────────────────┘\n               │\n┌──────────────▼─────────────────┐\n│  Parallel Typed Retrieval      │\n└──────────────┬─────────────────┘\n               │\n┌──────────────▼─────────────────┐\n│  Evidence Merge + Reasoning    │\n└────────────────────────────────┘",
+  "mermaid_diagram": "graph TD\n    A[Seed Schema] --> B[Graph Construction]\n    B --> C[Schema Evolution]\n    C --> D[Hierarchical Graph]\n    A --> E[Query Decomposition]\n    D --> F[Typed Retrieval]\n    E --> F\n    F --> G[Parallel Sub-question Search]\n    G --> H[Evidence Merge + Reasoning]",
+  "tags": ["graphrag", "schema-guided", "multi-hop-reasoning", "query-decomposition", "type-filtered-retrieval", "knowledge-graph", "schema-evolution", "community-detection"]
+}

@@ -4,7 +4,7 @@
 
 [한국어](./README_KR.md)
 
-**Pattern Scout** is a web application that helps you quickly find the right design patterns when building AI agents. It provides **155 patterns** from [nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns) in both Korean and English, with category-based navigation and real-time search.
+**Pattern Scout** is a web application that helps you quickly find the right design patterns when building AI agents. It provides **158 patterns** from [nibzard/awesome-agentic-patterns](https://github.com/nibzard/awesome-agentic-patterns) in both Korean and English, with category-based navigation and real-time search.
 
 🌐 **Website**: [https://gorita.github.io/pattern-scout](https://gorita.github.io/pattern-scout)
 
@@ -13,7 +13,7 @@
 ## ✨ Key Features
 
 - 🇰🇷 **Korean/English Support** - Bilingual support for all patterns
-- 📂 **Category Organization** - 8 major categories, 155 patterns
+- 📂 **Category Organization** - 8 major categories, 158 patterns
 - 🗂️ **Sidebar Navigation** - Optimized for desktop/mobile
 - 🔍 **Real-time Search** - Search by title, description, tags
 - 📊 **Detail Modal** - Problem, solution, diagrams, code examples, pros/cons
@@ -22,13 +22,13 @@
 
 ## 📂 8 Categories
 
-- 🎛️ **Orchestration & Control** (47) - Task decomposition, sub-agent spawning
-- 🧠 **Context & Memory** (18) - Sliding window, vector cache
+- 🎛️ **Orchestration & Control** (48) - Task decomposition, sub-agent spawning
+- 🧠 **Context & Memory** (19) - Sliding window, vector cache
 - 🔄 **Feedback Loops** (15) - Compiler, CI, self-healing retry
 - 📚 **Learning & Adaptation** (7) - Agent RFT, skill library
 - ✅ **Reliability & Eval** (19) - Guardrails, evaluation framework
 - 🔒 **Security & Safety** (10) - Isolated VM, PII tokenization
-- 🔧 **Tool Use & Environment** (23) - Shell, browser, DB
+- 🔧 **Tool Use & Environment** (24) - Shell, browser, DB
 - 👥 **UX & Collaboration** (16) - Prompt handoff, step-by-step commit
 
 ---

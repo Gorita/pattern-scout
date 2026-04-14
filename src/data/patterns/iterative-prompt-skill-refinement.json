@@ -6,27 +6,61 @@
   "status": "established",
   "original_url": "https://lethain.com/agents-iterative-refinement/",
   "problem": {
-    "en": "Agent usage reveals gaps in prompts, skills, and tools, but there's no systematic way to improve them.",
-    "ko": "에이전트 사용 시 프롬프트, 스킬, 도구의 격차가 드러나지만 체계적으로 개선할 방법이 없습니다."
+    "en": "Agent usage reveals gaps in prompts, skills, and tools—but how do you systematically improve them? When a workflow fails or behaves sub-optimally, you need multiple mechanisms to capture feedback and iterate. Single approaches aren't enough; you need a multi-pronged refinement strategy.",
+    "ko": "에이전트 사용 시 프롬프트, 스킬, 도구의 격차가 드러나지만 어떻게 체계적으로 개선할 수 있을까요? 워크플로우가 실패하거나 최적이 아닐 때 피드백을 수집하고 반복할 여러 메커니즘이 필요합니다. 단일 접근 방식으로는 충분하지 않으며 다각적 개선 전략이 필요합니다."
   },
   "solution": {
-    "en": "Implement multiple complementary refinement mechanisms: responsive feedback, owner-led editing, AI-enhanced refinement, and dashboard tracking.",
-    "ko": "반응형 피드백, 소유자 주도 편집, AI 향상 개선, 대시보드 추적 등 여러 상호 보완적 개선 메커니즘을 구현합니다."
+    "en": "Implement multiple complementary refinement mechanisms that work together. No single mechanism catches all issues—you need layered approaches. This approach is grounded in RLHF research showing that human feedback is irreplaceable for alignment, while RLAIF demonstrates AI-assisted feedback enables scale. Four key mechanisms: (1) Responsive Feedback — monitor internal #ai channel for issues, skim workflow interactions daily. (2) Owner-Led Refinement — store prompts in editable documents, make them discoverable and editable by anyone. (3) Claude-Enhanced Refinement — use Datadog MCP to pull logs into skill repository. (4) Dashboard Tracking — track workflow run frequency, errors, and tool usage for data-driven prioritization.",
+    "ko": "함께 작동하는 여러 상호 보완적 개선 메커니즘을 구현합니다. 단일 메커니즘으로는 모든 문제를 포착할 수 없으며 계층화된 접근 방식이 필요합니다. 이 접근 방식은 인간 피드백이 정렬에 대체 불가능함을 보여주는 RLHF 연구에 기반하며, RLAIF는 AI 지원 피드백이 규모를 가능하게 함을 보여줍니다. 네 가지 핵심 메커니즘: (1) 반응형 피드백 — 내부 #ai 채널에서 문제를 모니터링하고 워크플로우 상호작용을 매일 살펴봅니다. (2) 소유자 주도 개선 — 프롬프트를 편집 가능한 문서에 저장하고 누구나 발견하고 편집할 수 있게 합니다. (3) Claude 향상 개선 — Datadog MCP를 사용하여 로그를 스킬 저장소로 가져옵니다. (4) 대시보드 추적 — 워크플로우 실행 빈도, 오류, 도구 사용량을 추적하여 데이터 기반 우선순위를 결정합니다."
   },
   "ascii_diagram": "┌────────────────────┐\n│  Workflow Runs     │\n└─────────┬──────────┘\n    ┌─────┼─────┐\n    ▼     ▼     ▼\n┌─────┐┌─────┐┌─────┐\n│Feed ││Owner││Dash │\n│back ││Edit ││board│\n└──┬──┘└──┬──┘└──┬──┘\n   └──────┼──────┘\n          ▼\n   ┌────────────┐\n   │Update Skill│\n   └────────────┘",
-  "mermaid_diagram": "flowchart TD\n    A[Workflow Runs] --> B[Feedback Channel]\n    A --> C[Owner Edits Prompts]\n    A --> D[Dashboard Metrics]\n    B & C & D --> E[Identify Issues]\n    E --> F[Update Prompts/Skills]\n    F --> A",
-  "code_example": "# After each workflow run\nworkflow_result = {\n    'output': '...',\n    'prompt_link': 'https://notion.so/prompt-abc123'\n}\n# Discovery strategy: daily skim, weekly review, quarterly audit",
+  "mermaid_diagram": "graph TD\n    A[Workflow Runs] --> B[Feedback Channel: #ai]\n    A --> C[Owner Edits Prompts]\n    A --> D[Datadog Logs → Claude]\n    A --> E[Dashboards: Metrics]\n    B --> F[Identify Issues]\n    C --> F\n    D --> F\n    E --> F\n    F --> G[Update Prompts/Skills]\n    G --> A",
+  "code_example": "# After each workflow run, include link\nworkflow_result = {\n    'output': '...',\n    'prompt_link': 'https://notion.so/prompt-abc123'\n}\n\n# Discovery strategy:\n# Daily: skim feedback channel, review workflow interactions\n# Weekly: review dashboard metrics for error spikes\n# Ad-hoc: pull logs when specific issues reported\n# Quarterly: comprehensive prompt/skill audit",
   "when_to_use": {
-    "en": ["Internal agent platforms", "Team-wide prompt management", "Continuous improvement processes"],
-    "ko": ["내부 에이전트 플랫폼", "팀 전체 프롬프트 관리", "지속적 개선 프로세스"]
+    "en": [
+      "Feedback channel for internal agent issues",
+      "Editable prompts stored in Notion/docs, not code",
+      "Prompt links included in every workflow output",
+      "Log access via Datadog/observability with MCP integration",
+      "Dashboards tracking workflow runs, errors, tool usage"
+    ],
+    "ko": [
+      "내부 에이전트 이슈를 위한 피드백 채널",
+      "코드가 아닌 Notion/문서에 저장된 편집 가능한 프롬프트",
+      "모든 워크플로우 출력에 포함된 프롬프트 링크",
+      "MCP 통합이 된 Datadog/관측성을 통한 로그 접근",
+      "워크플로우 실행, 오류, 도구 사용량을 추적하는 대시보드"
+    ]
   },
   "pros": {
-    "en": ["Multi-layered catches different issues", "Continuous improvement", "Accessible to anyone"],
-    "ko": ["다층 구조로 다양한 문제 포착", "지속적 개선", "누구나 접근 가능"]
+    "en": [
+      "Multi-layered catches issues different mechanisms miss",
+      "Continuous improvement, not episodic",
+      "Accessible to anyone for contribution",
+      "Data-driven prioritization via dashboards",
+      "Central team can maintain platform-level skills"
+    ],
+    "ko": [
+      "다층 구조로 개별 메커니즘이 놓치는 문제를 포착",
+      "일시적이 아닌 지속적 개선",
+      "누구나 기여 가능한 접근성",
+      "대시보드를 통한 데이터 기반 우선순위 결정",
+      "중앙 팀이 플랫폼 수준 스킬을 유지 관리"
+    ]
   },
   "cons": {
-    "en": ["No silver bullet", "Maintenance overhead", "Permission complexity"],
-    "ko": ["만능 해결책 아님", "유지보수 오버헤드", "권한 복잡성"]
+    "en": [
+      "No silver bullet — can't eliminate any mechanism",
+      "Maintenance overhead from multiple systems",
+      "Permission complexity requiring balanced edit access",
+      "Alert fatigue from too many signals"
+    ],
+    "ko": [
+      "만능 해결책 없음 — 어떤 메커니즘도 제거할 수 없음",
+      "다중 시스템으로 인한 유지보수 오버헤드",
+      "균형 잡힌 편집 접근이 필요한 권한 복잡성",
+      "너무 많은 신호로 인한 알림 피로"
+    ]
   },
-  "tags": ["refinement", "iteration", "prompts", "skills", "feedback", "dashboards"]
+  "tags": ["refinement", "iteration", "prompts", "skills", "feedback", "multi-mechanism", "continuous-improvement", "dashboards"]
 }
