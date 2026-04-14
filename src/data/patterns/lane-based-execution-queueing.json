@@ -6,24 +6,54 @@
   "status": "validated-in-production",
   "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/process/command-queue.ts",
   "problem": {
-    "en": "Traditional agent systems serialize all operations through a single queue, creating bottlenecks. Concurrent execution causes interleaving hazards, race conditions, and deadlock risks.",
-    "ko": "전통적인 에이전트 시스템은 모든 작업을 단일 큐를 통해 직렬화하여 병목 현상을 만듭니다. 동시 실행은 인터리빙 위험, 경쟁 조건, 데드락 위험을 야기합니다."
+    "en": "Traditional agent systems serialize all operations through a single execution queue, creating bottlenecks that limit throughput. Concurrent execution is desirable but risky:\n\n- **Interleaving hazards**: Multiple commands writing to stdin/stdout simultaneously corrupt user-facing output\n- **Race conditions**: Shared state access without proper synchronization causes data corruption\n- **Deadlock risks**: Naive concurrent queuing can create circular dependencies between operations\n\nAgentic systems need parallelism to remain responsive (e.g., background tasks shouldn't block user interactions), but must preserve isolation guarantees.",
+    "ko": "전통적인 에이전트 시스템은 모든 작업을 단일 실행 큐를 통해 직렬화하여 처리량을 제한하는 병목 현상을 만듭니다. 동시 실행이 바람직하지만 위험합니다:\n\n- **인터리빙 위험**: 여러 명령이 동시에 stdin/stdout에 쓰면 사용자 출력이 손상됩니다\n- **경쟁 조건**: 적절한 동기화 없는 공유 상태 접근이 데이터 손상을 야기합니다\n- **데드락 위험**: 순진한 동시 큐잉이 작업 간 순환 의존성을 만들 수 있습니다\n\n에이전틱 시스템은 응답성을 유지하기 위해 병렬성이 필요하지만(예: 백그라운드 작업이 사용자 상호작용을 차단하면 안 됨), 격리 보장을 보존해야 합니다."
   },
   "solution": {
-    "en": "Isolated execution lanes with independent queues and configurable concurrency per lane. Each lane is a named queue with its own concurrency limit, drained independently. Hierarchical composition prevents deadlocks through structured queuing.",
-    "ko": "독립적인 큐와 레인당 설정 가능한 동시성을 가진 격리된 실행 레인입니다. 각 레인은 자체 동시성 제한이 있는 명명된 큐이며 독립적으로 드레인됩니다. 계층적 구성은 구조화된 큐잉을 통해 데드락을 방지합니다."
+    "en": "Isolated execution lanes with independent queues and configurable concurrency per lane. Each lane is a named queue with its own concurrency limit, drained independently without interference.\n\n**Core concepts:**\n\n- **Session lanes**: Per-conversation queues prevent message interleaving. Each user session gets an isolated lane (e.g., `session:telegram:user123`).\n- **Global lanes**: Background tasks (cron jobs, health checks) execute in dedicated lanes (e.g., `cron`, `subagent`) without blocking session lanes.\n- **Hierarchical composition**: Operations can nest lanes (session → global) via queue chaining. The outer lane waits for the inner lane, preventing deadlocks through structured queuing.\n- **Configurable concurrency**: Each lane supports `maxConcurrent` workers (default 1). High-throughput lanes can run parallel tasks; serial lanes preserve ordering.\n- **Wait-time warnings**: Tasks that sit queued too long trigger warnings and callbacks, surfacing performance issues.",
+    "ko": "독립적인 큐와 레인당 설정 가능한 동시성을 가진 격리된 실행 레인입니다. 각 레인은 자체 동시성 제한이 있는 명명된 큐이며 간섭 없이 독립적으로 드레인됩니다.\n\n**핵심 개념:**\n\n- **세션 레인**: 대화별 큐가 메시지 인터리빙을 방지합니다. 각 사용자 세션은 격리된 레인을 받습니다 (예: `session:telegram:user123`).\n- **글로벌 레인**: 백그라운드 작업(크론 작업, 상태 점검)이 세션 레인을 차단하지 않고 전용 레인(예: `cron`, `subagent`)에서 실행됩니다.\n- **계층적 구성**: 작업이 큐 체이닝을 통해 레인을 중첩할 수 있습니다(세션 → 글로벌). 외부 레인이 내부 레인을 기다리며, 구조화된 큐잉을 통해 데드락을 방지합니다.\n- **설정 가능한 동시성**: 각 레인이 `maxConcurrent` 워커를 지원합니다(기본값 1). 높은 처리량 레인은 병렬 작업을 실행할 수 있고, 직렬 레인은 순서를 보존합니다.\n- **대기 시간 경고**: 너무 오래 큐에 대기하는 작업이 경고와 콜백을 트리거하여 성능 이슈를 노출합니다."
   },
   "when_to_use": {
-    "en": ["Multi-user agent systems", "Background task isolation", "Mixed serial/parallel workloads"],
-    "ko": ["다중 사용자 에이전트 시스템", "백그라운드 작업 격리", "혼합 직렬/병렬 워크로드"]
+    "en": [
+      "Identify isolation boundaries: group operations that must not interleave (e.g., per-user, per-channel)",
+      "Define lane names using a hierarchy (e.g., session:telegram:user123) for scoping",
+      "Set concurrency limits: serial lanes use maxConcurrent=1; parallel lanes use higher values",
+      "Compose hierarchically: when a queued task must spawn work in another lane, await the inner enqueue from the outer task",
+      "Track per-lane metrics (queue depth, active count, wait times) to detect backpressure and starvation"
+    ],
+    "ko": [
+      "격리 경계 식별: 인터리빙되면 안 되는 작업 그룹화 (예: 사용자별, 채널별)",
+      "범위 지정을 위해 계층적 레인 이름 정의 (예: session:telegram:user123)",
+      "동시성 제한 설정: 직렬 레인은 maxConcurrent=1; 병렬 레인은 더 높은 값 사용",
+      "계층적 구성: 큐에 넣은 작업이 다른 레인에서 작업을 생성해야 할 때, 외부 작업에서 내부 enqueue를 await",
+      "역압과 기아 감지를 위해 레인별 메트릭(큐 깊이, 활성 수, 대기 시간) 추적"
+    ]
   },
   "pros": {
-    "en": ["Isolation guarantees between lanes", "Flexible parallelism per lane", "Simple hierarchical composition", "Lane-level observability"],
-    "ko": ["레인 간 격리 보장", "레인별 유연한 병렬성", "간단한 계층적 구성", "레인 수준 관찰 가능성"]
+    "en": [
+      "Isolation guarantees: No interleaving between lanes; each lane preserves ordering",
+      "Flexible parallelism: Concurrency per lane allows mixed workloads (serial UI, parallel background)",
+      "Simple mental model: Hierarchical composition maps to structured programming patterns",
+      "Observability: Lane-level metrics (queue depth, active count, wait times) aid debugging"
+    ],
+    "ko": [
+      "격리 보장: 레인 간 인터리빙 없음; 각 레인이 순서를 보존함",
+      "유연한 병렬성: 레인별 동시성으로 혼합 워크로드 허용 (직렬 UI, 병렬 백그라운드)",
+      "간단한 사고 모델: 계층적 구성이 구조적 프로그래밍 패턴에 매핑됨",
+      "관찰 가능성: 레인 수준 메트릭(큐 깊이, 활성 수, 대기 시간)이 디버깅 지원"
+    ]
   },
   "cons": {
-    "en": ["Memory overhead for many lanes", "Concurrency tuning required", "Not a full-featured scheduler"],
-    "ko": ["많은 레인에 대한 메모리 오버헤드", "동시성 튜닝 필요", "완전한 스케줄러가 아님"]
+    "en": [
+      "Memory overhead: Each lane maintains a queue; thousands of idle lanes may waste memory",
+      "Tuning required: Concurrency limits need calibration based on workload characteristics",
+      "Not a general scheduler: No priority queues, deadlines, or work stealing; use a proper scheduler for complex needs"
+    ],
+    "ko": [
+      "메모리 오버헤드: 각 레인이 큐를 유지; 수천 개의 유휴 레인이 메모리를 낭비할 수 있음",
+      "튜닝 필요: 동시성 제한을 워크로드 특성에 따라 조정해야 함",
+      "범용 스케줄러 아님: 우선순위 큐, 데드라인, 작업 훔치기 없음; 복잡한 요구에는 적절한 스케줄러 사용"
+    ]
   },
   "tags": ["queueing", "concurrency", "lanes", "isolation", "parallelism", "deadlock-prevention"]
 }
