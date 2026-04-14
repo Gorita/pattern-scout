@@ -2,31 +2,51 @@
   "id": "subagent-compilation-checker",
   "title": "Subagent Compilation Checker",
   "title_ko": "서브에이전트 컴파일 검사기",
-  "category": "Tool Use & Environment",
+  "category": "Reliability & Eval",
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=Xkwok_XXQgw",
   "problem": {
-    "en": "Large coding tasks with multiple components blow up context length when main agent handles all compilation. Build logs in prompts are impractical and slow down inference.",
-    "ko": "여러 컴포넌트가 있는 대규모 코딩 작업은 메인 에이전트가 모든 컴파일을 처리할 때 컨텍스트 길이를 폭발시킵니다. 프롬프트의 빌드 로그는 비실용적이고 추론을 느리게 합니다."
+    "en": "Large coding tasks often involve multiple independent components (e.g., microservices, libraries). Having the main agent handle compilation and error checking for every component in-context:\n\n- **Blows Up Context Length:** Including entire build logs or bytecode in the prompt is impractical.\n- **Slows Down Inference:** Sending full build commands and parsing verbose output in-context uses excessive tokens.\n\nAdditionally, when the agent's single \"compile-and-run\" step fails, it's hard to pinpoint which submodule caused the error without a more granular approach.",
+    "ko": "대규모 코딩 작업은 종종 여러 독립적 컴포넌트(예: 마이크로서비스, 라이브러리)를 포함합니다. 메인 에이전트가 모든 컴포넌트의 컴파일과 오류 검사를 컨텍스트 내에서 처리하면:\n\n- **컨텍스트 길이 폭발:** 전체 빌드 로그나 바이트코드를 프롬프트에 포함하는 것은 비실용적입니다.\n- **추론 속도 저하:** 전체 빌드 명령을 전송하고 상세 출력을 컨텍스트 내에서 파싱하면 과도한 토큰을 사용합니다.\n\n또한, 에이전트의 단일 \"컴파일-실행\" 단계가 실패하면 더 세분화된 접근 방식 없이는 어떤 서브모듈이 오류를 유발했는지 파악하기 어렵습니다."
   },
   "solution": {
-    "en": "Spawn specialized Compilation Subagents to independently build and verify each module, reporting back only concise error summaries (file, line, error message) or artifact references.",
-    "ko": "각 모듈을 독립적으로 빌드하고 검증하는 전문 컴파일 서브에이전트를 생성하고, 간결한 오류 요약(파일, 라인, 오류 메시지) 또는 아티팩트 참조만 반환합니다."
+    "en": "Spawn **specialized \"Compilation Subagents\"** to independently build and verify each code submodule, reporting back only:\n\n**1. Error Summary:** File paths, line numbers, and error messages.\n**2. Binary Artifacts (if needed):** Reference IDs (e.g., paths to compiled object files) rather than raw binaries.\n\n**Workflow:**\n- **Main Agent Request:** \"Compile module `auth-service`.\"\n- **Spawn `CompileSubagent(auth-service)`**\n  - Subagent runs `mvn clean install` or `go build ./auth-service`.\n  - Returns a structured error list or location of compiled artifact.\n- **Main Agent:** Updates its context with the **concise error report** (e.g., `[{file: \"auth_controller.go\", line: 85, error: \"undefined: UserModel\"}]`).",
+    "ko": "각 코드 서브모듈을 독립적으로 빌드하고 검증하는 **전문 \"컴파일 서브에이전트\"**를 생성하여 다음만 보고합니다:\n\n**1. 오류 요약:** 파일 경로, 줄 번호, 오류 메시지.\n**2. 바이너리 아티팩트 (필요시):** 원시 바이너리가 아닌 참조 ID(예: 컴파일된 오브젝트 파일 경로).\n\n**워크플로우:**\n- **메인 에이전트 요청:** \"모듈 `auth-service`를 컴파일하라.\"\n- **`CompileSubagent(auth-service)` 생성**\n  - 서브에이전트가 `mvn clean install` 또는 `go build ./auth-service`를 실행합니다.\n  - 구조화된 오류 목록 또는 컴파일된 아티팩트 위치를 반환합니다.\n- **메인 에이전트:** **간결한 오류 보고서**(예: `[{file: \"auth_controller.go\", line: 85, error: \"undefined: UserModel\"}]`)로 컨텍스트를 업데이트합니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│   Main Agent    │\n│ 'Compile auth'  │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│CompileSubagent  │\n│  (auth-service) │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ go build ./auth │\n└────────┬────────┘\n    ┌────┴────┐\n    ▼         ▼\n[Success] [Failure]\n    │         │\n    │    [{file, line, error}]\n    │         │\n    └────┬────┘\n         │\n┌────────▼────────┐\n│  Concise Report │\n│  to Main Agent  │\n└─────────────────┘",
   "mermaid_diagram": "sequenceDiagram\n    MainAgent->>CompileSubagent: Compile service A\n    CompileSubagent->>BuildEnv: go build ./serviceA\n    alt Build Success\n        CompileSubagent-->>MainAgent: {status: 'success', artifact: 'serviceA.bin'}\n    else Build Failure\n        CompileSubagent-->>MainAgent: [{file: 'fileA.go', line: 10, error: 'Syntax error'}]\n    end\n    MainAgent->>Context: Inject concise error summary",
   "code_example": "# Main agent spawns compilation subagent\nresult = spawn_subagent(\n    type='compile',\n    target='auth-service',\n    command='go build ./auth-service'\n)\n\n# Subagent returns structured report\n# Success: {status: 'success', artifact: 'auth.bin'}\n# Failure: [{file: 'auth.go', line: 85, error: 'undefined: UserModel'}]\n\n# Main agent sees only concise summary, not full build log",
   "when_to_use": {
-    "en": ["Multi-module projects", "Long build processes", "Parallel compilation needed"],
-    "ko": ["다중 모듈 프로젝트", "긴 빌드 프로세스", "병렬 컴파일 필요"]
+    "en": [
+      "Subagent as a lightweight container or process with appropriate runtime (e.g., JVM for Java, Node for JavaScript)",
+      "Integration in RL loop treating each subagent invocation as a tool call",
+      "Error-driven reward assigning negative reward proportional to error count"
+    ],
+    "ko": [
+      "적절한 런타임을 갖춘 경량 컨테이너 또는 프로세스로서의 서브에이전트 (예: Java용 JVM, JavaScript용 Node)",
+      "각 서브에이전트 호출을 도구 호출로 취급하는 RL 루프 통합",
+      "오류 수에 비례하는 음의 보상을 부여하는 오류 기반 보상"
+    ]
   },
   "pros": {
-    "en": ["Modular isolation", "Parallel builds possible", "Context length preserved"],
-    "ko": ["모듈식 격리", "병렬 빌드 가능", "컨텍스트 길이 보존"]
+    "en": [
+      "Modular isolation: main agent never needs to load entire build logs into context",
+      "Parallel builds: multiple subagents can compile different modules simultaneously, speeding up end-to-end workflow"
+    ],
+    "ko": [
+      "모듈식 격리: 메인 에이전트가 전체 빌드 로그를 컨텍스트에 로드할 필요 없음",
+      "병렬 빌드: 여러 서브에이전트가 동시에 다른 모듈을 컴파일하여 종단 간 워크플로우 가속"
+    ]
   },
   "cons": {
-    "en": ["Infrastructure overhead for build environments", "Subagent synchronization needed"],
-    "ko": ["빌드 환경을 위한 인프라 오버헤드", "서브에이전트 동기화 필요"]
+    "en": [
+      "Infrastructure overhead: requires mechanism to spin up and tear down multiple build environments",
+      "Subagent synchronization: if one module depends on another's build artifact, coordination policies must ensure correct build order"
+    ],
+    "ko": [
+      "인프라 오버헤드: 여러 빌드 환경을 생성하고 해제하는 메커니즘 필요",
+      "서브에이전트 동기화: 한 모듈이 다른 모듈의 빌드 아티팩트에 의존하면 올바른 빌드 순서를 보장하는 조정 정책 필요"
+    ]
   },
   "tags": ["subagent", "compilation", "modularity", "error-isolation"]
 }

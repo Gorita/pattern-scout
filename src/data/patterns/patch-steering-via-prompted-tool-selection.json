@@ -6,27 +6,51 @@
   "status": "best-practice",
   "original_url": "https://www.youtube.com/watch?v=Xkwok_XXQgw",
   "problem": {
-    "en": "Agents with multiple patching tools may choose suboptimal ones without explicit guidance, leading to inconsistent results.",
-    "ko": "여러 패칭 도구가 있는 에이전트가 명시적 안내 없이 차선의 도구를 선택하여 일관되지 않은 결과를 초래할 수 있습니다."
+    "en": "Coding agents with access to multiple patching or refactoring tools (e.g., text-based apply_patch, AST-based refactoring, semantic migration) may choose suboptimal tools if not explicitly guided. This leads to unnecessary complexity, inconsistent results hampering reproducibility, and safety risks where text-based patching on refactoring tasks can break imports, miss references, or introduce syntax errors.",
+    "ko": "여러 패칭 또는 리팩토링 도구(예: 텍스트 기반 apply_patch, AST 기반 리팩토링, 시맨틱 마이그레이션)에 접근할 수 있는 코딩 에이전트가 명시적 안내 없이 차선의 도구를 선택할 수 있습니다. 이로 인해 불필요한 복잡성, 재현성을 저해하는 일관되지 않은 결과, 리팩토링 작업에서 텍스트 기반 패칭이 임포트를 깨뜨리거나 참조를 누락하거나 구문 오류를 도입하는 안전 위험이 발생합니다."
   },
   "solution": {
-    "en": "Steer the agent's tool selection through explicit natural language instructions in the prompt.",
-    "ko": "프롬프트에서 명시적 자연어 지시를 통해 에이전트의 도구 선택을 조정합니다."
+    "en": "**Steer** the agent's tool selection and patch approach through **explicit natural language instructions** in the prompt. Techniques include:\n\n**1. Direct Tool Invocation**\n- Prepend: \"Use the `apply_patch` tool to insert a new function `validate_input` in `auth_service.py`.\"\n\n**2. Tool Usage Teaching**\n- Provide a mini-manual in the context describing the tool's input schema and when to use it.\n\n**3. Implicit Shorthands**\n- Introduce domain-specific abbreviations that map to specific tools under the hood.\n\n**4. Reason-Encouraging Phrases**\n- Add: \"Think about type safety before choosing a patch tool.\" to promote deeper reasoning.\n\n**5. Negative Constraints**\n- Specify what NOT to use: \"Do NOT use text-based patching for function signature changes (will break imports).\" Explicit anti-patterns prevent unsafe tool selections more effectively than positive instructions alone.",
+    "ko": "프롬프트에서 **명시적 자연어 지시**를 통해 에이전트의 도구 선택과 패치 접근 방식을 **조정**합니다. 기법은 다음과 같습니다:\n\n**1. 직접 도구 호출**\n- \"`apply_patch` 도구를 사용하여 `auth_service.py`에 새 함수 `validate_input`을 삽입하세요.\"라고 앞에 추가합니다.\n\n**2. 도구 사용법 교육**\n- 컨텍스트에 도구의 입력 스키마와 사용 시기를 설명하는 미니 매뉴얼을 제공합니다.\n\n**3. 암시적 약어**\n- 내부적으로 특정 도구에 매핑되는 도메인별 약어를 도입합니다.\n\n**4. 추론 장려 문구**\n- \"패치 도구를 선택하기 전에 타입 안전성에 대해 생각하세요.\"를 추가하여 더 깊은 추론을 촉진합니다.\n\n**5. 부정 제약**\n- 사용하지 말아야 할 것을 명시합니다: \"함수 시그니처 변경에 텍스트 기반 패칭을 사용하지 마세요 (임포트가 깨집니다).\" 명시적 안티패턴은 긍정적 지시만으로는 달성하기 어려운 안전하지 않은 도구 선택을 더 효과적으로 방지합니다."
   },
   "ascii_diagram": "┌─────────────────────┐\n│ User: \"Refactor     │\n│ validation logic\"   │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│ Augmented Prompt:   │\n│ \"Use ASTRefactor    │\n│  for this task\"     │\n└──────────┬──────────┘\n           │\n┌──────────▼──────────┐\n│ Agent selects       │\n│ ASTRefactor tool    │\n└─────────────────────┘",
-  "mermaid_diagram": "flowchart TD\n    A[User: Refactor validation] --> B[Augmented Prompt]\n    B --> C[Please use ASTRefactor to update functions]\n    C --> D[Agent selects ASTRefactor]\n    D --> E[ASTRefactor patches code]",
+  "mermaid_diagram": "flowchart TD\n    A[User Prompt: \"Refactor validation logic\"] --> B[Augmented Prompt]\n    B --> C[\"Please use ASTRefactor to update function signatures\"]\n    C --> D[Agent selects ASTRefactor]\n    D --> E[ASTRefactorTool patches code]",
   "code_example": "# Prompt template for tool steering\nprompt_template = '''\nTask: {task_description}\nPreferred tool: {tool_name}\nUsage example: {tool_usage_snippet}\n\nIf {tool_name} fails, fallback to apply_patch.\n'''\n\n# Direct tool invocation in prompt\n\"Use the `apply_patch` tool to insert a new function `validate_input` in `auth_service.py`\"",
   "when_to_use": {
-    "en": ["Multi-tool agents", "Code refactoring tasks", "Consistent behavior requirements"],
-    "ko": ["멀티 도구 에이전트", "코드 리팩토링 작업", "일관된 동작 요구사항"]
+    "en": [
+      "Expose tool metadata (name, usage example, input schema, capabilities/limitations) in the agent's initialization context with use_when and avoid_when criteria",
+      "Create reusable prompt templates with placeholders for task description and preferred tool",
+      "Include fallback handling directives: specify fallback chains (semantic -> AST -> text)",
+      "When agents have access to multiple patching or refactoring tools"
+    ],
+    "ko": [
+      "에이전트 초기화 컨텍스트에 use_when과 avoid_when 기준이 포함된 도구 메타데이터(이름, 사용 예제, 입력 스키마, 기능/제한사항) 노출",
+      "작업 설명과 선호 도구를 위한 자리표시자가 있는 재사용 가능한 프롬프트 템플릿 생성",
+      "폴백 처리 지시문 포함: 폴백 체인 지정 (시맨틱 -> AST -> 텍스트)",
+      "에이전트가 여러 패칭 또는 리팩토링 도구에 접근할 수 있을 때"
+    ]
   },
   "pros": {
-    "en": ["Predictable behavior", "Higher code quality with semantic tools"],
-    "ko": ["예측 가능한 동작", "의미론적 도구로 더 높은 코드 품질"]
+    "en": [
+      "Predictable behavior: reduces variance in tool usage for the same task",
+      "Higher code quality: ensures the agent uses semantically safe tools over string-based replacements",
+      "Appropriate tool selection: guides agents to match tool capabilities to task requirements"
+    ],
+    "ko": [
+      "예측 가능한 동작: 동일 작업에 대한 도구 사용의 변동성 감소",
+      "높은 코드 품질: 에이전트가 문자열 기반 대체 대신 의미론적으로 안전한 도구를 사용하도록 보장",
+      "적절한 도구 선택: 도구 기능을 작업 요구사항에 맞추도록 에이전트를 안내"
+    ]
   },
   "cons": {
-    "en": ["Prompt length increases", "Template maintenance needed"],
-    "ko": ["프롬프트 길이 증가", "템플릿 유지보수 필요"]
+    "en": [
+      "Prompt length: excessive tool documentation in the prompt can consume valuable tokens",
+      "Maintenance: as new patching tools emerge, templates and tool registry need periodic updates"
+    ],
+    "ko": [
+      "프롬프트 길이: 프롬프트 내 과도한 도구 문서가 귀중한 토큰을 소비할 수 있음",
+      "유지보수: 새로운 패칭 도구가 등장하면 템플릿과 도구 레지스트리의 주기적 업데이트 필요"
+    ]
   },
   "tags": ["patching", "prompt-steering", "tool-selection", "coding-agent"]
 }

@@ -24,9 +24,9 @@
 - 🧠 **Context & Memory** (19개) - 슬라이딩 윈도우, 벡터 캐시
 - 🔄 **Feedback Loops** (15개) - 컴파일러, CI, 자가 치유 재시도
 - 📚 **Learning & Adaptation** (7개) - 에이전트 RFT, 스킬 라이브러리
-- ✅ **Reliability & Eval** (18개) - 가드레일, 평가 프레임워크
+- ✅ **Reliability & Eval** (19개) - 가드레일, 평가 프레임워크
 - 🔒 **Security & Safety** (10개) - 격리된 VM, PII 토큰화
-- 🔧 **Tool Use & Environment** (23개) - 셸, 브라우저, DB
+- 🔧 **Tool Use & Environment** (22개) - 셸, 브라우저, DB
 - 👥 **UX & Collaboration** (16개) - 프롬프트 핸드오프, 단계별 커밋
 
 ---

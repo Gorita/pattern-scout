@@ -6,27 +6,51 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=Xkwok_XXQgw",
   "problem": {
-    "en": "Coding agents often underutilize specialized tools, defaulting to thinking tokens instead of invoking compilers, linters, or test runners.",
-    "ko": "코딩 에이전트가 컴파일러, 린터, 테스트 러너를 호출하는 대신 생각 토큰을 기본으로 사용하여 전문 도구를 충분히 활용하지 못합니다."
+    "en": "Coding agents often underutilize specialized tools (e.g., compilers, linters, test runners) when left to optimize only for final task success. They default to \"thinking\" tokens—generating internal chain-of-thought—instead of invoking external tools, which can slow down development and lead to suboptimal code outputs. Models like R1 use their think tokens almost exclusively rather than calling tools unless explicitly rewarded for tool use. Without intermediate incentives, the agent has no incentive to write code, compile, or run tests until the very end. Sparse final rewards provide insufficient signal for learning optimal tool-use patterns across multi-step episodes.",
+    "ko": "코딩 에이전트가 최종 작업 성공만을 최적화하도록 두면 전문 도구(예: 컴파일러, 린터, 테스트 러너)를 충분히 활용하지 못합니다. 외부 도구를 호출하는 대신 내부 사고 연쇄를 생성하는 \"생각\" 토큰을 기본으로 사용하여 개발 속도가 느려지고 최적이 아닌 코드 출력으로 이어집니다. R1과 같은 모델은 도구 사용에 대한 명시적 보상이 없으면 생각 토큰만 거의 독점적으로 사용합니다. 중간 인센티브가 없으면 에이전트는 맨 마지막까지 코드를 작성하거나 컴파일하거나 테스트를 실행할 동기가 없습니다. 희소한 최종 보상은 다단계 에피소드에서 최적의 도구 사용 패턴을 학습하는 데 불충분한 신호를 제공합니다."
   },
   "solution": {
-    "en": "Provide dense, shaped rewards for every intermediate tool invocation that contributes toward final code correctness.",
-    "ko": "최종 코드 정확성에 기여하는 모든 중간 도구 호출에 대해 밀도 있는 보상을 제공합니다."
+    "en": "Provide **dense, shaped rewards** for every intermediate tool invocation that contributes toward final code correctness. Key components:\n\n**1. Define Tool-Specific Reward Signals**\n- **Compile Reward:** +1 if code compiles without errors.\n- **Lint Reward:** +0.5 if linter returns zero issues.\n- **Test Reward:** +2 if test suite passes a new test case.\n- **Documentation Reward:** +0.2 for adding or correcting docstrings.\n- **Efficiency Reward:** +0.1 for parallelizing independent tool calls; -0.05 for redundant invocations.\n- **Format Reward:** +0.2 for proper tool invocation schema compliance.\n\n**2. Episode-Level Aggregation**\n- Sum intermediate rewards to form a cumulative \"coding progress\" score.\n- Combine with final reward (e.g., full test suite pass or PR merge) to guide policy updates.\n- Use turn-level credit assignment to attribute rewards correctly across multi-step tool sequences.\n\n**3. Policy Update Mechanism**\n- Use Proximal Policy Optimization (PPO), Advantage Actor-Critic (A2C), or GRPO with these shaped rewards.\n- During each RL rollout, track `(state, action, tool_result, local_reward)` tuples.\n\n```python\n# Pseudo-code: at each RL step, after tool call:\nif action == \"compile\":\n    local_reward = 1 if compile_success else -0.5\nelif action == \"run_tests\":\n    local_reward = 2 if new_tests_passed else 0\nelif action == \"parallel_tool_batch\":\n    local_reward = 0.1  # efficiency bonus\n\n# Check for redundant calls\nif is_redundant_call(action, history):\n    local_reward -= 0.05\n\ntrajectory.append((state, action, tool_output, local_reward))\n```",
+    "ko": "최종 코드 정확성에 기여하는 모든 중간 도구 호출에 대해 **밀도 있는 형성 보상**을 제공합니다. 주요 구성 요소:\n\n**1. 도구별 보상 신호 정의**\n- **컴파일 보상:** 코드가 오류 없이 컴파일되면 +1.\n- **린트 보상:** 린터가 문제 없음을 반환하면 +0.5.\n- **테스트 보상:** 테스트 스위트가 새 테스트 케이스를 통과하면 +2.\n- **문서화 보상:** 독스트링 추가 또는 수정 시 +0.2.\n- **효율성 보상:** 독립적 도구 호출 병렬화 시 +0.1, 중복 호출 시 -0.05.\n- **형식 보상:** 적절한 도구 호출 스키마 준수 시 +0.2.\n\n**2. 에피소드 수준 집계**\n- 중간 보상을 합산하여 누적 \"코딩 진행\" 점수를 형성합니다.\n- 최종 보상(예: 전체 테스트 스위트 통과 또는 PR 머지)과 결합하여 정책 업데이트를 안내합니다.\n- 턴 수준 크레딧 할당을 사용하여 다단계 도구 시퀀스에서 보상을 올바르게 귀속합니다.\n\n**3. 정책 업데이트 메커니즘**\n- PPO(Proximal Policy Optimization), A2C(Advantage Actor-Critic), 또는 GRPO를 형성 보상과 함께 사용합니다.\n- 각 RL 롤아웃에서 `(상태, 행동, 도구_결과, 로컬_보상)` 튜플을 추적합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Agent     │\n│   Action    │\n└──────┬──────┘\n       │\n   ┌───┴───┐\n   ▼       ▼\n┌─────┐ ┌─────┐\n│Comp │ │Test │\n│+1.0 │ │+2.0 │\n└──┬──┘ └──┬──┘\n   └───┬───┘\n       ▼\n┌─────────────┐\n│ Cumulative  │\n│   Reward    │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent Action] --> B{Tool Type}\n    B -->|Compile| C[+1.0 if success]\n    B -->|Test| D[+2.0 if pass]\n    B -->|Lint| E[+0.5 if clean]\n    C & D & E --> F[Aggregate Reward]\n    F --> G[Policy Update]",
   "code_example": "if action == 'compile':\n    reward = 1.0 if compile_success else -0.5\nelif action == 'run_tests':\n    reward = 2.0 if new_tests_passed else 0\nelif action == 'lint':\n    reward = 0.5 if lint_clean else 0\ntrajectory.append((state, action, reward))",
   "when_to_use": {
-    "en": ["RL-based agent training", "Tool utilization improvement", "Coding agent development"],
-    "ko": ["RL 기반 에이전트 훈련", "도구 활용 개선", "코딩 에이전트 개발"]
+    "en": [
+      "Instrumentation: Wrap tool calls with functions that return a binary or graded success signal",
+      "Hyperparameter tuning to prevent overfitting to one tool",
+      "Curriculum design starting with simpler tasks to collect early positive signals",
+      "Multi-criteria grading with weighted combinations of correctness, format, tool-use quality, and efficiency",
+      "RLAIF for scalable, cost-effective reward signal generation"
+    ],
+    "ko": [
+      "도구 호출을 이진 또는 등급 성공 신호를 반환하는 함수로 래핑하는 계측",
+      "하나의 도구에 과적합하지 않도록 하이퍼파라미터 튜닝",
+      "초기 긍정 신호를 수집하기 위해 단순한 작업부터 시작하는 커리큘럼 설계",
+      "정확성, 형식, 도구 사용 품질, 효율성의 가중 조합을 사용한 다기준 평가",
+      "확장 가능하고 비용 효율적인 보상 신호 생성을 위한 RLAIF"
+    ]
   },
   "pros": {
-    "en": ["Denser feedback guiding step-by-step", "Encourages tool adoption"],
-    "ko": ["단계별 안내하는 밀도 높은 피드백", "도구 채택 장려"]
+    "en": [
+      "Denser feedback guiding the agent step by step, reducing reliance on sparse final success signals",
+      "Encourages the agent to learn how and when to invoke compilers and test runners"
+    ],
+    "ko": [
+      "에이전트를 단계별로 안내하는 밀도 높은 피드백으로 희소한 최종 성공 신호 의존도 감소",
+      "에이전트가 컴파일러와 테스트 러너를 언제 어떻게 호출하는지 학습하도록 장려"
+    ]
   },
   "cons": {
-    "en": ["Reward engineering overhead", "Potential overfitting to intermediate rewards"],
-    "ko": ["보상 설계 오버헤드", "중간 보상에 대한 과적합 가능성"]
+    "en": [
+      "Reward engineering overhead: requires careful design and maintenance of reward functions for each tool",
+      "Potential overfitting: the agent may game intermediate rewards (e.g., repeatedly running lint without changing code)"
+    ],
+    "ko": [
+      "보상 설계 오버헤드: 각 도구에 대한 보상 함수의 신중한 설계와 유지보수 필요",
+      "과적합 가능성: 에이전트가 중간 보상을 악용할 수 있음 (예: 코드 변경 없이 반복적으로 린트 실행)"
+    ]
   },
   "tags": ["tool-use", "reward-shaping", "coding-agent", "RL"]
 }

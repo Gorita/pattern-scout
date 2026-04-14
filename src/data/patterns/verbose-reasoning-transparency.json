@@ -6,27 +6,51 @@
   "status": "best-practice",
   "original_url": "https://www.nibzard.com/claude-code",
   "problem": {
-    "en": "Black-box agent outputs are hard to debug, verify, and trust without visibility into reasoning.",
-    "ko": "블랙박스 에이전트 출력은 추론에 대한 가시성 없이 디버깅, 검증, 신뢰하기 어렵습니다."
+    "en": "AI agents, especially those using complex models or multiple tools, can sometimes behave like \"black boxes.\" Users may not understand why an agent made a particular decision, chose a specific tool, or generated a certain output. This lack of transparency can hinder debugging, trust, and the ability to effectively guide the agent.",
+    "ko": "AI 에이전트, 특히 복잡한 모델이나 여러 도구를 사용하는 에이전트는 때때로 \"블랙박스\"처럼 동작할 수 있습니다. 사용자는 에이전트가 특정 결정을 내린 이유, 특정 도구를 선택한 이유, 또는 특정 출력을 생성한 이유를 이해하지 못할 수 있습니다. 이러한 투명성 부족은 디버깅, 신뢰, 그리고 에이전트를 효과적으로 안내하는 능력을 저해할 수 있습니다."
   },
   "solution": {
-    "en": "Expose detailed reasoning chains and decision steps for debugging, verification, and user understanding.",
-    "ko": "디버깅, 검증, 사용자 이해를 위해 상세한 추론 체인과 결정 단계를 노출합니다."
+    "en": "Implement a feature that allows users to inspect the agent's internal \"thought process\" or reasoning steps on demand. This could be triggered by a keybinding (e.g., `Ctrl+R` in Claude Code) or a command.\n\nWhen activated, the verbose output might reveal:\n\n- The agent's interpretation of the user's prompt.\n- Alternative actions or tools it considered.\n- The specific tool(s) it selected and why (if available).\n- Intermediate steps or sub-tasks it performed.\n- Confidence scores or internal states.\n- Raw outputs from tools before they are processed or summarized.\n\nThis transparency helps users understand the agent's decision-making process, identify issues if the agent is stuck or producing incorrect results, and learn how to prompt more effectively.",
+    "ko": "사용자가 에이전트의 내부 \"사고 과정\" 또는 추론 단계를 필요에 따라 검사할 수 있는 기능을 구현합니다. 이는 키바인딩(예: Claude Code의 `Ctrl+R`) 또는 명령어로 트리거할 수 있습니다.\n\n활성화되면 상세 출력은 다음을 보여줄 수 있습니다:\n\n- 사용자 프롬프트에 대한 에이전트의 해석\n- 고려한 대안 행동 또는 도구\n- 선택한 특정 도구와 그 이유 (가능한 경우)\n- 수행한 중간 단계 또는 하위 작업\n- 신뢰도 점수 또는 내부 상태\n- 도구의 원시 출력 (처리 또는 요약 전)\n\n이러한 투명성은 사용자가 에이전트의 의사 결정 과정을 이해하고, 에이전트가 막히거나 잘못된 결과를 생성할 때 문제를 식별하며, 더 효과적으로 프롬프트하는 방법을 학습하는 데 도움이 됩니다."
   },
   "ascii_diagram": "┌───────────────────────────┐\n│   Verbose Mode            │\n├───────────────────────────┤\n│ Step 1: Analyzing task... │\n│ Step 2: Found files...    │\n│ Step 3: Planning edits... │\n│ Step 4: Executing...      │\n│ Step 5: Verifying...      │\n│                           │\n│ [User can inspect each]   │\n└───────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent] -->|Log| B[Step 1: Analyze]\n    B -->|Log| C[Step 2: Search]\n    C -->|Log| D[Step 3: Plan]\n    D -->|Log| E[Step 4: Execute]\n    B & C & D & E --> F[User Inspection Panel]",
   "code_example": "class VerboseAgent:\n    def execute(self, task, verbose=True):\n        steps = []\n        \n        step = self.analyze(task)\n        if verbose: steps.append(f'Analyzing: {step}')\n        \n        files = self.search(step)\n        if verbose: steps.append(f'Found {len(files)} files')\n        \n        plan = self.plan(files)\n        if verbose: steps.append(f'Plan: {plan}')\n        \n        result = self.run(plan)\n        if verbose: steps.append(f'Result: {result}')\n        \n        return {'result': result, 'reasoning': steps}",
   "when_to_use": {
-    "en": ["Debugging sessions", "Trust building", "Learning/training purposes"],
-    "ko": ["디버깅 세션", "신뢰 구축", "학습/훈련 목적"]
+    "en": [
+      "Debugging agents that produce incorrect or unexpected outputs",
+      "Learning how to prompt more effectively by studying agent reasoning patterns",
+      "Building trust in high-stakes scenarios where understanding \"why\" matters",
+      "Complementing human-in-the-loop approval workflows with transparency"
+    ],
+    "ko": [
+      "잘못되거나 예상치 못한 출력을 생성하는 에이전트 디버깅",
+      "에이전트 추론 패턴을 연구하여 더 효과적인 프롬프트 방법 학습",
+      "\"왜\"를 이해하는 것이 중요한 고위험 시나리오에서 신뢰 구축",
+      "투명성으로 사람 개입 승인 워크플로우 보완"
+    ]
   },
   "pros": {
-    "en": ["Transparency", "Easy debugging", "Improved trust"],
-    "ko": ["투명성", "쉬운 디버깅", "향상된 신뢰"]
+    "en": [
+      "Enables debugging of unexpected agent behavior",
+      "Supports prompt engineering",
+      "Builds trust through explainability"
+    ],
+    "ko": [
+      "예상치 못한 에이전트 동작 디버깅 가능",
+      "프롬프트 엔지니어링 지원",
+      "설명 가능성을 통한 신뢰 구축"
+    ]
   },
   "cons": {
-    "en": ["Increased output volume", "Higher token costs"],
-    "ko": ["출력량 증가", "토큰 비용 증가"]
+    "en": [
+      "Adds modest performance overhead (+10-30% tokens)",
+      "Requires careful handling of sensitive information (system prompts, credentials)"
+    ],
+    "ko": [
+      "적당한 성능 오버헤드 추가 (+10-30% 토큰)",
+      "민감한 정보(시스템 프롬프트, 자격 증명) 처리에 주의 필요"
+    ]
   },
-  "tags": ["explainability", "debugging", "transparency", "verbose-mode"]
+  "tags": ["explainability", "debugging", "transparency", "agent reasoning", "verbose mode", "introspection"]
 }

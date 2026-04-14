@@ -6,27 +6,59 @@
   "status": "emerging",
   "original_url": "https://arxiv.org/abs/2308.09687",
   "problem": {
-    "en": "Tree structures cannot represent thought aggregation or cycles in reasoning processes.",
-    "ko": "트리 구조는 추론 과정에서 생각의 집계나 순환을 표현할 수 없습니다."
+    "en": "Linear reasoning approaches like Chain-of-Thought (CoT) and even tree-based methods like Tree-of-Thoughts (ToT) have limitations when dealing with problems that require complex interdependencies between reasoning steps. Many real-world problems involve reasoning paths that merge, split, and recombine in ways that don't fit neatly into linear or tree structures. These problems need a more flexible approach that can represent arbitrary relationships between thoughts.",
+    "ko": "Chain-of-Thought(CoT)와 같은 선형 추론 방식이나 Tree-of-Thoughts(ToT)와 같은 트리 기반 방법은 추론 단계 간 복잡한 상호 의존성이 필요한 문제에 한계가 있습니다. 많은 실제 문제는 선형 또는 트리 구조에 깔끔하게 맞지 않는 방식으로 병합, 분기, 재결합하는 추론 경로를 포함합니다. 이러한 문제에는 생각 간 임의의 관계를 표현할 수 있는 더 유연한 접근 방식이 필요합니다."
   },
   "solution": {
-    "en": "Model reasoning as a graph where thoughts can merge, aggregate, and form cycles for complex problem solving.",
-    "ko": "생각이 병합, 집계, 순환을 형성할 수 있는 그래프로 추론을 모델링하여 복잡한 문제를 해결합니다."
+    "en": "Graph of Thoughts (GoT) extends reasoning frameworks by representing the thought process as a directed graph. GoT provides a general framework that subsumes Chain-of-Thought (linear) and Tree-of-Thoughts (branching) as special cases, with aggregation as the key enabling operation.\n\nIn GoT:\n\n- **Nodes** represent individual thoughts or reasoning states\n- **Edges** represent transformations or reasoning steps between thoughts\n- **Multiple paths** can lead to and from each node\n- **Aggregation operations** can combine multiple thoughts\n- **Backtracking** allows revisiting and refining previous thoughts\n\nThis enables operations like:\n1. **Branching**: Generate multiple thoughts from one\n2. **Aggregation**: Combine insights from multiple reasoning paths\n3. **Refinement**: Improve thoughts based on later insights\n4. **Looping**: Revisit and refine thoughts iteratively",
+    "ko": "Graph of Thoughts(GoT)는 사고 과정을 방향 그래프로 표현하여 추론 프레임워크를 확장합니다. GoT는 Chain-of-Thought(선형)와 Tree-of-Thoughts(분기)를 특수 케이스로 포함하는 일반 프레임워크를 제공하며, 집계가 핵심 연산입니다.\n\nGoT에서:\n\n- **노드**는 개별 생각 또는 추론 상태를 나타냅니다\n- **엣지**는 생각 간 변환 또는 추론 단계를 나타냅니다\n- **다중 경로**가 각 노드로 이어지거나 각 노드에서 나올 수 있습니다\n- **집계 연산**이 여러 생각을 결합할 수 있습니다\n- **백트래킹**으로 이전 생각을 재방문하고 개선할 수 있습니다\n\n이를 통해 다음 연산이 가능합니다:\n1. **분기**: 하나의 생각에서 여러 생각 생성\n2. **집계**: 여러 추론 경로의 통찰 결합\n3. **개선**: 후속 통찰을 기반으로 생각 개선\n4. **루프**: 생각을 반복적으로 재방문하고 개선"
   },
   "ascii_diagram": "      ┌───┐\n      │ A │\n      └─┬─┘\n     ┌──┴──┐\n     ▼     ▼\n   ┌───┐ ┌───┐\n   │ B │ │ C │\n   └─┬─┘ └─┬─┘\n     │     │\n     └──┬──┘ (merge)\n        ▼\n      ┌───┐\n      │ D │\n      └─┬─┘\n        │\n        ▼ (may cycle back)",
   "mermaid_diagram": "flowchart TD\n    A[Thought A] --> B[Thought B]\n    A --> C[Thought C]\n    B --> D[Merge D]\n    C --> D\n    D -->|Refine| A",
   "code_example": "graph = ThoughtGraph()\ngraph.add_node('A', initial_thought)\ngraph.branch('A', ['B', 'C'])\ngraph.merge(['B', 'C'], 'D')\nif needs_refinement(graph.get('D')):\n    graph.add_edge('D', 'A')  # cycle back",
   "when_to_use": {
-    "en": ["Complex problem solving", "Multi-perspective integration", "Iterative reasoning"],
-    "ko": ["복잡한 문제 해결", "다중 관점 통합", "반복적 추론"]
+    "en": [
+      "Complex problems with interdependent reasoning steps that need merging",
+      "Problems where early decisions may need revision based on later insights",
+      "Multi-perspective integration requiring aggregation of reasoning paths",
+      "Cases where LangGraph-like workflows with cycles and backtracking are beneficial"
+    ],
+    "ko": [
+      "병합이 필요한 상호 의존적 추론 단계가 있는 복잡한 문제",
+      "후속 통찰에 따라 초기 결정을 수정해야 할 수 있는 문제",
+      "추론 경로의 집계가 필요한 다중 관점 통합",
+      "순환과 백트래킹이 포함된 LangGraph 유사 워크플로우가 유용한 경우"
+    ]
   },
   "pros": {
-    "en": ["Flexible reasoning structure", "Thought aggregation possible", "Supports cyclic reasoning"],
-    "ko": ["유연한 추론 구조", "생각 집계 가능", "순환 추론 지원"]
+    "en": [
+      "Handles complex problems with interdependent reasoning steps",
+      "Can discover non-obvious connections between ideas",
+      "Supports iterative refinement and backtracking",
+      "More expressive than linear or tree-based approaches"
+    ],
+    "ko": [
+      "상호 의존적 추론 단계가 있는 복잡한 문제 처리",
+      "아이디어 간 비명시적 연결 발견 가능",
+      "반복적 개선과 백트래킹 지원",
+      "선형 또는 트리 기반 접근 방식보다 높은 표현력"
+    ]
   },
   "cons": {
-    "en": ["High implementation complexity", "Difficult to track reasoning paths"],
-    "ko": ["구현 복잡도 높음", "추론 경로 추적 어려움"]
+    "en": [
+      "Significantly higher computational cost (5-20x vs. linear reasoning)",
+      "Complex to implement and debug",
+      "May generate many redundant thoughts",
+      "Requires sophisticated scoring and path-finding algorithms",
+      "Can be overkill for simple problems"
+    ],
+    "ko": [
+      "현저히 높은 계산 비용 (선형 추론 대비 5-20배)",
+      "구현 및 디버깅 복잡",
+      "많은 중복 생각 생성 가능",
+      "정교한 점수화 및 경로 탐색 알고리즘 필요",
+      "단순한 문제에는 과도할 수 있음"
+    ]
   },
-  "tags": ["reasoning", "graph-based", "problem-solving", "aggregation"]
+  "tags": ["reasoning", "graph-based", "problem-solving", "thought-exploration", "backtracking", "aggregation"]
 }
