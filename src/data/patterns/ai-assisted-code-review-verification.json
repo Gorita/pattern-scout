@@ -6,27 +6,51 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=BGgsoIgbT_Y",
   "problem": {
-    "en": "As AI generates increasing amounts of code, the bottleneck shifts from generation to verification. Ensuring AI-generated code is semantically correct, aligns with intent (especially if underspecified), and meets quality standards becomes crucial and time-consuming.",
-    "ko": "AI가 점점 더 많은 코드를 생성함에 따라 병목 현상이 생성에서 검증으로 이동합니다. AI 생성 코드가 의미적으로 올바르고, 의도(특히 불충분하게 지정된 경우)에 부합하며, 품질 표준을 충족하는지 확인하는 것이 중요하고 시간이 많이 걸립니다."
+    "en": "As AI models generate increasing amounts of code, the bottleneck in software development shifts from code generation to code verification and review. Ensuring that AI-generated code is not only syntactically correct but also semantically correct, aligns with the intended functionality (especially if underspecified), and meets quality standards becomes crucial and time-consuming.",
+    "ko": "AI 모델이 점점 더 많은 코드를 생성함에 따라 소프트웨어 개발의 병목 현상이 코드 생성에서 코드 검증 및 리뷰로 이동합니다. AI 생성 코드가 구문적으로 올바를 뿐만 아니라 의미적으로도 올바르고, 의도된 기능(특히 불충분하게 지정된 경우)에 부합하며, 품질 표준을 충족하는지 확인하는 것이 중요하고 시간이 많이 걸립니다."
   },
   "solution": {
-    "en": "Employ AI-powered tools to assist code review: analyze changes and highlight potential issues, summarize intent/impact of changes, interactive systems for explaining code or justifying decisions, ensure alignment with user's 'mind's eye' intent.",
-    "ko": "AI 기반 도구를 사용하여 코드 리뷰 지원: 변경 사항 분석 및 잠재적 문제 강조, 변경의 의도/영향 요약, 코드 설명 또는 결정 정당화를 위한 대화형 시스템, 사용자의 '마음의 눈' 의도와의 일치 보장."
+    "en": "Develop and employ AI-powered tools and processes specifically designed to assist humans in reviewing and verifying code, whether it's AI-generated or human-written. This can involve:\n\n- AI agents that analyze code changes and highlight potential issues, bugs, or deviations from best practices.\n- Tools that help summarize the intent or impact of code changes, making it easier for human reviewers to understand.\n- Interactive systems where reviewers can ask the AI to explain parts of the code or justify certain decisions made during generation.\n- Mechanisms to ensure the AI's output aligns with the user's \"mind's eye\" or high-level intent, even if the initial specification was ambiguous.\n- Multi-agent approaches where one agent generates code while another critiques and verifies it, iterating until convergence.\n- Three-layer workflows stratifying tasks by complexity: AI-only for style/documentation, AI-human collaboration for logic/security, and human-only for architectural decisions.\n\nThe goal is to make the code review process more efficient and reliable, building confidence in the (AI-assisted) codebase.",
+    "ko": "AI 생성 코드든 인간이 작성한 코드든, 코드 리뷰 및 검증을 지원하기 위해 특별히 설계된 AI 기반 도구와 프로세스를 개발하고 활용합니다. 여기에는 다음이 포함됩니다:\n\n- 코드 변경 사항을 분석하고 잠재적 문제, 버그 또는 모범 사례 이탈을 강조하는 AI 에이전트\n- 코드 변경의 의도나 영향을 요약하여 인간 리뷰어의 이해를 돕는 도구\n- 리뷰어가 AI에게 코드의 일부를 설명하거나 생성 중 내린 결정을 정당화하도록 요청할 수 있는 대화형 시스템\n- 초기 명세가 모호하더라도 AI 출력이 사용자의 '마음의 눈' 또는 상위 의도에 부합하도록 보장하는 메커니즘\n- 하나의 에이전트가 코드를 생성하고 다른 에이전트가 비평 및 검증하여 수렴할 때까지 반복하는 멀티 에이전트 접근 방식\n- 복잡도별 작업 계층화: 스타일/문서화는 AI 전용, 로직/보안은 AI-인간 협업, 아키텍처 결정은 인간 전용의 3계층 워크플로우\n\n목표는 코드 리뷰 프로세스를 더 효율적이고 신뢰할 수 있게 만들어 (AI 지원) 코드베이스에 대한 신뢰를 구축하는 것입니다."
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   AI-Generated Code Changes     │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│    AI Review Assistant          │\n├─────────────────────────────────┤\n│ • Analyze changes               │\n│ • Highlight potential issues    │\n│ • Summarize intent/impact       │\n│ • Explain code decisions        │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│      Human Reviewer             │\n│  Focus on high-level intent     │\n│  and business logic             │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Confident Codebase            │\n└─────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[AI-Generated Code] --> B[AI Review Assistant]\n    B --> C[Analyze Changes]\n    B --> D[Highlight Issues]\n    B --> E[Summarize Intent]\n    C --> F[Human Reviewer]\n    D --> F\n    E --> F\n    F --> G{Aligns with Intent?}\n    G -->|Yes| H[Approve]\n    G -->|No| I[Request Changes]",
   "code_example": "# AI-Assisted Code Review Integration\n\nclass AICodeReviewAssistant:\n    def review_changes(self, diff):\n        analysis = {\n            'issues': self.detect_potential_issues(diff),\n            'intent_summary': self.summarize_intent(diff),\n            'impact_analysis': self.analyze_impact(diff),\n            'questions': self.generate_review_questions(diff)\n        }\n        return analysis\n    \n    def explain_decision(self, code_section, question):\n        # Interactive Q&A about code decisions\n        return self.explain(code_section, question)\n\n# Integration into PR review process\ndef review_pr(pr):\n    ai_review = assistant.review_changes(pr.diff)\n    \n    # Human focuses on alignment with intent\n    print(f\"Intent Summary: {ai_review['intent_summary']}\")\n    print(f\"Potential Issues: {ai_review['issues']}\")\n    \n    # Human can ask clarifying questions\n    explanation = assistant.explain_decision(\n        pr.diff, \"Why was this approach chosen?\"\n    )",
   "when_to_use": {
-    "en": ["Reviewing large AI-generated changes", "Verifying alignment with underspecified intent", "PR review process integration", "Building confidence in AI-assisted codebases"],
-    "ko": ["대규모 AI 생성 변경 검토", "불충분하게 지정된 의도와의 일치 검증", "PR 리뷰 프로세스 통합", "AI 지원 코드베이스에 대한 신뢰 구축"]
+    "en": [
+      "Integrate AI verification tools into the PR review process",
+      "Prompt agents to explain their generated code or provide rationales for changes",
+      "Focus human review on verifying alignment with high-level intent and business logic"
+    ],
+    "ko": [
+      "PR 리뷰 프로세스에 AI 검증 도구 통합",
+      "에이전트에게 생성된 코드 설명 또는 변경 근거 제공 요청",
+      "상위 의도 및 비즈니스 로직과의 일치 검증에 인간 리뷰 집중"
+    ]
   },
   "pros": {
-    "en": ["Makes review more efficient", "Highlights issues humans might miss", "Summarizes complex changes", "Interactive explanation capability"],
-    "ko": ["리뷰를 더 효율적으로", "인간이 놓칠 수 있는 문제 강조", "복잡한 변경 요약", "대화형 설명 기능"]
+    "en": [
+      "Reduces time spent on routine review tasks",
+      "Enables consistent enforcement of coding standards",
+      "Can identify issues humans miss through multi-agent debate and self-critique loops"
+    ],
+    "ko": [
+      "일상적인 리뷰 작업 시간 단축",
+      "코딩 표준의 일관된 시행 가능",
+      "멀티 에이전트 토론과 자기 비평 루프를 통해 인간이 놓치는 문제 식별 가능"
+    ]
   },
   "cons": {
-    "en": ["AI may miss subtle bugs", "Over-reliance risk", "Explanation quality varies", "Adds tooling complexity"],
-    "ko": ["AI가 미묘한 버그를 놓칠 수 있음", "과도한 의존 위험", "설명 품질 차이", "도구 복잡성 추가"]
+    "en": [
+      "Risk of hallucination (reviewing non-existent code or making uncited claims)",
+      "High false positive rates can lead to alert fatigue",
+      "Teams heavily adopting AI assistants have seen significant increases in PR review time due to the volume of AI-generated changes requiring verification"
+    ],
+    "ko": [
+      "환각 위험 (존재하지 않는 코드 리뷰 또는 출처 없는 주장)",
+      "높은 오탐률로 인한 경고 피로 발생 가능",
+      "AI 어시스턴트를 적극 도입한 팀에서 검증이 필요한 AI 생성 변경량으로 인해 PR 리뷰 시간이 크게 증가"
+    ]
   },
-  "tags": ["code-review", "verification", "quality-assurance", "human-ai-collaboration", "trust", "explainability"]
+  "tags": ["code-review", "verification", "quality-assurance", "human-ai-collaboration", "trust", "explainability", "software-quality"]
 }

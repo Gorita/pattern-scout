@@ -6,59 +6,61 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=2wjnV6F2arc",
   "problem": {
-    "en": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense. When agents write 90% of code, these tools create bottlenecks and friction.",
-    "ko": "전통적인 개발 도구는 더 이상 유효하지 않은 가정 위에 구축되어 있습니다: 인간이 노력과 전문성으로 코드를 작성하고, 변경 사항은 희소하고 가치 있으며, 선형 워크플로우가 합리적이라는 가정입니다. 에이전트가 코드의 90%를 작성할 때, 이러한 도구는 병목과 마찰을 만듭니다."
+    "en": "Traditional development tools are built on assumptions that no longer hold: that humans write code with effort and expertise, that changes are scarce and valuable, that linear workflows make sense. When agents write most code, these tools create bottlenecks and friction. Academic research confirms this is a paradigm shift requiring ecosystem-level rethinking, not incremental adjustments.",
+    "ko": "전통적인 개발 도구는 더 이상 유효하지 않은 가정 위에 구축되어 있습니다: 인간이 노력과 전문성으로 코드를 작성하고, 변경 사항은 희소하고 가치 있으며, 선형 워크플로우가 합리적이라는 가정입니다. 에이전트가 대부분의 코드를 작성하면 이러한 도구는 병목과 마찰을 만듭니다. 학술 연구에서도 이것이 점진적 조정이 아닌 생태계 수준의 재고가 필요한 패러다임 전환임을 확인합니다."
   },
   "solution": {
-    "en": "Re-examine dev tooling assumptions from first principles. When agents write most code, the perceived value of changes drops dramatically. Replace linear tickets with immediate agent dispatch, PR reviews with automated verification, sprint planning with continuous flow. Embrace the 'primordial soup' of continuous agent-generated code rather than discrete human changes.",
-    "ko": "개발 도구의 가정을 제1원칙에서 재검토합니다. 에이전트가 대부분의 코드를 작성하면 변경의 인식된 가치가 급격히 떨어집니다. 선형 티켓을 즉각적인 에이전트 디스패치로, PR 리뷰를 자동화된 검증으로, 스프린트 계획을 지속적 흐름으로 대체합니다. 이산적인 인간 변경 대신 에이전트가 지속적으로 생성하는 코드의 '원시 수프'를 수용합니다."
+    "en": "**Re-examine dev tooling assumptions** from first principles. When agents write most code, the perceived value of changes drops dramatically, and workflows optimized for human effort become inefficient.\n\n**The ticket example:**\n\n- **Old world**: Bug reported → Developer busy → Create ticket → Assign next week → Developer gets context → Fix\n- **New world**: Bug reported → Send agent immediately → Agent diagnoses and fixes in same time it takes to create a ticket\n\n**The code review example:**\n\nGitHub features assume changes are valuable (emoji reactions, assigning reviewers, careful consideration). But when agents write 90% of code, you can say: 'Generate 10 variations of this.'\n\n**New tooling principles:**\n\n1. **Immediate action**: Don't queue work, spawn agents instantly\n2. **Variation generation**: Generate 10 versions, pick best\n3. **Automated verification**: Tests > reviews\n4. **Direct integration**: Fewer handoffs, more automation\n5. **Observable execution**: See what agents are doing, not approve each step\n6. **Machine-readable output**: JSON/structured data > human-readable logs\n7. **Unified logging**: Single log stream for all system events (client, server, database)\n\n**The 'primordial soup' metaphor:**\n\nWhen agents generate code continuously, you don't have discrete changes—you have a bubbling, brewing ecosystem of code variants. This requires new mental models: not linear tickets but continuous streams, not PR reviews but automated quality gates, not sprint planning but real-time prioritization.\n\n**Industry examples:**\n- **Model Context Protocol (MCP)**: Universal 'USB-C for AI' standard replacing proprietary tool integrations\n- **Unified logging** (Sourcegraph): Single JSONL stream for all system events, optimized for agent consumption\n- **Code-first interfaces** (Cloudflare): LLMs write code to call tools, reducing tokens 10-100x\n- **CLI-first design**: Tools with `--json` flags for machine-readable output",
+    "ko": "**개발 도구의 가정을 제1원칙에서 재검토합니다.** 에이전트가 대부분의 코드를 작성하면 변경의 인식된 가치가 급격히 떨어지고, 인간 노력에 최적화된 워크플로우가 비효율적이 됩니다.\n\n**티켓 예시:**\n\n- **기존 방식**: 버그 보고 → 개발자 바쁨 → 티켓 생성 → 다음 주 배정 → 개발자 컨텍스트 파악 → 수정\n- **새로운 방식**: 버그 보고 → 에이전트 즉시 파견 → 에이전트가 티켓 생성에 걸리는 시간 안에 진단 및 수정\n\n**코드 리뷰 예시:**\n\nGitHub 기능은 변경이 가치 있다고 가정합니다(이모지 반응, 리뷰어 배정, 신중한 검토). 하지만 에이전트가 코드의 90%를 작성하면 '이것의 변형 10개를 생성해'라고 말할 수 있습니다.\n\n**새로운 도구 원칙:**\n\n1. **즉각적 행동**: 작업을 큐에 넣지 말고 에이전트를 즉시 생성\n2. **변형 생성**: 10개 버전을 생성하고 최선을 선택\n3. **자동화된 검증**: 리뷰보다 테스트\n4. **직접 통합**: 핸드오프를 줄이고 자동화를 늘림\n5. **관찰 가능한 실행**: 각 단계를 승인하지 말고 에이전트 활동을 관찰\n6. **기계 판독 가능 출력**: 사람이 읽는 로그보다 JSON/구조화된 데이터\n7. **통합 로깅**: 모든 시스템 이벤트를 위한 단일 로그 스트림\n\n**'원시 수프' 비유:**\n\n에이전트가 지속적으로 코드를 생성하면 이산적인 변경이 아닌 끓어오르는 코드 변형의 생태계가 됩니다. 새로운 멘탈 모델이 필요합니다: 선형 티켓이 아닌 지속적 스트림, PR 리뷰가 아닌 자동화된 품질 게이트, 스프린트 계획이 아닌 실시간 우선순위 지정.\n\n**업계 사례:**\n- **Model Context Protocol (MCP)**: 독점 도구 통합을 대체하는 범용 'AI용 USB-C' 표준\n- **통합 로깅** (Sourcegraph): 에이전트 소비에 최적화된 단일 JSONL 스트림\n- **코드 우선 인터페이스** (Cloudflare): LLM이 도구를 호출하는 코드를 작성하여 토큰 10~100배 절감\n- **CLI 우선 설계**: 기계 판독 가능한 출력을 위한 `--json` 플래그가 있는 도구"
   },
   "when_to_use": {
     "en": [
       "Agents writing majority of code (50%+)",
       "Team comfortable with autonomous agents",
       "Codebase has good automated testing",
+      "Can tolerate experimentation and failure",
       "Leadership committed to new ways of working"
     ],
     "ko": [
       "에이전트가 코드의 대부분(50% 이상)을 작성할 때",
       "팀이 자율 에이전트에 익숙할 때",
       "코드베이스에 좋은 자동화 테스트가 있을 때",
+      "실험과 실패를 허용할 수 있을 때",
       "리더십이 새로운 작업 방식에 전념할 때"
     ]
   },
   "pros": {
     "en": [
-      "Removes bottlenecks by eliminating waiting for human availability",
-      "Faster iteration with immediate agent investigation",
-      "Better exploration through parallel approach generation",
-      "Reduced ceremony around changes",
-      "Scalability as agent usage grows"
+      "Removes bottlenecks: no waiting for human availability",
+      "Faster iteration: agents investigate immediately",
+      "Better exploration: generate multiple approaches in parallel",
+      "Reduced ceremony: less overhead around changes",
+      "Scalability: works better as agent usage grows"
     ],
     "ko": [
-      "인간 가용성 대기를 제거하여 병목 해소",
-      "즉각적인 에이전트 조사로 빠른 반복",
-      "병렬 접근 방식 생성을 통한 탐색 향상",
-      "변경 주변 절차 감소",
-      "에이전트 사용 증가에 따른 확장성"
+      "병목 제거: 인간 가용성 대기 불필요",
+      "빠른 반복: 에이전트가 즉시 조사",
+      "탐색 향상: 여러 접근 방식을 병렬로 생성",
+      "절차 감소: 변경 관련 오버헤드 감소",
+      "확장성: 에이전트 사용 증가에 따라 더 효과적"
     ]
   },
   "cons": {
     "en": [
-      "Loss of visibility into what's happening",
-      "Integration challenges with existing tools",
-      "Team resistance to unfamiliar workflows",
-      "Increased blast radius with more automation",
-      "Transition pain with hybrid human/agent workflows"
+      "Loss of visibility: harder to track what's happening",
+      "Integration challenges: existing tools don't fit new model",
+      "Team resistance: developers attached to familiar workflows",
+      "New risks: more automation means blast radius increases",
+      "Transition pain: hybrid human/agent workflows are awkward"
     ],
     "ko": [
-      "진행 상황에 대한 가시성 손실",
-      "기존 도구와의 통합 문제",
-      "익숙하지 않은 워크플로우에 대한 팀의 저항",
-      "더 많은 자동화에 따른 영향 범위 증가",
-      "하이브리드 인간/에이전트 워크플로우의 전환 고통"
+      "가시성 손실: 진행 상황 추적이 어려움",
+      "통합 문제: 기존 도구가 새 모델에 맞지 않음",
+      "팀 저항: 개발자가 익숙한 워크플로우에 집착",
+      "새로운 위험: 자동화 증가로 영향 범위 확대",
+      "전환 고통: 하이브리드 인간/에이전트 워크플로우의 어색함"
     ]
   },
-  "mermaid_diagram": "graph TD\n    A1[Humans write code] --> C[Linear Tickets]\n    A2[Code is scarce] --> D[PR Reviews]\n    A3[Developers are busy] --> E[Sprint Planning]\n    B1[Agents write code] --> G[Send Agent Immediately]\n    B2[Code is abundant] --> H[Generate 10 Variations]\n    B3[Agents are unlimited] --> I[Parallel Investigation]",
-  "tags": ["dev-tools", "assumptions", "tickets", "code-review", "tooling", "agent-workflows", "paradigm-shift"]
+  "mermaid_diagram": "graph TD\n    subgraph Old_Assumptions[\"Old Assumptions\"]\n        A1[Humans write code]\n        A2[Code is scarce/valuable]\n        A3[Developers are busy]\n        A4[Changes are permanent]\n    end\n\n    subgraph New_Reality[\"New Reality\"]\n        B1[Agents write code]\n        B2[Code is abundant/cheap]\n        B3[Agents are unlimited]\n        B4[Variations are trivial]\n    end\n\n    A1 --> C[Linear Tickets]\n    A2 --> D[PR Reviews + Emoji Reactions]\n    A3 --> E[Sprint Planning]\n    A4 --> F[Branching Strategies]\n\n    B1 --> G[Send Agent Immediately]\n    B2 --> H[Generate 10 Variations]\n    B3 --> I[Parallel Investigation]\n    B4 --> J[Primordial Soup]",
+  "tags": ["dev-tools", "assumptions", "github", "tickets", "code-review", "tooling", "agent-workflows", "paradigm-shift"]
 }

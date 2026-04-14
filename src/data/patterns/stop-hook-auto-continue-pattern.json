@@ -6,27 +6,65 @@
   "status": "emerging",
   "original_url": "https://every.to/podcast/transcript-how-to-use-claude-code-like-the-people-who-built-it",
   "problem": {
-    "en": "Agents may stop prematurely before completing all requirements, claiming they're done when they're not.",
-    "ko": "에이전트가 모든 요구사항을 완료하기 전에 조기에 중지하고, 완료되지 않았는데 완료됐다고 주장할 수 있습니다."
+    "en": "Agents complete their turn and return control to the user even when the task isn't truly done. Common scenarios include: code compiles but tests fail, changes made but quality checks haven't passed, feature implemented but integration tests broken, and migrations run but verification steps not completed. Without intervention, the user must manually check and re-prompt the agent, creating friction.",
+    "ko": "에이전트가 작업이 실제로 완료되지 않았는데도 턴을 완료하고 사용자에게 제어를 반환합니다. 일반적인 시나리오로는 코드는 컴파일되지만 테스트가 실패하거나, 변경이 이루어졌지만 품질 검사를 통과하지 못했거나, 기능은 구현되었지만 통합 테스트가 깨져 있거나, 마이그레이션은 실행되었지만 검증 단계가 완료되지 않은 경우가 있습니다. 개입 없이는 사용자가 수동으로 확인하고 에이전트에 다시 프롬프트를 보내야 하며, 이는 마찰을 유발합니다."
   },
   "solution": {
-    "en": "Use stop hooks to verify success criteria (tests pass, lint clean) before allowing agent termination.",
-    "ko": "에이전트 종료를 허용하기 전에 성공 기준(테스트 통과, 린트 클린)을 확인하는 정지 훅을 사용합니다."
+    "en": "Use **stop hooks** to programmatically check success criteria after each agent turn. If criteria aren't met, automatically continue the agent's execution until the task is genuinely complete.\n\n**Stop hook**: A script that runs when the agent finishes a turn. It can inspect state and decide whether to return control to the user or keep the agent running.\n\n```pseudo\ndefine_stop_hook() {\n    test_result = run_tests()\n    if test_result.failed:\n        agent.continue_with_prompt(\n            \"Tests failed with: {test_result.errors}. Fix these issues.\"\n        )\n    else:\n        agent.stop()  // Return control to user\n}\n```\n\n**Combined with dangerous mode**: In containerized/sandboxed environments, this enables fully autonomous operation until success.",
+    "ko": "**정지 훅**을 사용하여 각 에이전트 턴 후 성공 기준을 프로그래밍 방식으로 확인합니다. 기준이 충족되지 않으면 작업이 진정으로 완료될 때까지 에이전트의 실행을 자동으로 계속합니다.\n\n**정지 훅**: 에이전트가 턴을 마칠 때 실행되는 스크립트입니다. 상태를 검사하고 사용자에게 제어를 반환할지 에이전트를 계속 실행할지 결정할 수 있습니다.\n\n**위험 모드와 결합**: 컨테이너화/샌드박스 환경에서 성공할 때까지 완전 자율 운영을 가능하게 합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│   Agent     │\n│  \"Done\"     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│  Stop Hook  │\n│  Check:     │\n│  - Tests?   │\n│  - Lint?    │\n└──────┬──────┘\n   ┌───┴───┐\n   ▼       ▼\n [Pass]  [Fail]\n   │       │\n   ▼  ┌────▼────┐\n Done │Continue │\n      │ Working │\n      └─────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent: I'm Done] --> B{Stop Hook Check}\n    B -->|Tests Pass & Lint Clean| C[Really Done]\n    B -->|Failures Found| D[Continue Working]\n    D --> A",
   "code_example": "# Claude Code stop hook example\n# .claude/hooks/stop.sh\n#!/bin/bash\nnpm test || exit 1  # Fails = agent continues\nnpm run lint || exit 1\necho 'All checks passed'",
   "when_to_use": {
-    "en": ["Test-driven development", "Quality gates", "Autonomous agents"],
-    "ko": ["테스트 주도 개발", "품질 게이트", "자율 에이전트"]
+    "en": [
+      "Define success criteria (tests pass, build succeeds, linter clean, etc.)",
+      "Create stop hook that checks these criteria",
+      "If criteria fail, inject feedback and continue agent execution",
+      "If criteria pass, return control to user",
+      "Combine with dangerous mode in containers for autonomous operation",
+      "Achieve deterministic outcomes from non-deterministic processes"
+    ],
+    "ko": [
+      "성공 기준 정의 (테스트 통과, 빌드 성공, 린터 클린 등)",
+      "성공 기준을 확인하는 정지 훅 생성",
+      "기준 실패 시 피드백 주입 및 에이전트 실행 계속",
+      "기준 통과 시 사용자에게 제어 반환",
+      "컨테이너에서 위험 모드와 결합하여 자율 운영",
+      "비결정적 프로세스에서 결정적 결과 달성"
+    ]
   },
   "pros": {
-    "en": ["Completion guarantee", "Quality maintenance", "Automation"],
-    "ko": ["완료 보장", "품질 유지", "자동화"]
+    "en": [
+      "True task completion: Don't stop until actually done",
+      "Reduced human intervention: No manual re-prompting needed",
+      "Systematic quality: Encoded success criteria, not human judgment",
+      "Autonomous operation: Combined with SDK, enables fully hands-off tasks",
+      "Prevents premature completion: Agent can't declare victory too early"
+    ],
+    "ko": [
+      "진정한 작업 완료: 실제로 완료될 때까지 중지하지 않음",
+      "인간 개입 감소: 수동 재프롬프트 불필요",
+      "체계적 품질: 인간 판단이 아닌 인코딩된 성공 기준",
+      "자율 운영: SDK와 결합하여 완전 비대면 작업 가능",
+      "조기 완료 방지: 에이전트가 너무 일찍 승리를 선언할 수 없음"
+    ]
   },
   "cons": {
-    "en": ["Risk of infinite loops", "Hook design required"],
-    "ko": ["무한 루프 위험", "훅 설계 필요"]
+    "en": [
+      "Runaway costs: Agent might loop indefinitely if criteria impossible",
+      "Requires good criteria: Bad success checks lead to infinite loops",
+      "Container overhead: Safest in sandboxed environments",
+      "Debugging challenges: Harder to inspect mid-execution state",
+      "Timeout management: Need sensible limits to prevent infinite execution"
+    ],
+    "ko": [
+      "비용 폭주: 기준이 불가능하면 에이전트가 무한 루프에 빠질 수 있음",
+      "좋은 기준 필요: 잘못된 성공 검사는 무한 루프로 이어짐",
+      "컨테이너 오버헤드: 샌드박스 환경에서 가장 안전",
+      "디버깅 어려움: 실행 중간 상태 검사가 어려움",
+      "타임아웃 관리: 무한 실행 방지를 위한 합리적 제한 필요"
+    ]
   },
-  "tags": ["hooks", "automation", "testing", "success-criteria", "quality-gates"]
+  "tags": ["hooks", "automation", "testing", "determinism", "success-criteria", "continuous-execution"]
 }

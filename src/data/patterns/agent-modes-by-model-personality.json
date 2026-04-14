@@ -6,55 +6,61 @@
   "status": "emerging",
   "original_url": "https://www.youtube.com/watch?v=4rx36wc9ugw",
   "problem": {
-    "en": "Different AI models have fundamentally different personalities and working styles. Treating all models the same leads to suboptimal outcomes. Some models are 'trigger happy' and want to run commands immediately, while others prefer thorough research before acting.",
-    "ko": "서로 다른 AI 모델은 근본적으로 다른 성격과 작업 스타일을 가지고 있습니다. 모든 모델을 동일하게 취급하면 최적이 아닌 결과가 발생합니다. 일부 모델은 즉시 명령을 실행하려 하고, 다른 모델은 행동 전 철저한 조사를 선호합니다."
+    "en": "Different AI models have fundamentally different personalities and working styles. Treating all models the same—expecting them to work identically—leads to suboptimal outcomes. Users expect a consistent interface, but models like Opus 4.5 are \"trigger happy\" and want to run commands immediately, while models like GPT-5.2 are \"lazy\" and prefer thorough research before acting.",
+    "ko": "서로 다른 AI 모델은 근본적으로 다른 성격과 작업 스타일을 가지고 있습니다. 모든 모델을 동일하게 취급하여 동일하게 작동하기를 기대하면 최적이 아닌 결과가 발생합니다. 사용자는 일관된 인터페이스를 기대하지만, Opus 4.5 같은 모델은 '트리거 해피'로 즉시 명령을 실행하려 하고, GPT-5.2 같은 모델은 '게으른' 성격으로 행동 전 철저한 조사를 선호합니다."
   },
   "solution": {
-    "en": "Design different agent modes optimized for each model's personality rather than forcing all models into a single interaction pattern. Each mode should have its own UI/UX patterns, tool configurations, expectation setting, and working style. Present these as different working modes (e.g., Smart Mode, Rush Mode, Deep Mode), not as a model selector dropdown.",
-    "ko": "모든 모델을 하나의 상호작용 패턴에 강제하는 대신, 각 모델의 성격에 최적화된 다른 에이전트 모드를 설계합니다. 각 모드는 고유한 UI/UX 패턴, 도구 구성, 기대치 설정, 작업 스타일을 가져야 합니다. 모델 선택 드롭다운이 아닌 다른 작업 모드(예: 스마트 모드, 러시 모드, 딥 모드)로 제시합니다."
+    "en": "Design **different agent modes** optimized for each model's personality rather than forcing all models into a single interaction pattern. Each mode should have its own UI/UX patterns (font, prompt length guidance), tool configurations, expectation setting, and working style.\n\n**Key insight:** It's not about model selection—it's about **different ways of working**.\n\n**Model personalities identified:**\n- **Claude Opus 4.5**: Trigger happy, interactive. Runs commands, asks questions, rapid feedback loops. Best for quick back-and-forth, interactive tasks.\n- **GPT-5.2**: Lazy, thorough, deep researcher. Goes off for 45+ minutes, researches extensively, comes back with comprehensive results. Best for well-scoped problems, big tasks, finding information.\n\n**Implementation mechanisms:**\n- System prompts: Define personality-specific instructions per mode\n- Temperature/sampling: Low (0.1-0.3) for consistent modes; medium (0.4-0.7) for balanced; high (0.7-1.0+) for creative modes\n- Tool configuration: Mode-specific permission sets and constraints\n\n**Mode differentiation strategies:**\n1. Visual/UI differentiation: Different fonts, prompt length guidance\n2. Tool configuration: Smart mode optimized for rapid execution; Deep mode optimized for thorough research\n3. Expectation setting: Smart mode \"Watch the agent work\"; Deep mode \"Send off and check in 60 minutes later\"",
+    "ko": "모든 모델을 하나의 상호작용 패턴에 강제하는 대신, 각 모델의 성격에 최적화된 **다른 에이전트 모드**를 설계합니다. 각 모드는 고유한 UI/UX 패턴(폰트, 프롬프트 길이 가이드), 도구 구성, 기대치 설정, 작업 스타일을 가져야 합니다.\n\n**핵심 통찰:** 모델 선택이 아닌 **다른 작업 방식**에 관한 것입니다.\n\n**식별된 모델 성격:**\n- **Claude Opus 4.5**: 트리거 해피, 대화형. 명령 실행, 질문, 빠른 피드백 루프. 빠른 상호작용 작업에 적합합니다.\n- **GPT-5.2**: 게으르지만 철저한 깊은 연구자. 45분 이상 연구하고 포괄적인 결과를 제공합니다. 범위가 명확한 문제, 큰 작업, 정보 수집에 적합합니다.\n\n**구현 메커니즘:**\n- 시스템 프롬프트: 모드별 성격 특화 지침 정의\n- 온도/샘플링: 일관된 모드는 낮게(0.1-0.3), 균형은 중간(0.4-0.7), 창의적 모드는 높게(0.7-1.0+)\n- 도구 구성: 모드별 권한 세트 및 제약 조건\n\n**모드 차별화 전략:**\n1. 시각적/UI 차별화: 다른 폰트, 프롬프트 길이 가이드\n2. 도구 구성: 스마트 모드는 빠른 실행에 최적화, 딥 모드는 철저한 조사에 최적화\n3. 기대치 설정: 스마트 모드 \"에이전트 작업 관찰\", 딥 모드 \"보내고 60분 후 확인\""
   },
   "when_to_use": {
     "en": [
-      "Multi-model agent systems with different model backends",
-      "Products supporting both interactive and autonomous workflows",
-      "When model personalities significantly differ in working style",
-      "User-facing AI tools requiring clear expectation setting"
+      "Identify model personalities in your stack through internal testing",
+      "Create mode names that describe the working style, not the model",
+      "Differentiate UX to make each mode feel distinct",
+      "Configure tools per mode optimized for the model's strength",
+      "Set user expectations explaining when to use each mode",
+      "Smart Mode (Opus-like): Quick configuration tasks, debugging with rapid iteration, tasks requiring frequent human feedback",
+      "Deep Mode (GPT-5.2-like): Well-scoped problems, big tasks with clear requirements, research and information gathering"
     ],
     "ko": [
-      "다양한 모델 백엔드를 가진 멀티 모델 에이전트 시스템",
-      "대화형과 자율 워크플로우를 모두 지원하는 제품",
-      "모델 성격이 작업 스타일에서 크게 다를 때",
-      "명확한 기대치 설정이 필요한 사용자 대면 AI 도구"
+      "내부 테스트를 통해 스택 내 모델 성격 파악",
+      "모델이 아닌 작업 스타일을 설명하는 모드 이름 생성",
+      "각 모드가 구별되도록 UX 차별화",
+      "모델의 강점에 최적화된 모드별 도구 구성",
+      "각 모드의 사용 시기를 설명하는 사용자 기대치 설정",
+      "스마트 모드(Opus 유형): 빠른 구성 작업, 빠른 반복 디버깅, 빈번한 인간 피드백이 필요한 작업",
+      "딥 모드(GPT-5.2 유형): 범위가 명확한 문제, 명확한 요구사항의 큰 작업, 연구 및 정보 수집"
     ]
   },
   "pros": {
     "en": [
-      "Optimized for each model's strengths",
-      "Clear user expectations per mode",
-      "Reduced user frustration",
-      "Better outcomes through model-appropriate workflows"
+      "Optimized for each model's strengths: Better outcomes than one-size-fits-all",
+      "Clear user expectations: Users know how to interact with each mode",
+      "Reduced frustration: Users don't fight against model's natural tendencies",
+      "Better outcomes: Different models get to equally good results via different paths"
     ],
     "ko": [
-      "각 모델의 강점에 최적화",
-      "모드별 명확한 사용자 기대치",
-      "사용자 불만 감소",
-      "모델에 적합한 워크플로우를 통한 향상된 결과"
+      "각 모델의 강점에 최적화: 획일적 접근보다 나은 결과",
+      "명확한 사용자 기대치: 사용자가 각 모드와 상호작용하는 방법을 인지",
+      "불만 감소: 사용자가 모델의 자연스러운 경향에 맞서 싸우지 않음",
+      "향상된 결과: 다른 모델이 다른 경로를 통해 동등하게 좋은 결과에 도달"
     ]
   },
   "cons": {
     "en": [
-      "Increased complexity with multiple modes to maintain",
-      "User confusion about which mode to choose",
-      "Model evolution risk as personalities change with new versions",
-      "Testing overhead for each mode independently"
+      "Increased complexity: Multiple modes to maintain and document",
+      "User confusion: Some users just want \"the best model\"",
+      "Model evolution risk: Personalities change with new versions",
+      "Testing overhead: Need to validate each mode independently"
     ],
     "ko": [
-      "유지해야 할 여러 모드로 인한 복잡성 증가",
-      "어떤 모드를 선택할지에 대한 사용자 혼란",
-      "새 버전에서 성격이 변하는 모델 진화 위험",
-      "각 모드의 독립적 테스트 오버헤드"
+      "복잡성 증가: 유지 및 문서화할 여러 모드",
+      "사용자 혼란: 일부 사용자는 단순히 '최고의 모델'을 원함",
+      "모델 진화 위험: 새 버전에서 성격이 변경됨",
+      "테스트 오버헤드: 각 모드를 독립적으로 검증 필요"
     ]
   },
   "mermaid_diagram": "graph LR\n    A[User Request] --> B{Select Mode}\n    B -->|Smart Mode| C[Opus 4.5]\n    B -->|Deep Mode| D[GPT-5.2]\n    C --> E[Interactive: Fast feedback, rapid iteration]\n    D --> F[Autonomous: Send off, check back later]\n    E --> G[Results in minutes]\n    F --> H[Results in 45-60 minutes]",
-  "tags": ["model-personality", "interaction-modes", "multi-model", "ux-design", "agent-behavior"]
+  "tags": ["model-personality", "interaction-modes", "multi-model", "ux-design", "agent-behavior", "opus", "gpt-52"]
 }

@@ -6,24 +6,50 @@
   "status": "emerging",
   "original_url": "https://github.com/nibzard/labruno-agent",
   "problem": {
-    "en": "Parallel sandboxes can spawn many runs, but static fan-out policies don't adapt to task difficulty. After some N, you're paying for redundant failures. If prompts are underspecified, scaling N just scales errors. Unbounded fan-out can overwhelm budgets and rate limits.",
-    "ko": "병렬 샌드박스는 많은 실행을 생성할 수 있지만, 정적 팬아웃 정책은 작업 난이도에 적응하지 못합니다. 일정 N 이후에는 중복 실패에 비용을 지불합니다. 프롬프트가 불충분하면 N을 늘려도 오류만 확대됩니다. 무제한 팬아웃은 예산과 속도 제한을 초과할 수 있습니다."
+    "en": "Parallel sandboxes are intoxicating: you can spawn 10... 100... 1000 runs. But two things break quickly:\n\n1. **Diminishing returns:** After some N, you're mostly paying for redundant failures or near-duplicate solutions\n2. **Prompt fragility:** If the prompt is underspecified, scaling N just scales errors (lots of sandboxes fail fast)\n3. **Resource risk:** Unbounded fan-out can overwhelm budgets, rate limits, or queues\n4. **Oscillation risk:** Poorly tuned thresholds can cause scale-up/scale-down thrashing as the controller oscillates between decisions\n\nStatic \"N=10 always\" policies don't adapt to task difficulty, model variance, or observed failure rates. Most implementations use static caps rather than true signal-driven adaptation.",
+    "ko": "병렬 샌드박스는 매혹적입니다: 10개... 100개... 1000개 실행을 생성할 수 있습니다. 하지만 두 가지가 빠르게 문제가 됩니다:\n\n1. **수확 체감:** 일정 N 이후에는 대부분 중복 실패나 거의 동일한 솔루션에 비용을 지불합니다\n2. **프롬프트 취약성:** 프롬프트가 불충분하면 N을 늘려도 오류만 확대됩니다 (많은 샌드박스가 빠르게 실패)\n3. **리소스 위험:** 무제한 팬아웃은 예산, 속도 제한, 큐를 초과할 수 있습니다\n4. **진동 위험:** 튜닝이 부실한 임계값은 컨트롤러가 결정 사이에서 진동하면서 확장/축소 스래싱을 유발할 수 있습니다\n\n정적 \"N=10 항상\" 정책은 작업 난이도, 모델 분산, 관찰된 실패율에 적응하지 못합니다. 대부분의 구현은 진정한 신호 기반 적응이 아닌 정적 한도를 사용합니다."
   },
   "solution": {
-    "en": "Add a controller that adapts fan-out in real time based on observed signals. Start small (N=3-5), sample early signals (success rate, diversity, error clustering), then decide: scale up if variance is high, stop early if confident, refine prompt if errors cluster, or decompose if repeated failures occur.",
-    "ko": "관찰된 신호를 기반으로 실시간으로 팬아웃을 조정하는 컨트롤러를 추가합니다. 작게 시작(N=3-5)하고, 초기 신호(성공률, 다양성, 오류 클러스터링)를 샘플링한 후 결정합니다: 분산이 높으면 확장, 확신이 있으면 조기 중단, 오류가 클러스터링되면 프롬프트 개선, 반복 실패 시 분해합니다."
+    "en": "Add a controller that *adapts fan-out in real time* based on observed signals from early runs.\n\n**Core loop:**\n\n1. **Start small:** Launch a small batch (e.g., N=3-5) in parallel\n2. **Early signal sampling:** As soon as the first X runs finish (or after T seconds), compute:\n   - success rate (exit code / test pass)\n   - diversity score (are solutions meaningfully different?)\n   - judge confidence / winner margin\n   - error clustering (same error everywhere vs varied errors)\n\n3. **Decide next action:**\n   - **Scale up** if: success rate is good but quality variance is high (you want a better winner)\n   - **Stop early** if: judge is confident + tests pass + solutions converge\n   - **Refine prompt / spec** if: error clustering is high (everyone fails the same way)\n   - **Switch strategy** if: repeated failure suggests decomposition is needed (spawn investigative sub-agent)\n\n4. **Budget guardrails:** Enforce max sandboxes, max runtime, and \"no-progress\" stop conditions\n\n5. **Hysteresis for stability:** Use different thresholds for scale-up vs. stop (e.g., scale up if confidence < 0.65, stop only if > 0.75) to prevent oscillation",
+    "ko": "초기 실행에서 관찰된 신호를 기반으로 *실시간으로 팬아웃을 조정하는* 컨트롤러를 추가합니다.\n\n**핵심 루프:**\n\n1. **작게 시작:** 작은 배치(예: N=3-5)를 병렬로 시작합니다\n2. **초기 신호 샘플링:** 처음 X개 실행이 완료되면(또는 T초 후) 계산합니다:\n   - 성공률 (종료 코드 / 테스트 통과)\n   - 다양성 점수 (솔루션이 의미 있게 다른가?)\n   - 판정 신뢰도 / 승자 마진\n   - 오류 클러스터링 (모든 곳에서 같은 오류 vs 다양한 오류)\n\n3. **다음 행동 결정:**\n   - **확장**: 성공률은 좋지만 품질 분산이 높을 때 (더 나은 승자를 원함)\n   - **조기 중단**: 판정이 확실하고 + 테스트 통과 + 솔루션이 수렴할 때\n   - **프롬프트/사양 개선**: 오류 클러스터링이 높을 때 (모두 같은 방식으로 실패)\n   - **전략 전환**: 반복 실패가 분해가 필요함을 시사할 때 (조사 서브 에이전트 생성)\n\n4. **예산 가드레일:** 최대 샌드박스 수, 최대 실행 시간, \"진행 없음\" 중단 조건 적용\n\n5. **안정성을 위한 히스테리시스:** 확장과 중단에 다른 임계값 사용 (예: 신뢰도 < 0.65면 확장, > 0.75일 때만 중단)하여 진동 방지"
   },
   "when_to_use": {
-    "en": ["Best-of-N codegen with sandbox execution", "Tasks with cheap objective checks (unit tests, schema validation)", "When latency and cost matter - need minimum N for reliability"],
-    "ko": ["샌드박스 실행이 있는 Best-of-N 코드 생성", "저렴한 객관적 검사가 있는 작업(단위 테스트, 스키마 검증)", "지연과 비용이 중요할 때 - 신뢰성을 위한 최소 N 필요"]
+    "en": [
+      "Doing 'best-of-N codegen + execution' in sandboxes",
+      "Have cheap objective checks (unit tests, static analysis, schema validation)",
+      "Latency and cost matter: want the minimum N that achieves reliability"
+    ],
+    "ko": [
+      "샌드박스에서 'Best-of-N 코드 생성 + 실행' 수행",
+      "저렴한 객관적 검사 보유 (단위 테스트, 정적 분석, 스키마 검증)",
+      "지연과 비용이 중요: 신뢰성을 달성하는 최소 N 필요"
+    ]
   },
   "pros": {
-    "en": ["Prevents scaling errors when prompts are bad", "Lowers spend by stopping early when winner is clear", "Makes sandbox swarms production-safe via budgets"],
-    "ko": ["프롬프트가 나쁠 때 오류 확산 방지", "승자가 명확할 때 조기 중단으로 비용 절감", "예산을 통한 샌드박스 스웜 프로덕션 안전화"]
+    "en": [
+      "Prevents 'scale errors' when prompts are bad",
+      "Lowers spend by stopping early when a clear winner appears",
+      "Makes sandbox swarms production-safe via budgets and no-progress stopping"
+    ],
+    "ko": [
+      "프롬프트가 나쁠 때 '오류 확산' 방지",
+      "명확한 승자가 나타나면 조기 중단으로 비용 절감",
+      "예산과 진행 없음 중단을 통한 샌드박스 스웜 프로덕션 안전화"
+    ]
   },
   "cons": {
-    "en": ["Requires instrumentation for failure signatures and confidence", "Needs careful defaults to avoid oscillation", "Bad scoring functions can cause premature stopping"],
-    "ko": ["실패 서명과 신뢰도를 위한 계측 필요", "진동을 피하기 위한 신중한 기본값 필요", "나쁜 점수 함수는 조기 중단 유발 가능"]
+    "en": [
+      "Requires instrumentation (collecting failure signatures, confidence, diversity)",
+      "Needs careful defaults and hysteresis to avoid oscillation (scale up/down thrash)",
+      "Bad scoring functions can cause premature stopping",
+      "Few verified implementations; most systems use static caps instead of true signal-driven adaptation"
+    ],
+    "ko": [
+      "계측 필요 (실패 서명, 신뢰도, 다양성 수집)",
+      "진동(확장/축소 스래싱)을 피하기 위한 신중한 기본값과 히스테리시스 필요",
+      "나쁜 점수 함수가 조기 중단을 유발할 수 있음",
+      "검증된 구현이 적음; 대부분의 시스템이 진정한 신호 기반 적응 대신 정적 한도 사용"
+    ]
   },
   "mermaid_diagram": "flowchart TD\n    A[Task] --> B[Launch small batch N=3-5]\n    B --> C[Collect early results]\n    C --> D{Signals}\n    D -->|Good success + high variance| E[Increase N]\n    D -->|Good success + high confidence| F[Stop early + return winner]\n    D -->|Clustered failures| G[Prompt/spec refinement step]\n    D -->|Ambiguous / large task| H[Decompose + sub-agent investigation]\n    E --> C\n    G --> B\n    H --> B",
   "tags": ["fan-out", "adaptive", "parallel-sandboxes", "early-stopping", "controller", "variance", "prompt-refinement"]
