@@ -6,27 +6,53 @@
   "status": "validated-in-production",
   "original_url": "https://www.youtube.com/watch?v=Xkwok_XXQgw",
   "problem": {
-    "en": "Loading all source files into context overwhelms the model with noise and wastes tokens.",
-    "ko": "모든 소스 파일을 컨텍스트에 로드하면 노이즈로 모델이 압도되고 토큰이 낭비됩니다."
+    "en": "Loading all source files or dumping entire repositories into the agent's context overwhelms the model, introduces noise, and slows inference. Coding agents need to focus on only the most relevant modules to efficiently reason about changes or generate new functionality. Including every file biases the agent with irrelevant code, causing it to lose coherence over large contexts. Large contexts also inflate token usage, slowing down multi-turn RL training.",
+    "ko": "모든 소스 파일을 로드하거나 전체 저장소를 에이전트의 컨텍스트에 덤프하면 모델이 압도되고 노이즈가 유입되며 추론이 느려집니다. 코딩 에이전트는 변경 사항에 대한 추론이나 새로운 기능 생성을 효율적으로 수행하기 위해 가장 관련성 높은 모듈에만 집중해야 합니다. 모든 파일을 포함하면 관련 없는 코드로 에이전트에 편향이 생겨 대규모 컨텍스트에서 일관성을 잃게 됩니다. 또한 대규모 컨텍스트는 토큰 사용량을 증가시켜 다중 턴 RL 훈련을 느리게 합니다."
   },
   "solution": {
-    "en": "Maintain minimal, high-signal context using search sub-agents to fetch only relevant code snippets.",
-    "ko": "검색 서브 에이전트를 사용하여 관련 코드 스니펫만 가져오는 최소한의 고신호 컨텍스트를 유지합니다."
+    "en": "Maintain a minimal, high-signal code context (keeping the context \"sterile\") for the main coding agent by:\n\n1. **Context Sterilization**: Exclude unrelated modules (e.g., test utilities when working on a UI component). Automatically identify relevant files via a lightweight search agent that returns top-K matches.\n2. **Helper Subagent for Code Discovery**: Spawn a SearchSubagent (a small LLM, vector-search index, or standard tools like grep/ripgrep) that takes a query and returns a ranked list of file snippets. Only top-3 snippets (each ≤ 150 tokens) are injected into the main agent's context. Use progressive disclosure: fetch file summaries first, then load full content only when needed.\n3. **Context Update Cycle**: Main Agent identifies need → SearchSubagent finds relevant files → Only those files (or their summaries) enter the main agent's window.\n\nModern implementations often skip vector embeddings entirely, using standard tools (grep, find, file traversal) for cleaner deployment and always-current results.",
+    "ko": "메인 코딩 에이전트를 위해 최소한의 고신호 코드 컨텍스트(컨텍스트를 '무균' 상태로 유지)를 관리합니다:\n\n1. **컨텍스트 정화**: 관련 없는 모듈을 제외합니다(예: UI 컴포넌트 작업 시 테스트 유틸리티). 경량 검색 에이전트를 통해 상위 K개 매칭 파일을 자동 식별합니다.\n2. **코드 탐색용 보조 서브에이전트**: SearchSubagent(소형 LLM, 벡터 검색 인덱스, 또는 grep/ripgrep 같은 표준 도구)를 생성하여 쿼리를 받고 파일 스니펫의 순위 목록을 반환합니다. 상위 3개 스니펫(각 150토큰 이하)만 메인 에이전트의 컨텍스트에 주입합니다. 점진적 공개를 사용하여 파일 요약을 먼저 가져온 후 필요할 때만 전체 내용을 로드합니다.\n3. **컨텍스트 업데이트 사이클**: 메인 에이전트가 필요를 식별 → SearchSubagent가 관련 파일 검색 → 해당 파일(또는 요약)만 메인 에이전트의 윈도우에 진입합니다.\n\n최신 구현에서는 벡터 임베딩을 완전히 건너뛰고 표준 도구(grep, find, 파일 순회)를 사용하여 더 깔끔한 배포와 항상 최신 결과를 제공합니다."
   },
   "ascii_diagram": "┌─────────────┐\n│ Main Agent  │\n│ \"Find User  │\n│  Model\"     │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Search Subagt│\n│  (ripgrep)  │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│Top 3 files: │\n│ user.py     │\n│ auth.py     │\n│ models.py   │\n└──────┬──────┘\n       │\n┌──────▼──────┐\n│ Inject to   │\n│  Context    │\n└─────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Main Agent: Need UserModel] -->|Query| B[Search Sub-Agent]\n    B --> C[(Code Index/ripgrep)]\n    C --> D[Top K Relevant Files]\n    D --> E[Inject Snippets to Context]",
   "code_example": "# Main agent delegates search\nquery = 'UserModel validation'\nresults = search_subagent.find(query, top_k=5)\n\n# Only inject relevant snippets\nfor file in results:\n    snippet = extract_relevant_code(file, query)\n    context.add(snippet)\n\n# Continue with focused context",
   "when_to_use": {
-    "en": ["Large codebases", "Multi-file refactoring", "Long coding sessions"],
-    "ko": ["대규모 코드베이스", "멀티 파일 리팩토링", "긴 코딩 세션"]
+    "en": [
+      "Build a simple code index (e.g., with ripgrep, tree-sitter AST parsing, or a vector store) to map function/class names to file paths",
+      "Define SearchSubagent as a function that queries the code index and uses a small LLM to filter and rank matches",
+      "Create a wrapper (e.g., CuratedContextManager) that automatically invokes SearchSubagent when the main agent asks for relevant code"
+    ],
+    "ko": [
+      "간단한 코드 인덱스 구축(예: ripgrep, tree-sitter AST 파싱 또는 벡터 저장소)으로 함수/클래스 이름을 파일 경로에 매핑",
+      "코드 인덱스를 쿼리하고 소형 LLM으로 매칭을 필터링 및 순위 매기는 SearchSubagent 함수 정의",
+      "메인 에이전트가 관련 코드를 요청할 때 자동으로 SearchSubagent를 호출하는 래퍼(예: CuratedContextManager) 생성"
+    ]
   },
   "pros": {
-    "en": ["Noise reduction", "Token efficiency", "Clearer reasoning"],
-    "ko": ["노이즈 감소", "토큰 효율성", "명확한 추론"]
+    "en": [
+      "Noise reduction keeps the context focused on pertinent code, improving reasoning clarity",
+      "Token efficiency dramatically reduces tokens consumed per step, boosting RL throughput",
+      "Context anxiety mitigation helps prevent context window anxiety by keeping usage well below limits",
+      "Cleaner deployment using standard tools avoids vector embedding infrastructure and always reflects current code state"
+    ],
+    "ko": [
+      "노이즈 감소로 관련 코드에 컨텍스트를 집중시켜 추론 명확성 향상",
+      "토큰 효율성으로 단계당 소비 토큰을 대폭 감소시켜 RL 처리량 향상",
+      "컨텍스트 불안 완화로 사용량을 제한 이하로 유지하여 컨텍스트 윈도우 불안 방지",
+      "표준 도구를 사용한 깔끔한 배포로 벡터 임베딩 인프라를 피하고 항상 현재 코드 상태 반영"
+    ]
   },
   "cons": {
-    "en": ["Index freshness maintenance", "Complex pipeline"],
-    "ko": ["인덱스 최신성 유지", "복잡한 파이프라인"]
+    "en": [
+      "Index freshness: if code changes frequently, the index must be updated to avoid stale results",
+      "Complexity: adds an extra component (SearchSubagent + index) to the training and inference pipeline",
+      "Model adaptation required: different models may have varying tolerance for curated vs. full context approaches"
+    ],
+    "ko": [
+      "인덱스 최신성: 코드가 자주 변경되면 오래된 결과를 방지하기 위해 인덱스를 업데이트해야 함",
+      "복잡성: 훈련 및 추론 파이프라인에 추가 구성요소(SearchSubagent + 인덱스) 추가",
+      "모델 적응 필요: 모델에 따라 큐레이션된 컨텍스트와 전체 컨텍스트 접근 방식에 대한 허용 범위가 다를 수 있음"
+    ]
   },
-  "tags": ["context-management", "code-agent", "file-selection", "search"]
+  "tags": ["context-management", "code-agent", "file-selection", "noise-reduction"]
 }

@@ -6,12 +6,12 @@
   "status": "emerging",
   "original_url": "https://github.com/nibzard/SKILLS-AGENTIC-LESSONS",
   "problem": {
-    "en": "During complex multi-step tasks, AI agents lose track of what tasks are pending, in progress, or completed, which tasks are blocked by dependencies, verification steps that need to run, and next actions after context switches. This leads to redundant work, forgotten tasks, and confused users.",
-    "ko": "복잡한 다단계 작업 수행 중 AI 에이전트가 대기 중, 진행 중, 완료된 작업의 상태를 놓치고, 의존성에 의해 차단된 작업, 실행해야 할 검증 단계, 컨텍스트 전환 후 다음 행동을 추적하지 못합니다. 이로 인해 중복 작업, 누락된 작업, 혼란스러운 사용자 경험이 발생합니다."
+    "en": "During complex multi-step tasks, AI agents lose track of: what tasks are pending, in progress, or completed; which tasks are blocked by dependencies; verification steps that need to run; and next actions after context switches. This leads to redundant work, forgotten tasks, and confused users.",
+    "ko": "복잡한 다단계 작업 수행 중 AI 에이전트가 대기 중/진행 중/완료된 작업의 상태, 의존성에 의해 차단된 작업, 실행해야 할 검증 단계, 컨텍스트 전환 후 다음 행동을 추적하지 못합니다. 이로 인해 중복 작업, 누락된 작업, 혼란스러운 사용자 경험이 발생합니다."
   },
   "solution": {
-    "en": "Use TodoWrite (or equivalent state externalization) to maintain explicit working memory throughout the session. Track task status (pending, in_progress, completed), blocking relationships, verification steps, and next actions. TodoWrite usage correlates with smoother sessions—it serves as working memory for both agent and user.",
-    "ko": "TodoWrite(또는 동등한 상태 외부화)를 사용하여 세션 전체에 걸쳐 명시적 작업 기억을 유지합니다. 작업 상태(대기, 진행 중, 완료), 차단 관계, 검증 단계, 다음 행동을 추적합니다. TodoWrite 사용은 더 원활한 세션과 상관관계가 있으며, 에이전트와 사용자 모두를 위한 작업 기억으로 기능합니다."
+    "en": "Use `TodoWrite` (or equivalent state externalization) to maintain explicit working memory throughout the session. This serves as both agent and user visibility into session state.\n\nTheoretical foundation: Externalizes working memory per Baddeley's episodic buffer model and Miller's 7±2 capacity limit—humans and LLMs both struggle to track more than a handful of items internally.\n\nWhat to track:\n1. **Task status**: pending, in_progress, completed\n2. **Blocking relationships**: What blocks what\n3. **Verification steps**: Tests or checks needed\n4. **Next actions**: What to do next\n\nKey insights: TodoWrite usage correlates with smoother sessions, it serves as working memory for both agent and user, essential for complex multi-step tasks, and less critical for simple straightforward work.",
+    "ko": "`TodoWrite`(또는 동등한 상태 외부화)를 사용하여 세션 전체에 걸쳐 명시적 작업 기억을 유지합니다. 이는 에이전트와 사용자 모두에게 세션 상태에 대한 가시성을 제공합니다.\n\n이론적 기반: Baddeley의 에피소드 버퍼 모델과 Miller의 7±2 용량 한계에 따라 작업 기억을 외부화합니다. 인간과 LLM 모두 내부적으로 소수의 항목만 추적할 수 있습니다.\n\n추적 대상:\n1. **작업 상태**: 대기, 진행 중, 완료\n2. **차단 관계**: 무엇이 무엇을 차단하는지\n3. **검증 단계**: 필요한 테스트 또는 검사\n4. **다음 행동**: 다음에 할 일\n\n핵심 통찰: TodoWrite 사용은 더 원활한 세션과 상관관계가 있으며, 에이전트와 사용자 모두를 위한 작업 기억으로 기능하고, 복잡한 다단계 작업에 필수적이며, 단순한 작업에는 덜 중요합니다."
   },
   "when_to_use": {
     "en": [
@@ -48,13 +48,15 @@
       "Overhead for simple tasks",
       "Requires discipline to maintain",
       "Can become cluttered if overused",
-      "May feel bureaucratic for quick one-offs"
+      "May feel bureaucratic for quick one-offs",
+      "Not needed for simple single-step tasks or tasks that complete in seconds"
     ],
     "ko": [
       "간단한 작업에 대한 오버헤드",
       "유지하려면 규율 필요",
       "과다 사용 시 복잡해질 수 있음",
-      "빠른 일회성 작업에는 관료적으로 느껴질 수 있음"
+      "빠른 일회성 작업에는 관료적으로 느껴질 수 있음",
+      "단순한 단일 단계 작업이나 수초 내 완료되는 작업에는 불필요"
     ]
   },
   "mermaid_diagram": "stateDiagram-v2\n    [*] --> Pending: Task identified\n    Pending --> InProgress: Started\n    InProgress --> Completed: Finished\n    InProgress --> Blocked: Dependency wait\n    Blocked --> InProgress: Dependency resolved\n    Completed --> [*]",

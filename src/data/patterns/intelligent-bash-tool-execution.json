@@ -6,24 +6,60 @@
   "status": "validated-in-production",
   "original_url": "https://github.com/clawdbot/clawdbot/blob/main/src/agents/bash-tools.exec.ts",
   "problem": {
-    "en": "Secure, reliable command execution from agents is complex: PTY requirements for TTY-required CLIs, platform differences for signal handling, security concerns requiring approval workflows, and background process management needs.",
-    "ko": "에이전트의 안전하고 신뢰할 수 있는 명령 실행은 복잡합니다: TTY 필수 CLI를 위한 PTY 요구사항, 신호 처리의 플랫폼 차이, 승인 워크플로우가 필요한 보안 문제, 백그라운드 프로세스 관리 필요성이 있습니다."
+    "en": "Secure, reliable command execution from agents is complex and error-prone: PTY requirements (TTY-required CLIs like coding agents and terminal UIs fail with direct exec), platform differences (Linux and macOS behave differently for detached processes and signal handling), security concerns (arbitrary command execution needs approval workflows and elevated mode detection), and background management (long-running processes need tracking, output aggregation, and cleanup). Agents need a multi-mode execution strategy that adapts to the command's requirements while maintaining security and reliability.",
+    "ko": "에이전트의 안전하고 신뢰할 수 있는 명령 실행은 복잡하고 오류가 발생하기 쉽습니다. PTY 요구사항(코딩 에이전트나 터미널 UI 같은 TTY 필수 CLI가 직접 실행 시 실패), 플랫폼 차이(Linux와 macOS의 분리된 프로세스 및 시그널 처리 동작 차이), 보안 문제(임의 명령 실행에 승인 워크플로우와 권한 상승 모드 감지 필요), 백그라운드 관리(장시간 프로세스의 추적, 출력 집계, 정리 필요) 등이 있습니다. 에이전트는 보안과 신뢰성을 유지하면서 명령 요구사항에 적응하는 다중 모드 실행 전략이 필요합니다."
   },
   "solution": {
-    "en": "Multi-mode execution with adaptive fallback: direct exec → PTY, with automatic selection based on command requirements. Handles PTY spawn failures gracefully, manages background processes, and provides security-aware approval workflows.",
-    "ko": "적응형 폴백을 통한 다중 모드 실행: direct exec → PTY, 명령 요구사항에 따른 자동 선택입니다. PTY 스폰 실패를 우아하게 처리하고, 백그라운드 프로세스를 관리하며, 보안 인식 승인 워크플로우를 제공합니다."
+    "en": "Multi-mode execution with adaptive fallback: direct exec → PTY, with automatic selection based on command requirements and runtime capabilities. The system handles PTY spawn failures gracefully, manages background processes, and provides security-aware approval workflows.\n\nCore concepts:\n- **Tool schema definition**: Bash commands invoked through structured tool interfaces (MCP, OpenAI Function Calling) with validated parameters\n- **PTY-first for TTY-required commands**: Detects when commands need a pseudo-terminal and spawns via `node-pty`\n- **Graceful PTY fallback**: If PTY spawn fails (module missing, platform unsupported), falls back to direct exec with a warning\n- **Platform-specific handling**: macOS requires detached processes for proper signal propagation; Linux handles both modes\n- **Security-aware modes**: Elevated mode detection with approval workflows (deny, allowlist, full)\n- **Background process registry**: Long-running processes tracked with session IDs, output tailing, and exit notifications\n- **Output truncation**: Enforce `maxOutput` limits to prevent memory exhaustion for verbose processes\n- **Proper signal propagation**: SIGTERM/SIGKILL delivered correctly to child processes on timeout or abort",
+    "ko": "적응형 폴백을 통한 다중 모드 실행: direct exec → PTY, 명령 요구사항과 런타임 기능에 따른 자동 선택입니다. 시스템은 PTY 스폰 실패를 우아하게 처리하고, 백그라운드 프로세스를 관리하며, 보안 인식 승인 워크플로우를 제공합니다.\n\n핵심 개념:\n- **도구 스키마 정의**: 검증된 매개변수로 구조화된 도구 인터페이스(MCP, OpenAI Function Calling)를 통해 Bash 명령 호출\n- **TTY 필수 명령에 PTY 우선**: 명령이 의사 터미널을 필요로 하는지 감지하고 `node-pty`로 스폰\n- **우아한 PTY 폴백**: PTY 스폰 실패 시(모듈 누락, 플랫폼 미지원) 경고와 함께 직접 실행으로 폴백\n- **플랫폼별 처리**: macOS는 적절한 시그널 전파를 위해 분리된 프로세스 필요; Linux는 두 모드 모두 처리\n- **보안 인식 모드**: 승인 워크플로우를 통한 권한 상승 모드 감지(deny, allowlist, full)\n- **백그라운드 프로세스 레지스트리**: 세션 ID, 출력 테일링, 종료 알림으로 장시간 프로세스 추적\n- **출력 절삭**: 장황한 프로세스의 메모리 고갈 방지를 위한 `maxOutput` 제한 적용\n- **적절한 시그널 전파**: 타임아웃 또는 중단 시 자식 프로세스에 SIGTERM/SIGKILL 올바르게 전달"
   },
   "when_to_use": {
-    "en": ["Interactive CLI tools", "Long-running background tasks", "Security-sensitive command execution"],
-    "ko": ["대화형 CLI 도구", "장시간 백그라운드 작업", "보안 민감 명령 실행"]
+    "en": [
+      "Detect TTY requirements and set usePty for TTY-required CLIs",
+      "Handle PTY failures with try-catch and fall back to direct exec",
+      "Configure security modes (deny, allowlist, full) and approval behavior",
+      "Register background processes for tracking, polling, and cleanup",
+      "Propagate signals correctly with SIGTERM then SIGKILL for graceful shutdown",
+      "Aggregate output and enforce maxOutput limits to prevent memory exhaustion"
+    ],
+    "ko": [
+      "TTY 요구사항 감지 및 TTY 필수 CLI에 usePty 설정",
+      "try-catch로 PTY 실패 처리 및 직접 실행으로 폴백",
+      "보안 모드(deny, allowlist, full) 및 승인 동작 구성",
+      "추적, 폴링, 정리를 위한 백그라운드 프로세스 등록",
+      "우아한 종료를 위해 SIGTERM 후 SIGKILL로 올바른 시그널 전파",
+      "출력 집계 및 메모리 고갈 방지를 위한 maxOutput 제한 적용"
+    ]
   },
   "pros": {
-    "en": ["TTY support for interactive tools", "Graceful degradation without PTY", "Flexible security policies", "Background process tracking", "Platform-aware signal handling"],
-    "ko": ["대화형 도구를 위한 TTY 지원", "PTY 없이 우아한 성능 저하", "유연한 보안 정책", "백그라운드 프로세스 추적", "플랫폼 인식 신호 처리"]
+    "en": [
+      "TTY support enables TTY-required tools that would otherwise fail",
+      "Graceful degradation falls back to direct exec when PTY is unavailable",
+      "Multiple security modes (deny, allowlist, full) provide flexible security policies",
+      "Process registry enables long-running task management and cleanup",
+      "Platform awareness handles macOS/Linux differences for signal propagation"
+    ],
+    "ko": [
+      "TTY 지원으로 그렇지 않으면 실패할 TTY 필수 도구 활성화",
+      "PTY를 사용할 수 없을 때 직접 실행으로 우아한 성능 저하",
+      "다중 보안 모드(deny, allowlist, full)로 유연한 보안 정책 제공",
+      "프로세스 레지스트리로 장시간 작업 관리 및 정리 가능",
+      "플랫폼 인식으로 macOS/Linux 시그널 전파 차이 처리"
+    ]
   },
   "cons": {
-    "en": ["PTY native module dependency", "Multi-mode execution complexity", "Memory usage for output buffering", "Platform-specific signal limitations"],
-    "ko": ["PTY 네이티브 모듈 의존성", "다중 모드 실행 복잡성", "출력 버퍼링 메모리 사용", "플랫폼별 신호 제한"]
+    "en": [
+      "Requires node-pty native module which may fail to compile in some environments",
+      "Multi-mode execution increases code complexity and testing surface",
+      "Aggregating all output in memory can exhaust RAM for long-running verbose processes",
+      "Detached processes on macOS don't receive signals, requiring workarounds"
+    ],
+    "ko": [
+      "일부 환경에서 컴파일 실패할 수 있는 node-pty 네이티브 모듈 필요",
+      "다중 모드 실행으로 코드 복잡성 및 테스트 범위 증가",
+      "모든 출력을 메모리에 집계하면 장시간 장황한 프로세스에서 RAM 고갈 가능",
+      "macOS의 분리된 프로세스가 시그널을 수신하지 못해 우회 방법 필요"
+    ]
   },
   "tags": ["bash", "shell", "pty", "fallback", "security", "process-management", "sandboxing"]
 }

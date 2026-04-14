@@ -6,27 +6,27 @@
   "status": "best-practice",
   "original_url": "https://www.youtube.com/watch?v=Xkwok_XXQgw",
   "problem": {
-    "en": "Synchronous test runs block agents from parallel work, slowing iteration cycles.",
-    "ko": "동기 테스트 실행이 에이전트의 병렬 작업을 차단하여 반복 주기가 느려집니다."
+    "en": "When a coding agent tackles multi-file refactors or feature additions, running tests and waiting for test feedback **synchronously** ties up compute and prevents the agent from working on parallel tasks. The agent cannot easily improve code if it must halt until the entire suite finishes.\n\n- Traditional CI loops block further edits; the agent \"babysits\" the build until tests pass.\n- Long test suites introduce idle periods, leading to underutilized GPUs and inflated RL training times.",
+    "ko": "코딩 에이전트가 다중 파일 리팩토링이나 기능 추가를 수행할 때, 테스트를 실행하고 테스트 피드백을 **동기적으로** 기다리는 것은 컴퓨팅을 점유하고 에이전트가 병렬 작업을 수행하지 못하게 합니다. 전체 테스트 스위트가 완료될 때까지 중단해야 한다면 에이전트가 코드를 쉽게 개선할 수 없습니다.\n\n- 기존 CI 루프는 추가 편집을 차단합니다; 에이전트가 테스트가 통과할 때까지 빌드를 '지켜봐야' 합니다.\n- 긴 테스트 스위트는 유휴 기간을 도입하여 GPU 활용도를 떨어뜨리고 RL 훈련 시간을 증가시킵니다."
   },
   "solution": {
-    "en": "Run agents asynchronously against CI with iterative patch refinement until all tests pass.",
-    "ko": "모든 테스트가 통과할 때까지 반복적인 패치 개선과 함께 CI에 대해 에이전트를 비동기적으로 실행합니다."
+    "en": "Run the coding agent **asynchronously** against CI (local or remote), allowing it to:\n\n**1. Push a Branch & Trigger Tests**\n- When the agent proposes a patch, it commits to a branch and triggers the CI pipeline (e.g., `git push && github_action_run`).\n\n**2. Ingest Partial CI Feedback**\n- As tests begin, the agent periodically polls CI results.\n- **Failed Tests Partial Report:** Receive a small subset of failures (e.g., 10% of failures flagged first).\n\n**3. Iterative Patch Refinement**\n- Use CI outputs as **machine-readable feedback**: test failures, compilation errors, linting issues, type errors, and security scan results.\n- Agent autonomously applies fixes to specific files or functions without human intervention.\n- Enforce a **retry budget** (max attempts + runtime limits) to prevent infinite churn.\n\n**4. Ping on Final Green**\n- When all tests pass, send a notification (e.g., chat or pull request comment) that the PR is ready for review.",
+    "ko": "코딩 에이전트를 CI(로컬 또는 원격)에 대해 **비동기적으로** 실행하여 다음을 수행합니다:\n\n**1. 브랜치 푸시 및 테스트 트리거**\n- 에이전트가 패치를 제안하면 브랜치에 커밋하고 CI 파이프라인을 트리거합니다.\n\n**2. 부분 CI 피드백 수집**\n- 테스트가 시작되면 에이전트가 주기적으로 CI 결과를 폴링합니다.\n- **실패 테스트 부분 보고서:** 실패의 작은 하위 집합(예: 먼저 플래그된 실패의 10%)을 수신합니다.\n\n**3. 반복 패치 개선**\n- CI 출력을 **기계 판독 가능한 피드백**으로 사용합니다: 테스트 실패, 컴파일 오류, 린팅 이슈, 타입 오류, 보안 스캔 결과.\n- 에이전트가 인간 개입 없이 자율적으로 특정 파일이나 함수에 수정을 적용합니다.\n- 무한 반복을 방지하기 위해 **재시도 예산**(최대 시도 횟수 + 런타임 제한)을 적용합니다.\n\n**4. 최종 그린에서 알림**\n- 모든 테스트가 통과하면 PR이 리뷰 준비되었다는 알림을 전송합니다."
   },
   "ascii_diagram": "┌──────────┐\n│  Agent   │\n│  Commit  │\n└────┬─────┘\n     │\n┌────▼─────┐\n│   CI     │\n│  Tests   │\n└────┬─────┘\n     │ failures\n┌────▼─────┐\n│  Agent   │\n│  Patch   │\n└────┬─────┘\n     │ re-run\n     └──▶ (repeat until ✅)",
   "mermaid_diagram": "sequenceDiagram\n    Agent->>CI: Push\n    loop Until Pass\n        CI-->>Agent: Failures\n        Agent->>Code: Patch\n        Agent->>CI: Re-run\n    end\n    CI-->>Agent: ✅ Green",
   "code_example": "while True:\n    result = ci.run_tests()\n    if result.passed:\n        break\n    patches = agent.fix_failures(result.errors)\n    agent.apply_patches(patches)",
   "when_to_use": {
-    "en": ["Large-scale refactoring", "Automated bug fixing", "Test-driven development"],
-    "ko": ["대규모 리팩토링", "자동 버그 수정", "테스트 주도 개발"]
+    "en": ["CI Integration: Provide the agent with a CLI or API key to push branches and trigger tests (e.g., via GitHub Actions or Jenkins)", "Error Parsing Modules: Implement a small parser that translates CI logs into structured diagnostics", "Prioritized Test Runs: When re-running, only run tests in files that were patched, to reduce CI time", "Use draft PRs by default for safety", "Enable partial feedback ingestion to start fixing before full CI completes", "Add human-in-the-loop for high-risk changes"],
+    "ko": ["CI 통합: 에이전트에 CLI 또는 API 키를 제공하여 브랜치 푸시 및 테스트 트리거 (예: GitHub Actions 또는 Jenkins)", "에러 파싱 모듈: CI 로그를 구조화된 진단으로 변환하는 소형 파서 구현", "우선순위 테스트 실행: 재실행 시 패치된 파일의 테스트만 실행하여 CI 시간 단축", "안전을 위해 기본적으로 드래프트 PR 사용", "전체 CI 완료 전에 수정을 시작할 수 있도록 부분 피드백 수집 활성화", "고위험 변경에 대해 인간 참여 추가"]
   },
   "pros": {
-    "en": ["Efficient computing", "Fast iteration", "Autonomous correction"],
-    "ko": ["효율적 컴퓨팅", "빠른 반복", "자율 수정"]
+    "en": ["Compute Efficiency: Overlaps code generation and test runs across multiple agents or branches", "Faster Iteration: Agent spends less time waiting and more time generating code", "Autonomy: Reduces need for human intervention until final green"],
+    "ko": ["컴퓨팅 효율성: 여러 에이전트 또는 브랜치에 걸쳐 코드 생성과 테스트 실행을 중첩", "빠른 반복: 에이전트가 대기 시간을 줄이고 코드 생성에 더 많은 시간 투자", "자율성: 최종 그린까지 인간 개입 필요성 감소"]
   },
   "cons": {
-    "en": ["CI instability issues", "Security considerations"],
-    "ko": ["CI 불안정성", "보안 고려 필요"]
+    "en": ["CI Flakiness: Intermittent test failures can mislead the agent into unnecessary patches unless flakiness detection is in place", "Security: Agent requires permission to push and read CI logs, which may expose sensitive data if misconfigured"],
+    "ko": ["CI 불안정성: 간헐적 테스트 실패가 불안정성 감지가 없으면 에이전트를 불필요한 패치로 오도할 수 있음", "보안: 에이전트가 푸시 및 CI 로그 읽기 권한이 필요하며, 잘못 구성하면 민감한 데이터가 노출될 수 있음"]
   },
-  "tags": ["CI", "coding-agent", "asynchronous", "test-driven"]
+  "tags": ["CI", "coding-agent", "asynchronous", "test-driven", "feedback"]
 }
