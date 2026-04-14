@@ -6,19 +6,29 @@
   "status": "emerging",
   "original_url": "https://cognition.ai/blog/devin-sonnet-4-5-lessons-and-challenges",
   "problem": {
-    "en": "Models exhibit 'context anxiety' - they become aware of approaching context window limits and proactively summarize or rush to close tasks, even when sufficient context remains. This leads to premature completion, shortcuts, and incomplete work.",
-    "ko": "모델은 '컨텍스트 불안'을 보입니다 - 컨텍스트 윈도우 제한에 가까워짐을 인식하고 충분한 컨텍스트가 남아 있어도 적극적으로 요약하거나 작업을 서둘러 마무리합니다. 이는 조기 완료, 지름길, 불완전한 작업으로 이어집니다."
+    "en": "Models like Claude Sonnet 4.5 exhibit \"context anxiety\"—they become aware of approaching context window limits and proactively summarize progress or make decisive moves to close tasks, even when sufficient context remains. This leads to:\n\n- Premature task completion and shortcuts\n- Incomplete work despite having adequate context\n- Underestimation of remaining token capacity (consistently incorrect estimates)\n- Self-imposed pressure to \"wrap up\" rather than continue working",
+    "ko": "Claude Sonnet 4.5와 같은 모델은 \"컨텍스트 불안\"을 보입니다 - 컨텍스트 윈도우 제한에 가까워짐을 인식하고 충분한 컨텍스트가 남아 있어도 적극적으로 진행 상황을 요약하거나 작업을 마무리하려는 결정적 행동을 취합니다. 이로 인해 다음과 같은 문제가 발생합니다:\n\n- 조기 작업 완료와 지름길 선택\n- 충분한 컨텍스트가 있음에도 불완전한 작업\n- 남은 토큰 용량의 과소평가 (일관되게 부정확한 추정)\n- 작업을 계속하기보다 \"마무리\"하려는 자체 부과 압박"
   },
   "solution": {
-    "en": "Implement context buffer strategy (enable 1M tokens but cap at 200k), aggressive counter-prompting ('You have plenty of context - do not rush'), and token budget transparency. Override the model's anxiety-driven behaviors with explicit reassurance.",
-    "ko": "컨텍스트 버퍼 전략 구현(100만 토큰 활성화하지만 20만에서 제한), 공격적 반대 프롬프팅('컨텍스트가 충분합니다 - 서두르지 마세요'), 토큰 예산 투명성. 명시적 안심으로 모델의 불안 유발 행동을 재정의합니다."
+    "en": "Implement strategic context budget management and aggressive prompting techniques to override anxiety-driven behaviors:\n\n**1. Context Buffer Strategy**\n- Enable larger context windows (e.g., 1M token beta) but cap actual usage at 200k tokens\n- Provides psychological \"runway\" that mitigates the model's anxiety about running out of space\n\n**2. Aggressive Counter-Prompting**\n- Add explicit reminders at conversation start: \"You have plenty of context remaining—do not rush to complete tasks\"\n- Include end-of-conversation reinforcement: \"Take your time, context is not a constraint\"\n- Override summarization impulses with direct instructions\n\n**3. Token Budget Transparency**\n- Explicitly state available token budget in prompts\n- Provide regular reassurance about remaining capacity\n- Counter the model's tendency to underestimate available space\n\n```pseudo\n# Context anxiety mitigation approach\ndef setup_context_anxiety_management():\n    context_buffer = enable_large_context(1M_tokens)\n    actual_limit = cap_usage_at(200k_tokens)\n    \n    prompt_prefix = \"\"\"\n    CONTEXT GUIDANCE: You have abundant context space (200k+ tokens available).\n    Do NOT rush to complete tasks or summarize prematurely.\n    Work thoroughly and completely on each step.\n    \"\"\"\n    \n    prompt_suffix = \"\"\"\n    Remember: Context is NOT a constraint. Take your time and be thorough.\n    \"\"\"\n    \n    return enhanced_prompt(prefix + user_input + suffix)\n```",
+    "ko": "불안 유발 행동을 재정의하기 위한 전략적 컨텍스트 예산 관리와 공격적 프롬프팅 기법을 구현합니다:\n\n**1. 컨텍스트 버퍼 전략**\n- 더 큰 컨텍스트 윈도우(예: 100만 토큰 베타)를 활성화하되 실제 사용량은 20만 토큰으로 제한합니다\n- 모델의 공간 부족 불안을 완화하는 심리적 \"여유 공간\"을 제공합니다\n\n**2. 공격적 반대 프롬프팅**\n- 대화 시작 시 명시적 알림을 추가합니다: \"컨텍스트가 충분히 남아 있습니다 - 서둘러 작업을 완료하지 마세요\"\n- 대화 종료 시 강화를 포함합니다: \"시간을 들이세요, 컨텍스트는 제약이 아닙니다\"\n- 직접적인 지시로 요약 충동을 재정의합니다\n\n**3. 토큰 예산 투명성**\n- 프롬프트에 사용 가능한 토큰 예산을 명시적으로 기술합니다\n- 남은 용량에 대한 정기적인 안심을 제공합니다\n- 모델의 사용 가능 공간 과소평가 경향에 대응합니다"
   },
   "ascii_diagram": "┌─────────────────────────────────┐\n│   Model Context Anxiety         │\n├─────────────────────────────────┤\n│ \"Running out of space...\"       │\n│ \"Let me summarize quickly...\"   │\n│ \"Wrapping up now...\"            │\n└───────────────┬─────────────────┘\n                │\n        [MITIGATION]\n                │\n┌───────────────▼─────────────────┐\n│ 1. Context Buffer Strategy      │\n│    Enable 1M, cap at 200k       │\n├─────────────────────────────────┤\n│ 2. Counter-Prompting            │\n│    \"You have plenty of space\"   │\n├─────────────────────────────────┤\n│ 3. Token Budget Transparency    │\n│    Explicit remaining capacity  │\n└───────────────┬─────────────────┘\n                │\n┌───────────────▼─────────────────┐\n│   Thorough, Complete Work       │\n└─────────────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Model Starts Task] --> B{Context Anxiety?}\n    B -->|Signs of rushing| C[Apply Mitigation]\n    C --> D[Add Buffer Strategy]\n    C --> E[Counter-Prompting]\n    C --> F[Show Token Budget]\n    D --> G[Model Continues Thoroughly]\n    E --> G\n    F --> G\n    B -->|No anxiety| G\n    G --> H[Complete Work]",
   "code_example": "def setup_context_anxiety_management():\n    # Strategy 1: Context buffer\n    context_buffer = enable_large_context('1M_tokens')\n    actual_limit = cap_usage_at('200k_tokens')  # Psychological runway\n    \n    # Strategy 2: Counter-prompting\n    prompt_prefix = '''\n    CONTEXT GUIDANCE: You have abundant context space (200k+ tokens available).\n    Do NOT rush to complete tasks or summarize prematurely.\n    Work thoroughly and completely on each step.\n    '''\n    \n    prompt_suffix = '''\n    Remember: Context is NOT a constraint. Take your time and be thorough.\n    '''\n    \n    return enhanced_prompt(prefix + user_input + suffix)\n\n# Monitor for anxiety signs:\n# - Sudden summarization\n# - Rushed decisions\n# - \"Running out of space\" mentions",
   "when_to_use": {
-    "en": ["Long coding sessions", "Multi-step analysis requiring sustained attention", "Complex planning tasks", "When model mentions space constraints"],
-    "ko": ["긴 코딩 세션", "지속적인 주의가 필요한 다단계 분석", "복잡한 계획 작업", "모델이 공간 제약을 언급할 때"]
+    "en": [
+      "Long development work sessions where premature completion hurts quality",
+      "Multi-step research and analysis requiring sustained attention",
+      "Complex planning tasks needing thorough exploration before conclusions",
+      "When monitoring for signs of context anxiety: sudden summarization, rushed decisions, or explicit mentions of 'running out of space'"
+    ],
+    "ko": [
+      "조기 완료가 품질을 저하시키는 긴 개발 작업 세션",
+      "지속적인 주의가 필요한 다단계 리서치 및 분석",
+      "결론 전 철저한 탐구가 필요한 복잡한 계획 작업",
+      "컨텍스트 불안 징후 모니터링 시: 갑작스러운 요약, 급한 결정, '공간 부족' 명시적 언급"
+    ]
   },
   "pros": {
     "en": ["Prevents premature task abandonment", "Enables more thorough work", "Overcomes model-specific behavioral quirks"],

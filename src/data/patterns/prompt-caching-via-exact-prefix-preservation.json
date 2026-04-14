@@ -6,24 +6,60 @@
   "status": "emerging",
   "original_url": "https://openai.com/index/unrolling-the-codex-agent-loop/",
   "problem": {
-    "en": "Long-running agent conversations suffer from quadratic performance degradation: growing JSON payloads, expensive re-computation without caching, and ZDR constraints preventing server-side state.",
-    "ko": "장시간 실행 에이전트 대화는 이차적 성능 저하를 겪습니다: 증가하는 JSON 페이로드, 캐싱 없는 고비용 재계산, 서버 측 상태를 방지하는 ZDR 제약."
+    "en": "Long-running agent conversations with many tool calls can suffer from quadratic performance degradation: growing JSON payloads where each iteration sends the entire conversation history to the API, expensive re-computation without caching where the model re-processes the same static content repeatedly, ZDR (Zero Data Retention) constraints that prevent server-side state ruling out previous_response_id optimization, and configuration changes that can break cache efficiency mid-conversation. As conversations grow, inference costs and latency increase quadratically without proper caching strategies.",
+    "ko": "많은 도구 호출이 있는 장시간 실행 에이전트 대화는 이차적 성능 저하를 겪습니다: 매 반복마다 전체 대화 이력을 API에 전송하는 증가하는 JSON 페이로드, 캐싱 없이 모델이 동일한 정적 콘텐츠를 반복적으로 재처리하는 고비용 재계산, 서버 측 상태를 방지하여 previous_response_id 최적화를 불가능하게 만드는 ZDR(제로 데이터 보존) 제약, 대화 중 캐시 효율성을 깨뜨릴 수 있는 설정 변경 등이 있습니다. 대화가 증가할수록 적절한 캐싱 전략 없이는 추론 비용과 지연 시간이 이차적으로 증가합니다."
   },
   "solution": {
-    "en": "Maintain prompt cache efficiency through exact prefix preservation - always append new messages rather than modifying existing ones. Order messages by stability: static content first (system, tools, instructions), variable content last (user messages, tool results).",
-    "ko": "정확한 프리픽스 보존을 통해 프롬프트 캐시 효율성을 유지합니다 - 기존 메시지를 수정하지 않고 항상 새 메시지를 추가합니다. 안정성에 따라 메시지 정렬: 정적 콘텐츠 먼저(시스템, 도구, 지침), 가변 콘텐츠 나중에(사용자 메시지, 도구 결과)."
+    "en": "Maintain prompt cache efficiency through exact prefix preservation - always append new messages rather than modifying existing ones, and carefully order messages to maximize cache hits.\n\nCore insight: Prompt caches only work on exact prefix matches. If the first N tokens of a request match a previous request, the cached computation can be reused. Caching operates at the token level, not message level.\n\nMessage ordering strategy:\n1. Static content first (cached across all requests): System message, Tool definitions (consistent order), Developer instructions, User/project instructions\n2. Variable content last (changes per request): User message, Assistant messages, Tool call results (appended iteratively)\n\nConfiguration change via insertion: When configuration changes mid-conversation, insert a new message rather than modifying an existing one to preserve the exact prefix.\n\nWhat breaks cache hits: Changing available tools (position-sensitive), reordering messages, modifying existing message content, changing the model.\n\nProvider variations: OpenAI uses automatic caching on exact prefix matches. Anthropic uses explicit cache-control headers with TTL-based invalidation (up to 5 minutes) and 90% discount on cached tokens.\n\nStateless design for ZDR: Avoid previous_response_id to support Zero Data Retention. Rely on prompt caching for linear performance instead.",
+    "ko": "정확한 프리픽스 보존을 통해 프롬프트 캐시 효율성을 유지합니다 - 기존 메시지를 수정하지 않고 항상 새 메시지를 추가하며, 캐시 적중을 극대화하기 위해 메시지 순서를 신중하게 정렬합니다.\n\n핵심 인사이트: 프롬프트 캐시는 정확한 프리픽스 일치에서만 작동합니다. 요청의 첫 N개 토큰이 이전 요청과 일치하면 캐시된 계산을 재사용할 수 있습니다. 캐싱은 메시지 수준이 아닌 토큰 수준에서 작동합니다.\n\n메시지 정렬 전략:\n1. 정적 콘텐츠 먼저 (모든 요청에서 캐시됨): 시스템 메시지, 도구 정의(일관된 순서), 개발자 지침, 사용자/프로젝트 지침\n2. 가변 콘텐츠 나중에 (요청마다 변경): 사용자 메시지, 어시스턴트 메시지, 도구 호출 결과(반복적으로 추가)\n\n설정 변경 시 삽입: 대화 중 설정이 변경되면 기존 메시지를 수정하지 않고 새 메시지를 삽입하여 정확한 프리픽스를 보존합니다.\n\n캐시 적중을 깨뜨리는 것: 사용 가능한 도구 변경(위치 민감), 메시지 순서 변경, 기존 메시지 내용 수정, 모델 변경.\n\n프로바이더 차이: OpenAI는 정확한 프리픽스 일치에 대한 자동 캐싱을 사용합니다. Anthropic은 TTL 기반 무효화(최대 5분)와 캐시된 토큰 90% 할인으로 명시적 캐시 제어 헤더를 사용합니다.\n\nZDR을 위한 무상태 설계: 제로 데이터 보존을 지원하기 위해 previous_response_id를 사용하지 않습니다. 대신 선형 성능을 위해 프롬프트 캐싱에 의존합니다."
   },
   "when_to_use": {
-    "en": ["Multi-turn agent conversations", "Tool-heavy workflows", "ZDR-compliant deployments"],
-    "ko": ["다중 턴 에이전트 대화", "도구 집약적 워크플로우", "ZDR 준수 배포"]
+    "en": [
+      "Multi-turn agent conversations with many tool calls",
+      "Tool-heavy workflows with growing conversation history",
+      "ZDR-compliant deployments requiring stateless design",
+      "Long-running agent sessions where inference costs grow quadratically"
+    ],
+    "ko": [
+      "많은 도구 호출이 있는 다중 턴 에이전트 대화",
+      "대화 이력이 증가하는 도구 집약적 워크플로우",
+      "무상태 설계가 필요한 ZDR 준수 배포",
+      "추론 비용이 이차적으로 증가하는 장기 실행 에이전트 세션"
+    ]
   },
   "pros": {
-    "en": ["Linear sampling cost with caching", "ZDR-compatible stateless design", "No server state required", "Simple conceptual model"],
-    "ko": ["캐싱으로 선형 샘플링 비용", "ZDR 호환 무상태 설계", "서버 상태 불필요", "간단한 개념 모델"]
+    "en": [
+      "Linear sampling cost - prompt caching makes repeated inference linear rather than quadratic",
+      "ZDR-compatible - stateless design supports Zero Data Retention policies",
+      "No server state - avoids previous_response_id complexity",
+      "Simple conceptual model - exact prefix matching is easy to reason about",
+      "Production-validated savings - 43% cost reduction demonstrated at scale (HyperAgent, 9.4B tokens/month)"
+    ],
+    "ko": [
+      "선형 샘플링 비용 - 프롬프트 캐싱이 반복 추론을 이차적이 아닌 선형으로 만듦",
+      "ZDR 호환 - 무상태 설계가 제로 데이터 보존 정책 지원",
+      "서버 상태 불필요 - previous_response_id 복잡성 회피",
+      "간단한 개념 모델 - 정확한 프리픽스 매칭은 추론하기 쉬움",
+      "프로덕션 검증된 절감 - 대규모에서 43% 비용 절감 입증 (HyperAgent, 월 94억 토큰)"
+    ]
   },
   "cons": {
-    "en": ["Quadratic network traffic still exists", "Cache fragility with mid-conversation changes", "Disciplined message ordering required", "MCP server dynamic tool limitations"],
-    "ko": ["이차적 네트워크 트래픽 여전히 존재", "대화 중 변경 시 캐시 취약성", "규율 있는 메시지 순서 필요", "MCP 서버 동적 도구 제한"]
+    "en": [
+      "Quadratic network traffic - JSON payload size still grows quadratically (only sampling is cached)",
+      "Cache fragility - mid-conversation changes (tools, model) break prefix matching",
+      "Disciplined ordering required - all static content must come before variable content",
+      "Tool enumeration complexity - must maintain consistent tool ordering",
+      "MCP server limitations - dynamic tool changes can cause cache misses"
+    ],
+    "ko": [
+      "이차적 네트워크 트래픽 - JSON 페이로드 크기는 여전히 이차적으로 증가 (샘플링만 캐시됨)",
+      "캐시 취약성 - 대화 중 변경(도구, 모델)이 프리픽스 매칭을 깨뜨림",
+      "규율 있는 정렬 필요 - 모든 정적 콘텐츠가 가변 콘텐츠 앞에 와야 함",
+      "도구 열거 복잡성 - 일관된 도구 순서 유지 필요",
+      "MCP 서버 제한 - 동적 도구 변경이 캐시 미스를 유발할 수 있음"
+    ]
   },
-  "tags": ["prompt-caching", "exact-prefix", "performance", "stateless", "zero-data-retention", "optimization"]
+  "code_example": "function buildPrompt(state: ConversationState): Prompt {\n  const items: PromptItem[] = [];\n\n  // Static prefix (cached)\n  items.push({ role: 'system', content: state.systemMessage });\n  items.push({ type: 'tools', tools: state.tools });  // Consistent order!\n  items.push({ role: 'developer', content: state.instructions });\n\n  // Variable content (appended)\n  items.push(...state.history);\n\n  return { items };\n}\n\nfunction handleConfigChange(\n  state: ConversationState,\n  newConfig: SandboxConfig\n): ConversationState {\n  // DON'T: Modify existing permission message\n  // DO: Insert new message\n  return {\n    ...state,\n    history: [\n      ...state.history,\n      {\n        role: 'developer',\n        content: formatSandboxConfig(newConfig),\n      },\n    ],\n  };\n}",
+  "mermaid_diagram": "graph TD\n    subgraph \"Request 1\"\n        A1[System message]\n        A2[Tools]\n        A3[Instructions]\n        A4[User message]\n    end\n\n    subgraph \"Request 2 - Cache Hit!\"\n        B1[System message]\n        B2[Tools]\n        B3[Instructions]\n        B4[User message]\n        B5[Assistant response]\n        B6[Tool result]\n    end\n\n    subgraph \"Request 3 - Cache Hit!\"\n        C1[System message]\n        C2[Tools]\n        C3[Instructions]\n        C4[User message]\n        C5[Assistant response]\n        C6[Tool result 1]\n        C7[Tool result 2]\n    end",
+  "tags": ["prompt-caching", "exact-prefix", "performance", "stateless", "zero-data-retention", "message-ordering", "optimization"]
 }

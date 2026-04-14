@@ -6,27 +6,49 @@
   "status": "best-practice",
   "original_url": "https://simonwillison.net/2025/Jun/16/lethal-trifecta/",
   "problem": {
-    "en": "Agents with access to untrusted data, tools, and egress channels are vulnerable to prompt injection attacks.",
-    "ko": "신뢰할 수 없는 데이터, 도구, 송신 채널에 접근하는 에이전트가 프롬프트 인젝션 공격에 취약합니다."
+    "en": "Combining three agent capabilities - (1) Access to private data, (2) Exposure to untrusted content, (3) Ability to externally communicate - creates a straightforward path for prompt-injection attackers to steal sensitive information. LLMs cannot reliably distinguish \"good\" instructions from malicious ones once they appear in the same context window.",
+    "ko": "세 가지 에이전트 기능을 결합하면 - (1) 개인 데이터 접근, (2) 신뢰할 수 없는 콘텐츠 노출, (3) 외부 통신 능력 - 프롬프트 인젝션 공격자가 민감한 정보를 탈취할 수 있는 직접적인 경로가 만들어집니다. LLM은 동일한 컨텍스트 윈도우에 나타나면 \"좋은\" 지시와 악의적인 지시를 안정적으로 구별할 수 없습니다."
   },
   "solution": {
-    "en": "Identify and break the lethal trifecta by removing at least one of: untrusted data access, tool access, or exfiltration channels.",
-    "ko": "신뢰할 수 없는 데이터 접근, 도구 접근, 또는 송신 채널 중 최소 하나를 제거하여 치명적 삼중을 식별하고 차단합니다."
+    "en": "Adopt a Trifecta Threat Model:\n\n- Audit every tool an agent can call and classify it against the three capabilities.\n- Guarantee that at least one circle is missing in any execution path. Options include:\n  - Remove external network access (no exfiltration)\n  - Deny direct file/database reads (no private data)\n  - Sanitize or segregate untrusted inputs (no hostile instructions)\n- Enforce this at orchestration time, not with brittle prompt guardrails.\n\n```python\n# pseudo-policy\nif tool.can_externally_communicate and\n   tool.accesses_private_data and\n   input_source == \"untrusted\":\n       raise SecurityError(\"Lethal trifecta detected\")\n```",
+    "ko": "삼중 위협 모델을 채택합니다:\n\n- 에이전트가 호출할 수 있는 모든 도구를 감사하고 세 가지 기능에 대해 분류합니다.\n- 모든 실행 경로에서 최소한 하나의 원이 누락되도록 보장합니다. 옵션:\n  - 외부 네트워크 접근 제거 (데이터 유출 방지)\n  - 직접 파일/데이터베이스 읽기 거부 (개인 데이터 없음)\n  - 신뢰할 수 없는 입력 정화 또는 격리 (적대적 지시 없음)\n- 취약한 프롬프트 가드레일이 아닌 오케스트레이션 시점에서 시행합니다."
+  },
+  "when_to_use": {
+    "en": [
+      "Maintain a machine-readable capability matrix for every tool",
+      "Add a pre-execution policy check in your agent runner",
+      "Fail closed: if capability metadata is missing, treat the tool as high-risk"
+    ],
+    "ko": [
+      "모든 도구에 대한 기계 판독 가능한 기능 매트릭스 유지",
+      "에이전트 러너에 사전 실행 정책 검사 추가",
+      "안전 폐쇄: 기능 메타데이터가 누락되면 도구를 고위험으로 처리"
+    ]
+  },
+  "pros": {
+    "en": [
+      "Simple mental model - eliminates entire attack class",
+      "Disciplined capability tagging provides clear threat model",
+      "Design guidance for secure agent architectures"
+    ],
+    "ko": [
+      "간단한 멘탈 모델 - 전체 공격 클래스 제거",
+      "규율 있는 기능 태깅이 명확한 위협 모델 제공",
+      "안전한 에이전트 아키텍처를 위한 설계 가이드"
+    ]
+  },
+  "cons": {
+    "en": [
+      "Limits powerful \"all-in-one\" agents",
+      "Requires disciplined capability tagging"
+    ],
+    "ko": [
+      "강력한 '올인원' 에이전트 제한",
+      "규율 있는 기능 태깅 필요"
+    ]
   },
   "ascii_diagram": "┌─────────────────────────┐\n│   LETHAL TRIFECTA       │\n├─────────────────────────┤\n│ 1. Untrusted Data       │\n│    (emails, web, etc.)  │\n│            +            │\n│ 2. Tool Access          │\n│    (file, API, etc.)    │\n│            +            │\n│ 3. Exfiltration         │\n│    (network, etc.)      │\n│            =            │\n│    SECURITY RISK!       │\n│                         │\n│ Break ANY ONE → Safer   │\n└─────────────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Untrusted Data] --> D{All Three Present?}\n    B[Tool Access] --> D\n    C[Exfiltration Channel] --> D\n    D -->|Yes| E[DANGER: Full Attack Surface]\n    D -->|Missing One| F[Safer: Attack Limited]",
   "code_example": "def assess_trifecta(agent):\n    has_untrusted = agent.processes_external_data\n    has_tools = agent.can_execute_actions\n    has_egress = agent.can_send_outbound\n    \n    if all([has_untrusted, has_tools, has_egress]):\n        return 'CRITICAL: Lethal trifecta present'\n    else:\n        return 'Safer: Trifecta broken'\n\n# Break one: no egress for untrusted data handlers\nif agent.processes_untrusted:\n    agent.disable_egress()",
-  "when_to_use": {
-    "en": ["Agent security design", "Threat analysis", "Architecture review"],
-    "ko": ["에이전트 보안 설계", "위협 분석", "아키텍처 리뷰"]
-  },
-  "pros": {
-    "en": ["Clear threat model", "Defense prioritization", "Design guidance"],
-    "ko": ["명확한 위협 모델", "방어 우선순위", "설계 가이드"]
-  },
-  "cons": {
-    "en": ["May limit functionality", "Doesn't cover all threats"],
-    "ko": ["기능 제한 가능", "모든 위협 커버 불가"]
-  },
   "tags": ["security", "prompt-injection", "threat-model", "data-exfiltration"]
 }

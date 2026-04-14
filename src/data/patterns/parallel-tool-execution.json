@@ -6,27 +6,55 @@
   "status": "validated-in-production",
   "original_url": "https://gerred.github.io/building-an-agentic-system/parallel-tool-execution.html",
   "problem": {
-    "en": "Executing all tools strictly sequentially causes delays, while parallel execution without consideration risks race conditions.",
-    "ko": "모든 도구를 엄격하게 순차적으로 실행하면 지연이 발생하고, 고려 없이 병렬 실행하면 경쟁 조건 위험이 있습니다."
+    "en": "When an AI agent decides to use multiple tools in a single reasoning step, executing them strictly sequentially can lead to significant delays, especially if many tools are read-only and could be run concurrently. Conversely, executing all tools in parallel without consideration can cause race conditions, data corruption, or unpredictable behavior if some tools modify state (e.g., write to files, change system settings).",
+    "ko": "AI 에이전트가 단일 추론 단계에서 여러 도구를 사용하기로 결정할 때, 모든 도구를 엄격하게 순차적으로 실행하면 특히 많은 도구가 읽기 전용이고 동시에 실행 가능한 경우 상당한 지연이 발생합니다. 반대로, 고려 없이 모든 도구를 병렬로 실행하면 일부 도구가 상태를 수정하는 경우(예: 파일 쓰기, 시스템 설정 변경) 경쟁 조건, 데이터 손상, 예측 불가능한 동작이 발생할 수 있습니다."
   },
   "solution": {
-    "en": "Classify tools as read-only or state-modifying, executing read-only tools in parallel and state-modifying tools sequentially.",
-    "ko": "도구를 읽기 전용 또는 상태 수정으로 분류하여 읽기 전용 도구는 병렬로, 상태 수정 도구는 순차적으로 실행합니다."
+    "en": "Implement a conditional execution strategy for batches of tools based on their operational nature:\n\n1. **Tool Classification**: Each tool must declare whether it is read-only (e.g., `FileRead`, `GrepTool`, `GlobTool`) or state-modifying (e.g., `FileEditTool`, `FileWriteTool`, `BashTool`).\n\n2. **Execution Orchestration**: When the agent requests a batch of tools:\n   - If all tools in the batch are read-only: execute all tools concurrently to maximize speed\n   - If any tool in the batch is state-modifying: execute all tools sequentially in the order requested\n\n3. **Result Aggregation**: After execution, collect all tool results and present them in a consistent order matching the agent's original request sequence.\n\nThis strategy balances performance through parallelism for safe operations with safety through serialization for state-modifying operations. More advanced implementations may use dependency graph analysis to identify which tools can safely execute in parallel based on resource access patterns.",
+    "ko": "도구의 작동 특성에 따른 조건부 실행 전략을 구현합니다:\n\n1. **도구 분류**: 각 도구는 읽기 전용(예: `FileRead`, `GrepTool`, `GlobTool`)인지 상태 수정(예: `FileEditTool`, `FileWriteTool`, `BashTool`)인지 선언해야 합니다.\n\n2. **실행 오케스트레이션**: 에이전트가 도구 배치를 요청할 때:\n   - 배치의 모든 도구가 읽기 전용이면: 속도를 극대화하기 위해 모든 도구를 동시에 실행합니다\n   - 배치에 상태 수정 도구가 있으면: 요청 순서대로 모든 도구를 순차적으로 실행합니다\n\n3. **결과 집계**: 실행 후 모든 도구 결과를 수집하고 에이전트의 원래 요청 순서와 일치하는 일관된 순서로 제시합니다.\n\n이 전략은 안전한 작업에 대한 병렬성을 통한 성능과 상태 수정 작업에 대한 직렬화를 통한 안전성의 균형을 맞춥니다. 더 고급 구현에서는 리소스 접근 패턴에 기반하여 어떤 도구가 안전하게 병렬 실행될 수 있는지 식별하기 위해 의존성 그래프 분석을 사용할 수 있습니다."
   },
   "ascii_diagram": "┌─────────────────┐\n│ Tool Batch      │\n└────────┬────────┘\n         │\n┌────────▼────────┐\n│ Classify Tools  │\n└────────┬────────┘\n    ┌────┴────┐\n    ▼         ▼\n[All Read] [Any Write]\n    │         │\n    ▼         ▼\nParallel  Sequential\n    │         │\n    └────┬────┘\n┌────────▼────────┐\n│ Collect Results │\n└─────────────────┘",
   "mermaid_diagram": "flowchart TD\n    A[Agent Requests Tools] --> B{All Read-Only?}\n    B -->|Yes| C[Execute in Parallel]\n    B -->|No| D[Execute Sequentially]\n    C --> E[Collect & Order Results]\n    D --> E\n    E --> F[Return to Agent]",
   "code_example": "tools = agent.requested_tools()\n\nif all(tool.is_read_only for tool in tools):\n    # Safe to parallelize\n    results = await asyncio.gather(*[t.execute() for t in tools])\nelse:\n    # Must serialize for state safety\n    results = [await t.execute() for t in tools]\n\n# Return in original request order\nreturn sorted(results, key=lambda r: r.original_index)",
   "when_to_use": {
-    "en": ["Multi-tool agents", "Performance optimization", "File system operations"],
-    "ko": ["멀티 도구 에이전트", "성능 최적화", "파일 시스템 작업"]
+    "en": [
+      "Each tool in the agent's toolkit has a clearly defined isReadOnly property",
+      "Agent's core execution loop processes tool_use requests involving multiple tools",
+      "Default concurrency limit configured for parallel execution to avoid overwhelming system resources",
+      "Parallel results need re-sorting to match the agent's original requested order before passing back to the LLM"
+    ],
+    "ko": [
+      "에이전트 도구 키트의 각 도구에 명확한 isReadOnly 속성이 정의되어 있을 때",
+      "에이전트 코어 실행 루프가 여러 도구를 포함하는 tool_use 요청을 처리할 때",
+      "시스템 리소스 과부하를 방지하기 위해 병렬 실행의 기본 동시성 제한이 설정되어 있을 때",
+      "병렬 결과를 LLM에 전달하기 전에 에이전트의 원래 요청 순서로 재정렬이 필요할 때"
+    ]
   },
   "pros": {
-    "en": ["Significant performance improvement for reads", "Safety for writes", "Simpler than dependency graphs"],
-    "ko": ["읽기에 대한 상당한 성능 개선", "쓰기 안전성", "의존성 그래프보다 간단"]
+    "en": [
+      "Significantly improves performance for sequences of read-only tool calls; 40-50% latency reduction is typical",
+      "Maintains safety and prevents race conditions by serializing state-modifying operations",
+      "Simpler to implement than full dependency graph analysis while still offering substantial benefits",
+      "Model Behavior Alignment: Some models (e.g., Claude Sonnet 4.5) naturally exhibit parallel tool execution behavior"
+    ],
+    "ko": [
+      "읽기 전용 도구 호출 시퀀스의 성능을 크게 개선; 40-50% 지연 감소가 일반적",
+      "상태 수정 작업을 직렬화하여 안전성 유지 및 경쟁 조건 방지",
+      "전체 의존성 그래프 분석보다 구현이 간단하면서도 상당한 이점 제공",
+      "모델 행동 정렬: 일부 모델(예: Claude Sonnet 4.5)이 자연적으로 병렬 도구 실행 행동을 보임"
+    ]
   },
   "cons": {
-    "en": ["Single write in batch forces serialization", "Requires accurate tool classification"],
-    "ko": ["배치의 단일 쓰기가 직렬화 강제", "정확한 도구 분류 필요"]
+    "en": [
+      "If a batch contains mostly read-only but includes a single state-modifying operation, the entire batch is executed sequentially",
+      "Effectiveness relies on accurate classification of tools as read-only or state-modifying",
+      "Context Consumption: Parallel execution burns through context windows faster as multiple results return simultaneously"
+    ],
+    "ko": [
+      "배치에 대부분 읽기 전용이지만 단일 상태 수정 작업이 포함되면 전체 배치가 순차적으로 실행됨",
+      "효과는 도구의 읽기 전용 또는 상태 수정 분류 정확도에 의존함",
+      "컨텍스트 소모: 병렬 실행은 여러 결과가 동시에 반환되어 컨텍스트 윈도우를 더 빠르게 소모함"
+    ]
   },
-  "tags": ["parallel-execution", "tool-orchestration", "concurrency", "safety"]
+  "tags": ["parallel-execution", "tool-orchestration", "read-only-tools", "stateful-tools", "agent-efficiency", "concurrency-control", "task-scheduling"]
 }

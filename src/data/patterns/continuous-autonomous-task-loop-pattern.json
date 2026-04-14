@@ -6,27 +6,67 @@
   "status": "established",
   "original_url": "https://gist.github.com/nibzard/a97ef0a1919328bcbc6a224a5d2cfc78",
   "problem": {
-    "en": "Traditional development workflows require constant human intervention: manual task selection, context switching, rate limit handling, and repetitive git operations.",
-    "ko": "전통적인 개발 워크플로우는 지속적인 인간 개입이 필요합니다: 수동 작업 선택, 컨텍스트 전환, 속도 제한 처리, 반복적인 git 작업."
+    "en": "Traditional development workflows require constant human intervention for task management:\n\n- **Manual Task Selection**: Developers spend time deciding what to work on next from todo lists\n- **Context Switching Overhead**: Moving between different types of tasks interrupts flow state\n- **Rate Limit Interruptions**: API rate limits break development momentum and require manual waiting\n- **Repetitive Git Operations**: Each task completion requires manual staging, committing, and status checking\n- **Error Recovery**: Failed tasks need manual diagnosis and restart\n\nThis manual orchestration reduces overall productivity and prevents developers from focusing on higher-level problem solving.",
+    "ko": "전통적인 개발 워크플로우는 작업 관리에 지속적인 인간 개입이 필요합니다:\n\n- **수동 작업 선택**: 개발자가 할 일 목록에서 다음 작업을 결정하는 데 시간을 소모합니다\n- **컨텍스트 전환 오버헤드**: 다른 유형의 작업 간 이동이 몰입 상태를 방해합니다\n- **속도 제한 중단**: API 속도 제한이 개발 모멘텀을 깨뜨리고 수동 대기를 요구합니다\n- **반복적인 Git 작업**: 각 작업 완료 시 수동 스테이징, 커밋, 상태 확인이 필요합니다\n- **오류 복구**: 실패한 작업은 수동 진단과 재시작이 필요합니다\n\n이러한 수동 오케스트레이션은 전반적인 생산성을 저하시키고 개발자가 상위 수준의 문제 해결에 집중하는 것을 방해합니다."
   },
   "solution": {
-    "en": "Implement a continuous loop with fresh context per iteration, autonomous task selection via subagents, automated git management, and intelligent rate limit handling.",
-    "ko": "반복당 새로운 컨텍스트, 서브에이전트를 통한 자율 작업 선택, 자동화된 git 관리, 지능적인 속도 제한 처리를 갖춘 연속 루프를 구현합니다."
+    "en": "Implement a continuous autonomous loop that handles task selection, execution, and completion without human intervention. This pattern operationalizes the **ReAct paradigm** (Thought → Action → Observation) as a continuous execution cycle:\n\n1. **Fresh Context Per Iteration**: Each task starts with a clean context to avoid contamination\n2. **Autonomous Task Selection**: Use specialized subagents to pick the next appropriate task\n3. **Automated Git Management**: Handle commits and status updates through dedicated subagents\n4. **Intelligent Rate Limit Handling**: Detect rate limits and implement exponential backoff\n5. **Stream-Based Progress Tracking**: Real-time feedback through JSON streaming\n6. **Configurable Execution Limits**: Safety bounds to prevent runaway execution\n\nThe pattern operates in a continuous loop until stopped manually or reaching iteration limits.",
+    "ko": "인간 개입 없이 작업 선택, 실행, 완료를 처리하는 연속 자율 루프를 구현합니다. 이 패턴은 **ReAct 패러다임**(사고 → 행동 → 관찰)을 연속 실행 사이클로 운용합니다:\n\n1. **반복당 새로운 컨텍스트**: 각 작업은 오염을 피하기 위해 깨끗한 컨텍스트로 시작합니다\n2. **자율 작업 선택**: 전문 서브에이전트를 사용하여 다음 적절한 작업을 선택합니다\n3. **자동화된 Git 관리**: 전용 서브에이전트를 통해 커밋과 상태 업데이트를 처리합니다\n4. **지능적인 속도 제한 처리**: 속도 제한을 감지하고 지수적 백오프를 구현합니다\n5. **스트림 기반 진행 추적**: JSON 스트리밍을 통한 실시간 피드백을 제공합니다\n6. **설정 가능한 실행 제한**: 폭주 실행을 방지하는 안전 한계를 설정합니다\n\n패턴은 수동으로 중지하거나 반복 제한에 도달할 때까지 연속 루프로 작동합니다."
   },
   "ascii_diagram": "┌──────────────────┐\n│ Start Loop       │\n└────────┬─────────┘\n         │\n┌────────▼─────────┐\n│Task Agent: Select│\n│  Next Task       │\n└────────┬─────────┘\n         │\n┌────────▼─────────┐\n│Main Agent: Execute│\n│ (fresh context)  │\n└────────┬─────────┘\n         │\n┌────────▼─────────┐\n│Git Agent: Commit │\n└────────┬─────────┘\n    ┌────┴────┐\n    ▼         ▼\n[Rate Limit?][Continue]\n    │         │\n┌───▼───┐     │\n│Backoff│─────┘\n└───────┘",
   "mermaid_diagram": "sequenceDiagram\n    participant Script as Autonomous Script\n    participant TaskAgent as Task Master\n    participant MainAgent as Main Agent\n    participant GitAgent as Git Master\n\n    loop Continuous Processing\n        Script->>TaskAgent: Select next task\n        TaskAgent-->>Script: Task selected\n        Script->>MainAgent: Execute task\n        MainAgent-->>Script: Task completed\n        Script->>GitAgent: Commit changes\n        GitAgent-->>Script: Committed\n    end",
   "code_example": "#!/bin/bash\nMAX_ITERATIONS=50\nRATE_LIMIT_BACKOFF=300\n\nfor ((i=1; i<=MAX_ITERATIONS; i++)); do\n    # Select next task via subagent\n    TASK=$(claude --print \"Read TODO.md, return next task\")\n    \n    # Execute with fresh context\n    claude --dangerously-skip-permissions \"$TASK\"\n    \n    # Commit via git subagent\n    claude --print \"Commit changes with descriptive message\"\n    \n    # Handle rate limits\n    if [[ $? -eq 429 ]]; then\n        sleep $RATE_LIMIT_BACKOFF\n    fi\ndone",
   "when_to_use": {
-    "en": ["Batch task processing", "Overnight automation", "Repetitive development tasks"],
-    "ko": ["배치 작업 처리", "야간 자동화", "반복적인 개발 작업"]
+    "en": [
+      "CLI agent tool with autonomous execution capabilities available",
+      "Git repository with TODO.md or similar task file",
+      "Batch processing of discrete, well-defined tasks",
+      "Overnight or unattended automation scenarios",
+      "Repetitive development tasks requiring fresh context each time"
+    ],
+    "ko": [
+      "자율 실행 기능이 있는 CLI 에이전트 도구 사용 가능 시",
+      "TODO.md 또는 유사한 작업 파일이 있는 Git 저장소",
+      "개별적이고 잘 정의된 작업의 배치 처리",
+      "야간 또는 무인 자동화 시나리오",
+      "매번 새로운 컨텍스트가 필요한 반복적인 개발 작업"
+    ]
   },
   "pros": {
-    "en": ["Complete autonomy", "Continuous progress", "Fresh context per task"],
-    "ko": ["완전한 자율성", "지속적인 진행", "작업당 새로운 컨텍스트"]
+    "en": [
+      "Complete Autonomy: Eliminates manual task orchestration overhead",
+      "Continuous Progress: Maintains development momentum without human intervention",
+      "Fresh Context: Each task gets clean reasoning context",
+      "Intelligent Error Handling: Automated recovery from common failure modes",
+      "Git Automation: Maintains clean commit history automatically",
+      "Rate Limit Resilience: Handles API constraints gracefully"
+    ],
+    "ko": [
+      "완전한 자율성: 수동 작업 오케스트레이션 오버헤드 제거",
+      "지속적인 진행: 인간 개입 없이 개발 모멘텀 유지",
+      "새로운 컨텍스트: 각 작업이 깨끗한 추론 컨텍스트 확보",
+      "지능적 오류 처리: 일반적인 실패 모드에서 자동 복구",
+      "Git 자동화: 깨끗한 커밋 이력 자동 유지",
+      "속도 제한 복원력: API 제약을 우아하게 처리"
+    ]
   },
   "cons": {
-    "en": ["Reduced human oversight", "Runaway risk", "Requires well-defined tasks"],
-    "ko": ["인간 감독 감소", "폭주 위험", "잘 정의된 작업 필요"]
+    "en": [
+      "Reduced Human Oversight: Less control over individual task decisions",
+      "Permission Requirements: Needs elevated execution permissions for autonomy",
+      "Runaway Risk: Potential for unintended extensive execution",
+      "Task Quality Dependency: Effectiveness depends on well-structured task definitions",
+      "Limited Complex Problem Solving: Best for discrete, well-defined tasks",
+      "Resource Consumption: Continuous execution uses computational resources"
+    ],
+    "ko": [
+      "인간 감독 감소: 개별 작업 결정에 대한 통제력 저하",
+      "권한 요구: 자율성을 위해 상승된 실행 권한 필요",
+      "폭주 위험: 의도치 않은 과도한 실행 가능성",
+      "작업 품질 의존성: 잘 구조화된 작업 정의에 효과가 좌우됨",
+      "복잡한 문제 해결 제한: 개별적이고 잘 정의된 작업에 최적",
+      "자원 소모: 연속 실행이 계산 자원을 사용함"
+    ]
   },
-  "tags": ["autonomous-execution", "task-loop", "rate-limiting", "git-automation", "cli-driven"]
+  "tags": ["autonomous-execution", "task-loop", "rate-limiting", "git-automation", "cli-driven", "stream-processing"]
 }

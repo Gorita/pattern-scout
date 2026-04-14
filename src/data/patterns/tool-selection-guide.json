@@ -6,25 +6,29 @@
   "status": "emerging",
   "original_url": "https://github.com/nibzard/SKILLS-AGENTIC-LESSONS",
   "problem": {
-    "en": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows. Common anti-patterns include using Write when Edit would be more appropriate, launching subagents for simple exploration tasks, skipping build verification after code changes, and performing sequential exploration when parallel would be faster. These inefficiencies compound across long sessions.",
-    "ko": "AI 에이전트가 주어진 작업에 최적의 도구를 선택하는 데 어려움을 겪어 비효율적인 워크플로우가 발생합니다. 일반적인 안티 패턴으로는 Edit이 적절한 상황에서 Write 사용, 간단한 탐색에 서브 에이전트 실행, 코드 변경 후 빌드 검증 건너뛰기, 병렬이 더 빠를 때 순차적 탐색 등이 있습니다. 이러한 비효율은 긴 세션에서 누적됩니다."
+    "en": "AI agents often struggle to select the optimal tool for a given task, leading to inefficient workflows. Common anti-patterns include:\n\n- Using `Write` when `Edit` would be more appropriate\n- Launching subagents for simple exploration tasks\n- Skipping build verification after code changes\n- Performing sequential exploration when parallel would be faster\n\nThese inefficiencies compound across long sessions, resulting in wasted tokens, slower completion, and more user corrections.",
+    "ko": "AI 에이전트가 주어진 작업에 최적의 도구를 선택하는 데 어려움을 겪어 비효율적인 워크플로우가 발생합니다. 일반적인 안티 패턴은 다음과 같습니다:\n\n- `Edit`이 더 적절한 상황에서 `Write` 사용\n- 간단한 탐색 작업에 서브에이전트 실행\n- 코드 변경 후 빌드 검증 건너뛰기\n- 병렬이 더 빠를 때 순차적 탐색 수행\n\n이러한 비효율은 긴 세션에서 누적되어 토큰 낭비, 완료 속도 저하, 사용자 수정 증가로 이어집니다."
   },
   "solution": {
-    "en": "Encode data-driven tool selection patterns from analysis of 88 real-world sessions. Match task type to optimal tool: exploration tasks use Read/Grep/Glob, code modification uses Edit (not Write), verification uses Bash, and delegation uses Task with clear subjects. Key rules: prefer Edit over Write for modifications (3.4:1 ratio observed), always Read before Edit, run Bash verification after changes, and use parallel delegation for independent tasks.",
-    "ko": "88개 실제 세션 분석에서 도출된 데이터 기반 도구 선택 패턴을 적용합니다. 작업 유형에 최적 도구를 매핑합니다: 탐색 작업은 Read/Grep/Glob, 코드 수정은 Edit(Write 아님), 검증은 Bash, 위임은 명확한 제목과 함께 Task를 사용합니다. 핵심 규칙: 수정 시 Write보다 Edit 선호(3.4:1 비율 관찰), Edit 전 항상 Read, 변경 후 Bash 검증 실행, 독립적 작업에는 병렬 위임 사용입니다."
+    "en": "Encode data-driven tool selection patterns that emerged from analysis of 88 real-world Claude conversation sessions. By matching task type to optimal tool, agents can follow proven workflows.\n\n**Tool preference patterns from actual usage data:**\n\n| Task Type | Recommended Tool | Evidence |\n|-----------|-----------------|----------|\n| Codebase exploration | Read → Grep → Glob | Consistent pattern across all projects |\n| Code modification | Edit (not Write) | 3.4:1 Edit:Write ratio in nibzard-web |\n| New file creation | Write | Appropriate use case |\n| Build verification | Bash | 324 uses in nibzard-web, 276 in patterns |\n| Research delegation | Task (with clear subject) | 48 invocations across sessions |\n\n**Key selection criteria:**\n\n1. **Exploration tasks**: Start with `Glob` for file discovery, use `Grep` for content search, use `Read` for targeted file inspection\n2. **Code modification tasks**: Prefer `Edit` over `Write` (saves ~66% tokens), only use `Write` for new files or when changing >50% of a file, always `Read` the file before editing\n3. **Verification tasks**: Use `Bash` for build commands, test runners, and linting; run verification after every Edit/Write operation\n4. **Delegation tasks**: Use `Task` tool for subagent delegation with clear task subjects; prefer parallel over sequential for independent exploration (10x+ speedup possible)",
+    "ko": "88개 실제 Claude 대화 세션 분석에서 도출된 데이터 기반 도구 선택 패턴을 적용합니다. 작업 유형에 최적 도구를 매핑하여 에이전트가 검증된 워크플로우를 따를 수 있습니다.\n\n**실제 사용 데이터 기반 도구 선호 패턴:**\n\n| 작업 유형 | 권장 도구 | 근거 |\n|-----------|----------|------|\n| 코드베이스 탐색 | Read → Grep → Glob | 모든 프로젝트에서 일관된 패턴 |\n| 코드 수정 | Edit (Write 아님) | nibzard-web에서 3.4:1 Edit:Write 비율 |\n| 새 파일 생성 | Write | 적절한 사용 사례 |\n| 빌드 검증 | Bash | nibzard-web에서 324회, patterns에서 276회 사용 |\n| 리서치 위임 | Task (명확한 제목) | 세션 전반에서 48회 호출 |\n\n**핵심 선택 기준:**\n\n1. **탐색 작업**: `Glob`으로 파일 발견 시작, `Grep`으로 콘텐츠 검색, `Read`로 대상 파일 검사\n2. **코드 수정 작업**: `Write`보다 `Edit` 선호(토큰 약 66% 절약), 새 파일이나 파일의 50% 이상 변경 시에만 `Write` 사용, 편집 전 항상 `Read` 수행\n3. **검증 작업**: 빌드 명령, 테스트 러너, 린팅에 `Bash` 사용; 모든 Edit/Write 작업 후 검증 실행\n4. **위임 작업**: 명확한 작업 제목으로 서브에이전트 위임에 `Task` 도구 사용; 독립적 탐색에는 순차보다 병렬 선호 (10배 이상 속도 향상 가능)"
   },
   "when_to_use": {
     "en": [
-      "Codebase exploration requiring file and content search",
-      "Code modification of existing files",
-      "Build and test verification after changes",
-      "Delegating parallel research tasks to subagents"
+      "Before using any tool, mentally categorize: 'Am I discovering, changing, checking, or delegating?'",
+      "Codebase exploration requiring file and content search (Exploration toolkit)",
+      "Code modification of existing files (Edit after Read)",
+      "Build and test verification after changes (Bash verification)",
+      "Delegating parallel research tasks to subagents (Task with clear subject)",
+      "Anti-pattern prevention: don't use Write for modifications, don't skip Read before Edit, don't claim complete without Bash verification"
     ],
     "ko": [
-      "파일 및 콘텐츠 검색이 필요한 코드베이스 탐색",
-      "기존 파일의 코드 수정",
-      "변경 후 빌드 및 테스트 검증",
-      "서브 에이전트에 병렬 리서치 작업 위임"
+      "도구 사용 전 작업 분류: '발견하는 중인가, 변경하는 중인가, 확인하는 중인가, 위임하는 중인가?'",
+      "파일 및 콘텐츠 검색이 필요한 코드베이스 탐색 (탐색 도구 키트)",
+      "기존 파일의 코드 수정 (Read 후 Edit)",
+      "변경 후 빌드 및 테스트 검증 (Bash 검증)",
+      "서브에이전트에 병렬 리서치 작업 위임 (명확한 제목의 Task)",
+      "안티 패턴 방지: 수정에 Write 사용 금지, Edit 전 Read 건너뛰기 금지, Bash 검증 없이 완료 주장 금지"
     ]
   },
   "pros": {
